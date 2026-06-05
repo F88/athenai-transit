@@ -70,7 +70,6 @@ export interface TransitDisplayEntryData {
   headsign: string;
   /** Pre-formatted absolute display time (legacy presentation). */
   timeText: string;
-  isArrival: boolean;
   /** Boarding / drop-off availability and pattern-position flags for this event. */
   attributes: TimetableEntryAttributes;
   /** Service-day arrival minutes for `StopTimeTimeInfo` rendering. */
@@ -105,6 +104,12 @@ export interface TransitDisplayMeta {
    * when split by route type; several when route types are combined into one board.
    */
   routeTypes: readonly AppRouteTypeValue[];
+  /**
+   * Direction(s) of travel this board covers. `0` / `1` are GTFS `direction_id`
+   * (where the source provides it) and `'none'` is "no direction_id". One element
+   * when split by direction; several (the directions actually present) when not.
+   */
+  directions: readonly (0 | 1 | 'none')[];
   /** Row cap applied to this display's entries. */
   max: number;
   /** Radius (metres) the display's stops were selected within. */
@@ -141,6 +146,16 @@ export interface TransitDisplayCondition {
   maxEntries: number;
   /** How route types are grouped into boards. */
   routeGrouping: TransitDisplayRouteGrouping;
+  /**
+   * Whether to also split each board by direction of travel. When true, every
+   * route type is split by each trip's `routeDirection.direction` (`0` | `1` |
+   * `undefined`); when false, boards are not divided by direction. That
+   * `direction` mirrors GTFS `direction_id` where the source provides it
+   * (`undefined` otherwise) and is route-local / arbitrary across routes, so
+   * splitting can read poorly at multi-route stops -- the caller decides per
+   * display.
+   */
+  splitByDirection: boolean;
 }
 
 /** One stop event paired with the stop context it came from, before name resolution. */
@@ -208,21 +223,18 @@ export function selectByRouteType(
 }
 
 /**
- * Orders candidates earliest-first by the category's time and returns at most
- * `maxEntries` of them. Does not mutate the input.
+ * Orders candidates earliest-first by the category's time. Does not mutate the
+ * input.
  */
-export function sortAndCapByCategory(
+export function sortByCategory(
   candidates: readonly TransitDisplayCandidate[],
   category: TransitDisplayCategory,
-  maxEntries: number,
 ): TransitDisplayCandidate[] {
-  return [...candidates]
-    .sort(
-      (a, b) =>
-        minutesToDate(a.entry.serviceDate, categoryMinutes(a.entry, category)).getTime() -
-        minutesToDate(b.entry.serviceDate, categoryMinutes(b.entry, category)).getTime(),
-    )
-    .slice(0, maxEntries);
+  return [...candidates].sort(
+    (a, b) =>
+      minutesToDate(a.entry.serviceDate, categoryMinutes(a.entry, category)).getTime() -
+      minutesToDate(b.entry.serviceDate, categoryMinutes(b.entry, category)).getTime(),
+  );
 }
 
 export function buildTransitDisplayEntryData(
@@ -300,7 +312,6 @@ export function buildTransitDisplayEntryData(
       timeText: formatAbsoluteTime(
         minutesToDate(entry.serviceDate, categoryMinutes(entry, category)),
       ),
-      isArrival: entry.patternPosition.isTerminal,
       attributes: getTimetableEntryAttributes(entry),
       arrivalMinutes: entry.schedule.arrivalMinutes,
       departureMinutes: entry.schedule.departureMinutes,
@@ -317,12 +328,39 @@ export const NEARBY_RADIUS_M = 100;
 const CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
 /**
- * One board's cell: which route type(s) and category it is, plus its candidates.
- * Plain candidates (not UI rows), so the same shape flows through grouping,
- * sort + cap, and UI conversion without those concerns leaking into each other.
+ * Direction buckets used to split a board by direction of travel. The values
+ * are `routeDirection.direction`: `undefined` (no direction on the trip), then
+ * `0` and `1` (the route's two opposite directions). `direction` mirrors GTFS
+ * `direction_id` where the source provides it, and is `undefined` otherwise
+ * (e.g. non-GTFS / ODPT sources). Empty buckets are dropped downstream, so trips
+ * without a direction collapse to one group.
+ */
+const DIRECTIONS: readonly (0 | 1 | undefined)[] = [undefined, 0, 1];
+
+/**
+ * Directions actually present among the candidates, in `DIRECTIONS` order, with
+ * the no-direction case as `'none'`. Used for a not-split board's `directions`,
+ * mirroring how present route types are listed (data-present, not enumerated).
+ */
+function presentDirections(
+  candidates: readonly TransitDisplayCandidate[],
+): readonly (0 | 1 | 'none')[] {
+  const present = new Set(candidates.map((c) => c.entry.routeDirection.direction));
+  return DIRECTIONS.filter((direction) => present.has(direction)).map(
+    (direction) => direction ?? 'none',
+  );
+}
+
+/**
+ * One board's cell: which route type(s), direction(s) and category it is, plus
+ * its candidates. Plain candidates (not UI rows), so the same shape flows through
+ * grouping, sort + cap, and UI conversion without those concerns leaking into
+ * each other.
  */
 export interface TransitDisplayBoard {
   routeTypes: readonly AppRouteTypeValue[];
+  /** Direction(s) this board covers (see {@link TransitDisplayMeta.directions}). */
+  directions: readonly (0 | 1 | 'none')[];
   category: TransitDisplayCategory;
   candidates: TransitDisplayCandidate[];
 }
@@ -381,26 +419,54 @@ export function clusterCandidatesByRouteType(
 
 /**
  * Groups candidates into boards: clusters them by route type (per
- * `routeGrouping`) then splits each cluster by category, yielding one board per
- * non-empty cell, in route-type display order x (departures, arrivals).
+ * `routeGrouping`), optionally by direction of travel (when `splitByDirection`),
+ * then by category, yielding one board per non-empty cell.
+ *
+ * A trip's `routeDirection.direction` (which mirrors GTFS `direction_id` where
+ * the source provides it) is route-local and arbitrary across routes, so a
+ * caller that wants direction split for some modes but not others (e.g. trains
+ * yes, buses no) composes it by calling with different `routeGrouping` /
+ * `splitByDirection` and merging the results, rather than having a per-mode rule
+ * baked in here.
  *
  * Grouping only: it does not sort / cap ({@link sortAndCapBoards}) or resolve
  * display names ({@link toTransitDisplayData}). Empty cells are dropped, so the
- * present route types fall out without a separate enumeration.
+ * present route types / directions fall out without a separate enumeration.
  */
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
-  routeGrouping: TransitDisplayRouteGrouping,
+  condition: TransitDisplayCondition,
 ): TransitDisplayBoard[] {
-  return clusterCandidatesByRouteType(candidates, routeGrouping)
-    .flatMap((cluster) =>
-      CATEGORIES.map((category) => ({
-        routeTypes: cluster.routeTypes,
-        category,
-        // keep only the candidates that qualify for this category's board
-        candidates: cluster.candidates.filter((c) => categoryQualifies(c.entry, category)),
-      })),
-    )
+  return clusterCandidatesByRouteType(candidates, condition.routeGrouping)
+    .flatMap((cluster) => {
+      if (!condition.splitByDirection) {
+        // Not split: one board per category, covering the directions present.
+        return CATEGORIES.map((category) => {
+          const boardCandidates = cluster.candidates.filter((c) =>
+            categoryQualifies(c.entry, category),
+          );
+          return {
+            routeTypes: cluster.routeTypes,
+            directions: presentDirections(boardCandidates),
+            category,
+            candidates: boardCandidates,
+          };
+        });
+      }
+      // Split: one board per direction bucket (undefined / 0 / 1) per category.
+      return DIRECTIONS.flatMap((direction) => {
+        const directions: readonly (0 | 1 | 'none')[] = [direction ?? 'none'];
+        const inDirection = cluster.candidates.filter(
+          (c) => c.entry.routeDirection.direction === direction,
+        );
+        return CATEGORIES.map((category) => ({
+          routeTypes: cluster.routeTypes,
+          directions,
+          category,
+          candidates: inDirection.filter((c) => categoryQualifies(c.entry, category)),
+        }));
+      });
+    })
     .filter((board) => board.candidates.length > 0);
 }
 
@@ -412,10 +478,12 @@ export function sortAndCapBoards(
   boards: readonly TransitDisplayBoard[],
   maxEntries: number,
 ): TransitDisplayBoard[] {
-  return boards.map((board) => ({
-    ...board,
-    candidates: sortAndCapByCategory(board.candidates, board.category, maxEntries),
-  }));
+  return boards.map((board) => {
+    // sort by the category's time (category-dependent)
+    const sorted = sortByCategory(board.candidates, board.category);
+    // cap: keep the earliest maxEntries (slice is non-mutating, expects sorted input)
+    return { ...board, candidates: sorted.slice(0, maxEntries) };
+  });
 }
 
 /**
@@ -433,6 +501,7 @@ export function toTransitDisplayData(
     meta: {
       category: board.category,
       routeTypes: board.routeTypes,
+      directions: board.directions,
       max: maxEntries,
       radius: radiusMeters,
     },
@@ -461,8 +530,8 @@ export function buildTransitDisplayDataSet(
   const nearbyStops = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
   const candidates = toTransitDisplayCandidates(nearbyStops);
-  // cluster by route type, then split by category, into boards
-  const boards = groupCandidatesIntoBoards(candidates, condition.routeGrouping);
+  // cluster by route type, optionally by direction, then split by category
+  const boards = groupCandidatesIntoBoards(candidates, condition);
   // sort by time, cap each board
   const cappedBoards = sortAndCapBoards(boards, condition.maxEntries);
   // resolve display names, build UI data

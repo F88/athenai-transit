@@ -4,27 +4,30 @@
  * @vitest-environment node
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  agencyTobus,
-  baseStop,
-  busRoute,
-  createEntry,
-  railRoute,
-  subwayRoute,
-} from '../../../../stories/fixtures';
+import { makeContextualEntry, makeRoute, makeStop } from '../../../../__tests__/helpers';
 import type { InfoLevel } from '../../../../types/app/settings';
 import type { Route, TimetableEntryAttributes } from '../../../../types/app/transit';
-import type { StopWithContext } from '../../../../types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  StopWithContext,
+} from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
 import { getTimetableEntryAttributes } from '../../timetable-entry-attributes';
 import {
   categoryQualifies,
   clusterCandidatesByRouteType,
   filterStopsWithinRadius,
+  groupCandidatesIntoBoards,
+  sortAndCapBoards,
+  sortByCategory,
+  toTransitDisplayCandidates,
   transitDisplayMaxEntriesFor,
+  type TransitDisplayBoard,
   type TransitDisplayCandidate,
+  type TransitDisplayCategory,
+  type TransitDisplayCondition,
 } from '../build-transit-display-data';
 
 // categoryQualifies delegates origin/terminal determination to this domain
@@ -50,10 +53,14 @@ describe('transitDisplayMaxEntriesFor', () => {
   });
 });
 
+const busRoute = makeRoute('bus', 3); // route_type 3
+const railRoute = makeRoute('rail', 2); // route_type 2
+const subwayRoute = makeRoute('subway', 1); // route_type 1
+
 /** Minimal stop context; clustering only reads each candidate's route_type, not the stop. */
 const STUB_STOP: StopWithContext = {
-  stop: baseStop,
-  agencies: [agencyTobus],
+  stop: makeStop('stub'),
+  agencies: [],
   routes: [busRoute],
   routeTypes: [3],
   stopTimes: [],
@@ -62,13 +69,93 @@ const STUB_STOP: StopWithContext = {
 
 /** A candidate for a trip on the given route (route.route_type drives clustering). */
 function candidateOf(route: Route): TransitDisplayCandidate {
-  return { entry: createEntry({ route }), stopWithContext: STUB_STOP };
+  return { entry: makeContextualEntry({ route }), stopWithContext: STUB_STOP };
 }
+
+describe('sortByCategory', () => {
+  /** A candidate with explicit departure / arrival minutes (and optional service date). */
+  function candidateWithTimes(opts: {
+    dep: number;
+    arr?: number;
+    serviceDate?: Date;
+  }): TransitDisplayCandidate {
+    const entry = makeContextualEntry({
+      route: busRoute,
+      departureMinutes: opts.dep,
+      arrivalMinutes: opts.arr ?? opts.dep,
+      ...(opts.serviceDate ? { serviceDate: opts.serviceDate } : {}),
+    });
+    return { entry, stopWithContext: STUB_STOP };
+  }
+
+  it("'departures': orders earliest departure first", () => {
+    const result = sortByCategory(
+      [
+        candidateWithTimes({ dep: 900 }),
+        candidateWithTimes({ dep: 800 }),
+        candidateWithTimes({ dep: 850 }),
+      ],
+      'departures',
+    );
+    expect(result.map((c) => c.entry.schedule.departureMinutes)).toEqual([800, 850, 900]);
+  });
+
+  it("'arrivals': orders by arrival time, not departure time", () => {
+    const a = candidateWithTimes({ dep: 800, arr: 900 });
+    const b = candidateWithTimes({ dep: 850, arr: 810 });
+    // departures uses departureMinutes -> a (800) before b (850)
+    expect(
+      sortByCategory([a, b], 'departures').map((c) => c.entry.schedule.departureMinutes),
+    ).toEqual([800, 850]);
+    // arrivals uses arrivalMinutes -> b (810) before a (900)
+    expect(sortByCategory([a, b], 'arrivals').map((c) => c.entry.schedule.arrivalMinutes)).toEqual([
+      810, 900,
+    ]);
+  });
+
+  it('orders by service date then time (earlier date first even with a later time)', () => {
+    // makeContextualEntry defaults serviceDate to 2026-01-01.
+    const lateOnDay1 = candidateWithTimes({ dep: 1400 }); // 2026-01-01, 23:20
+    const earlyOnDay2 = candidateWithTimes({ dep: 100, serviceDate: new Date('2026-01-02') }); // next day, 01:40
+
+    expect(sortByCategory([earlyOnDay2, lateOnDay1], 'departures')).toEqual([
+      lateOnDay1,
+      earlyOnDay2,
+    ]);
+  });
+
+  it('compares by resolved wall-clock, so an overnight (>= 24:00) entry sorts past the next day', () => {
+    // The sort uses minutesToDate().getTime(), not a naive (serviceDate, minutes)
+    // ordering. A day-1 trip at 26:00 rolls over to day-2 02:00, so it must sort
+    // AFTER a day-2 trip at 01:00 -- the opposite of a naive date-then-minutes sort.
+    const overnightOnDay1 = candidateWithTimes({ dep: 1560 }); // 2026-01-01, 26:00 -> 01-02 02:00
+    const earlyOnDay2 = candidateWithTimes({ dep: 60, serviceDate: new Date('2026-01-02') }); // 01-02 01:00
+
+    expect(sortByCategory([overnightOnDay1, earlyOnDay2], 'departures')).toEqual([
+      earlyOnDay2,
+      overnightOnDay1,
+    ]);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(sortByCategory([], 'departures')).toEqual([]);
+  });
+
+  it('does not mutate the input array', () => {
+    const c900 = candidateWithTimes({ dep: 900 });
+    const c800 = candidateWithTimes({ dep: 800 });
+    const input = [c900, c800];
+
+    sortByCategory(input, 'departures');
+
+    expect(input).toEqual([c900, c800]);
+  });
+});
 
 describe('categoryQualifies', () => {
   // The entry content is irrelevant: getTimetableEntryAttributes is mocked, so
   // only the flags it returns drive the result.
-  const ENTRY = createEntry({ route: busRoute });
+  const ENTRY = makeContextualEntry({ route: busRoute });
 
   /** Make the mocked getTimetableEntryAttributes return the given flags (rest false). */
   function withAttributes(flags: Partial<TimetableEntryAttributes>): void {
@@ -96,12 +183,35 @@ describe('categoryQualifies', () => {
     withAttributes({ isOrigin: false, isTerminal: true });
     expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
   });
+
+  it('a plain entry (no terminal/origin) qualifies for both categories', () => {
+    withAttributes({});
+
+    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+  });
+
+  it('ignores boarding availability: pickup/drop-off unavailable does not disqualify', () => {
+    // Only terminal/origin gate qualification; boarding flags are irrelevant here.
+    withAttributes({ isPickupUnavailable: true, isDropOffUnavailable: true });
+
+    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+  });
+
+  it('delegates terminal/origin determination to getTimetableEntryAttributes', () => {
+    withAttributes({});
+
+    categoryQualifies(ENTRY, 'departures');
+
+    expect(getTimetableEntryAttributes).toHaveBeenCalledWith(ENTRY);
+  });
 });
 
 describe('filterStopsWithinRadius', () => {
   /** A stop context at a given distance (metres), with a unique id for assertions. */
   function stopAtDistance(stopId: string, distance: number | undefined): StopWithContext {
-    return { ...STUB_STOP, stop: { ...baseStop, stop_id: stopId }, distance };
+    return { ...STUB_STOP, stop: makeStop(stopId), distance };
   }
 
   it('keeps stops within the radius and drops the ones beyond it', () => {
@@ -216,5 +326,282 @@ describe('clusterCandidatesByRouteType', () => {
 
     expect(clusters[0].routeTypes).toEqual([1]); // 2 dropped (not present)
     expect(clusters[0].candidates).toEqual([subway]);
+  });
+
+  it("'route': keeps the input order of candidates within a single type's cluster", () => {
+    const bus1 = candidateOf(busRoute); // 3
+    const bus2 = candidateOf(busRoute); // 3
+
+    const clusters = clusterCandidatesByRouteType([bus1, bus2], { kind: 'route' });
+
+    const busCluster = clusters.find((c) => c.routeTypes[0] === busRoute.route_type);
+    expect(busCluster?.candidates).toEqual([bus1, bus2]);
+  });
+
+  it("'route': returns the full display-order skeleton even with no candidates (all clusters empty)", () => {
+    const clusters = clusterCandidatesByRouteType([], { kind: 'route' });
+
+    // Structure is data-independent: one single-type cluster per display-order entry.
+    expect(clusters.map((c) => c.routeTypes)).toEqual(ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]));
+    expect(clusters.every((c) => c.candidates.length === 0)).toBe(true);
+  });
+
+  it("'none': returns a single empty cluster with no route types for no candidates", () => {
+    const clusters = clusterCandidatesByRouteType([], { kind: 'none' });
+
+    expect(clusters).toEqual([{ routeTypes: [], candidates: [] }]);
+  });
+
+  it("'custom': returns no clusters for an empty groups list", () => {
+    const bus = candidateOf(busRoute);
+
+    expect(clusterCandidatesByRouteType([bus], { kind: 'custom', groups: [] })).toEqual([]);
+  });
+});
+
+describe('groupCandidatesIntoBoards', () => {
+  // groupCandidatesIntoBoards routes through categoryQualifies ->
+  // getTimetableEntryAttributes (mocked at the top). Make the mock faithful for
+  // the only flags categoryQualifies reads, derived from the entry itself, so
+  // each candidate gets its own terminal/origin result.
+  beforeEach(() => {
+    vi.mocked(getTimetableEntryAttributes).mockImplementation((entry) => ({
+      isTerminal: entry.patternPosition.isTerminal,
+      isOrigin: entry.patternPosition.isOrigin,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    }));
+  });
+
+  /** A candidate with an explicit direction and terminal/origin position. */
+  function cand(
+    opts: { route?: Route; direction?: 0 | 1; isOrigin?: boolean; isTerminal?: boolean } = {},
+  ): TransitDisplayCandidate {
+    return {
+      entry: makeContextualEntry({
+        route: opts.route ?? busRoute,
+        direction: opts.direction,
+        isOrigin: opts.isOrigin,
+        isTerminal: opts.isTerminal,
+      }),
+      stopWithContext: STUB_STOP,
+    };
+  }
+
+  const notSplit: TransitDisplayCondition = {
+    maxEntries: 100,
+    routeGrouping: { kind: 'none' },
+    splitByDirection: false,
+  };
+  const split: TransitDisplayCondition = { ...notSplit, splitByDirection: true };
+
+  it('not split: produces a departures and an arrivals board per cluster', () => {
+    const a = cand({ direction: 0 });
+    const b = cand({ direction: 1 });
+
+    const boards = groupCandidatesIntoBoards([a, b], notSplit);
+
+    expect(boards).toHaveLength(2);
+    expect(boards.map((bd) => bd.category)).toEqual(['departures', 'arrivals']);
+    for (const bd of boards) {
+      expect(bd.routeTypes).toEqual([3]);
+      expect(bd.directions).toEqual([0, 1]); // present directions of the board's candidates
+      expect(bd.candidates).toEqual([a, b]);
+    }
+  });
+
+  it("not split: excludes terminal from departures and origin from arrivals, narrowing each board's directions", () => {
+    const plain0 = cand({ direction: 0 }); // qualifies both
+    const terminal1 = cand({ direction: 1, isTerminal: true }); // arrivals only
+
+    const boards = groupCandidatesIntoBoards([plain0, terminal1], notSplit);
+
+    const departures = boards.find((bd) => bd.category === 'departures');
+    const arrivals = boards.find((bd) => bd.category === 'arrivals');
+
+    expect(departures?.candidates).toEqual([plain0]); // terminal1 dropped
+    expect(departures?.directions).toEqual([0]); // direction 1 no longer present
+    expect(arrivals?.candidates).toEqual([plain0, terminal1]);
+    expect(arrivals?.directions).toEqual([0, 1]);
+  });
+
+  it('split: one board per present (direction, category); undefined maps to "none", absent buckets dropped', () => {
+    const noDir = cand({}); // direction undefined
+    const dir0 = cand({ direction: 0 });
+    // no direction 1 -> its buckets are empty and dropped
+
+    const boards = groupCandidatesIntoBoards([noDir, dir0], split);
+
+    expect(boards.map((bd) => ({ directions: bd.directions, category: bd.category }))).toEqual([
+      { directions: ['none'], category: 'departures' },
+      { directions: ['none'], category: 'arrivals' },
+      { directions: [0], category: 'departures' },
+      { directions: [0], category: 'arrivals' },
+    ]);
+    // each bucket keeps only its own direction's candidate
+    expect(boards[0].candidates).toEqual([noDir]);
+    expect(boards[2].candidates).toEqual([dir0]);
+  });
+
+  it('split: drops a board left empty after category qualification', () => {
+    const terminal0 = cand({ direction: 0, isTerminal: true }); // arrivals only
+
+    const boards = groupCandidatesIntoBoards([terminal0], split);
+
+    // direction-0 departures board is empty (terminal excluded) and dropped.
+    expect(boards).toHaveLength(1);
+    expect(boards[0].directions).toEqual([0]);
+    expect(boards[0].category).toBe('arrivals');
+    expect(boards[0].candidates).toEqual([terminal0]);
+  });
+
+  it('returns no boards for empty input', () => {
+    expect(groupCandidatesIntoBoards([], notSplit)).toEqual([]);
+    expect(groupCandidatesIntoBoards([], split)).toEqual([]);
+  });
+
+  it("respects the route grouping: 'route' yields per-route-type boards in display order", () => {
+    const bus = cand({ route: busRoute }); // 3
+    const subway = cand({ route: subwayRoute }); // 1
+
+    const boards = groupCandidatesIntoBoards([bus, subway], {
+      maxEntries: 100,
+      routeGrouping: { kind: 'route' },
+      splitByDirection: false,
+    });
+
+    // Empty route-type clusters are dropped; 3 precedes 1 in display order, and
+    // each surviving type yields a departures + arrivals board.
+    expect(boards.map((bd) => ({ routeTypes: bd.routeTypes, category: bd.category }))).toEqual([
+      { routeTypes: [3], category: 'departures' },
+      { routeTypes: [3], category: 'arrivals' },
+      { routeTypes: [1], category: 'departures' },
+      { routeTypes: [1], category: 'arrivals' },
+    ]);
+  });
+});
+
+describe('sortAndCapBoards', () => {
+  /** A candidate with explicit departure / arrival minutes. */
+  function candWithTimes(dep: number, arr: number = dep): TransitDisplayCandidate {
+    return {
+      entry: makeContextualEntry({ route: busRoute, departureMinutes: dep, arrivalMinutes: arr }),
+      stopWithContext: STUB_STOP,
+    };
+  }
+
+  /** A board carrying the given category and candidates (metadata is incidental). */
+  function boardOf(
+    category: TransitDisplayCategory,
+    candidates: TransitDisplayCandidate[],
+  ): TransitDisplayBoard {
+    return { routeTypes: [3], directions: ['none'], category, candidates };
+  }
+
+  it("sorts each board's candidates by its own category's time", () => {
+    const dep = boardOf('departures', [candWithTimes(900), candWithTimes(800), candWithTimes(850)]);
+    const arr = boardOf('arrivals', [candWithTimes(700, 900), candWithTimes(710, 810)]);
+
+    const [sortedDep, sortedArr] = sortAndCapBoards([dep, arr], 100);
+
+    expect(sortedDep.candidates.map((c) => c.entry.schedule.departureMinutes)).toEqual([
+      800, 850, 900,
+    ]);
+    // arrivals board sorts by arrivalMinutes (810 before 900), not departure time
+    expect(sortedArr.candidates.map((c) => c.entry.schedule.arrivalMinutes)).toEqual([810, 900]);
+  });
+
+  it('caps each board to maxEntries, keeping the earliest after sorting', () => {
+    const board = boardOf('departures', [
+      candWithTimes(900),
+      candWithTimes(800),
+      candWithTimes(850),
+      candWithTimes(700),
+    ]);
+
+    const [capped] = sortAndCapBoards([board], 2);
+
+    expect(capped.candidates.map((c) => c.entry.schedule.departureMinutes)).toEqual([700, 800]);
+  });
+
+  it('preserves board metadata (routeTypes, directions, category)', () => {
+    const board: TransitDisplayBoard = {
+      routeTypes: [2, 1],
+      directions: [0, 'none'],
+      category: 'departures',
+      candidates: [candWithTimes(800)],
+    };
+
+    const [result] = sortAndCapBoards([board], 100);
+
+    expect(result.routeTypes).toEqual([2, 1]);
+    expect(result.directions).toEqual([0, 'none']);
+    expect(result.category).toBe('departures');
+  });
+
+  it('does not mutate the input board candidates', () => {
+    const c900 = candWithTimes(900);
+    const c800 = candWithTimes(800);
+    const board = boardOf('departures', [c900, c800]);
+
+    sortAndCapBoards([board], 100);
+
+    expect(board.candidates).toEqual([c900, c800]);
+  });
+
+  it('returns an empty array for no boards', () => {
+    expect(sortAndCapBoards([], 100)).toEqual([]);
+  });
+
+  it('keeps an empty board empty', () => {
+    const [result] = sortAndCapBoards([boardOf('departures', [])], 100);
+
+    expect(result.candidates).toEqual([]);
+  });
+});
+
+describe('toTransitDisplayCandidates', () => {
+  /** A stop context carrying the given stopTimes (other fields are incidental). */
+  function stopWith(stopId: string, stopTimes: ContextualTimetableEntry[]): StopWithContext {
+    return { ...STUB_STOP, stop: makeStop(stopId), stopTimes };
+  }
+
+  it("flattens a stop's stopTimes into (entry, stopWithContext) pairs", () => {
+    const e0 = makeContextualEntry({ departureMinutes: 600 });
+    const e1 = makeContextualEntry({ departureMinutes: 700 });
+    const stop = stopWith('s1', [e0, e1]);
+
+    expect(toTransitDisplayCandidates([stop])).toEqual([
+      { entry: e0, stopWithContext: stop },
+      { entry: e1, stopWithContext: stop },
+    ]);
+  });
+
+  it('preserves stop order then stopTime order without reordering by time', () => {
+    const a0 = makeContextualEntry({ departureMinutes: 600 });
+    const a1 = makeContextualEntry({ departureMinutes: 610 });
+    const b0 = makeContextualEntry({ departureMinutes: 500 }); // earlier, but later stop
+    const stopA = stopWith('a', [a0, a1]);
+    const stopB = stopWith('b', [b0]);
+
+    const candidates = toTransitDisplayCandidates([stopA, stopB]);
+
+    // Declaration order is kept (b0 at 500 stays last); each entry keeps its source stop.
+    expect(candidates.map((c) => c.entry)).toEqual([a0, a1, b0]);
+    expect(candidates.map((c) => c.stopWithContext)).toEqual([stopA, stopA, stopB]);
+  });
+
+  it('contributes nothing for a stop with no stopTimes', () => {
+    const empty = stopWith('empty', []);
+    const e0 = makeContextualEntry({});
+    const withTimes = stopWith('s', [e0]);
+
+    expect(toTransitDisplayCandidates([empty, withTimes])).toEqual([
+      { entry: e0, stopWithContext: withTimes },
+    ]);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(toTransitDisplayCandidates([])).toEqual([]);
   });
 });

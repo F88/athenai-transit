@@ -12,7 +12,7 @@ import {
   storyNow,
   storyServiceDate,
 } from '../../stories/fixtures';
-import type { AppRouteTypeValue } from '../../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { TransitDisplay } from './transit-displays';
@@ -28,8 +28,7 @@ interface MakeEntryOverrides {
   agencyName?: string;
   headsign?: string;
   timeText?: string;
-  isArrival?: boolean;
-  isPickupUnavailable?: boolean;
+  attributes?: TimetableEntryAttributes;
 }
 
 /** Build a minimal {@link StopWithContext} for a row's `stop.context`. */
@@ -68,11 +67,10 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData 
     agencyName: overrides.agencyName ?? '都バス',
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '14:30',
-    isArrival: overrides.isArrival ?? false,
-    attributes: {
-      isTerminal: overrides.isArrival ?? false,
+    attributes: overrides.attributes ?? {
+      isTerminal: false,
       isOrigin: false,
-      isPickupUnavailable: overrides.isPickupUnavailable ?? false,
+      isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
     arrivalMinutes: 870,
@@ -93,7 +91,14 @@ function makeDisplay(
   data: readonly TransitDisplayEntryData[] = departureRows,
 ): TransitDisplayData {
   return {
-    meta: { category: 'departures', routeTypes: [3], max: 12, radius: 100, ...metaOverrides },
+    meta: {
+      category: 'departures',
+      routeTypes: [3],
+      directions: ['none'],
+      max: 12,
+      radius: 100,
+      ...metaOverrides,
+    },
     data,
   };
 }
@@ -122,14 +127,24 @@ const arrivalRows: TransitDisplayEntryData[] = [
     timeText: '14:31',
     routeName: '都02',
     headsign: '錦糸町駅前',
-    isArrival: true,
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
   makeEntry({
     key: 'a2',
     timeText: '14:35',
     routeName: '錦27',
     headsign: '錦糸町駅前',
-    isArrival: true,
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
 ];
 

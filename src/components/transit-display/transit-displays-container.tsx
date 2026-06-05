@@ -49,27 +49,40 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
-  const displays = useMemo(() => {
-    // Under development: trying out routeGrouping variants here. Keep the
-    // commented-out alternatives below -- do not delete them.
+  const displays = useMemo(
+    () => {
+      // Under development: trying out routeGrouping variants here. Keep the
+      // commented-out alternatives below -- do not delete them.
 
-    const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-      // kind: 'none',
-      kind: 'route',
-    };
-    // const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-    //   kind: 'custom',
-    //   groups: [
-    //     [...ROUTE_TYPE_DISPLAY_ORDER], // as none
-    //     ...ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]), // as route
-    //     // ...(Object.values(ROUTE_TYPE_CATEGORY_GROUPS) as AppRouteTypeValue[][]), // as route type category
-    //   ],
-    // };
-    return buildTransitDisplayDataSet(stopTimes, dataLangs, NEARBY_RADIUS_M, {
-      maxEntries: transitDisplayMaxEntriesFor(infoLevel),
-      routeGrouping: transitDisplayRouteGrouping,
-    });
-  }, [stopTimes, dataLangs, infoLevel]);
+      const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
+        // kind: 'none',
+        kind: 'route',
+      };
+      // const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
+      //   kind: 'custom',
+      //   groups: [
+      //     [...ROUTE_TYPE_DISPLAY_ORDER], // as none
+      //     ...ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]), // as route
+      //     // ...(Object.values(ROUTE_TYPE_CATEGORY_GROUPS) as AppRouteTypeValue[][]), // as route type category
+      //   ],
+      // };
+
+      // Direction split (under development): a single toggle that splits every
+      // route type. Per-mode behavior (e.g. split trains but not buses) would be
+      // composed from multiple buildTransitDisplayDataSet calls with different
+      // routeGrouping, not a per-mode rule inside the builder.
+      const transitDisplaySplitByDirection = true;
+      // const transitDisplaySplitByDirection = false;
+
+      return buildTransitDisplayDataSet(stopTimes, dataLangs, NEARBY_RADIUS_M, {
+        maxEntries: transitDisplayMaxEntriesFor(infoLevel),
+        routeGrouping: transitDisplayRouteGrouping,
+        splitByDirection: transitDisplaySplitByDirection,
+      });
+    },
+    ///
+    [stopTimes, dataLangs, infoLevel],
+  );
 
   return (
     <div

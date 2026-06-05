@@ -113,6 +113,7 @@ export function TransitDisplay({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
   // Airport-board-style title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
@@ -123,6 +124,12 @@ export function TransitDisplay({
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   // A board that mixes route types: rows then show their own trip route-type emoji.
   const hasMultiRoutes = display.meta.routeTypes.length >= 2;
+
+  // for debug
+  // if (display.meta.category === 'arrivals') {
+  //   return null;
+  // }
+
   return (
     // Each board is framed like a classic airport signage panel: a thick,
     // square (no rounded corners) border makes the boundary between stacked
@@ -153,6 +160,13 @@ export function TransitDisplay({
           {routeTypeIcon}
           <span className="truncate">{title}</span>
         </h3>
+        {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
+        {infoLevelFlag.isVerboseEnabled && (
+          <p className="m-0 shrink-0 text-xs whitespace-nowrap text-amber-200/80">
+            [{display.meta.category} / rt {display.meta.routeTypes.join(',')} / dir{' '}
+            {display.meta.directions.join(',')} (max:{display.meta.max},{display.meta.radius}m)]
+          </p>
+        )}
         {/* Radius the board's stops were selected within (count is intentionally omitted). */}
         <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
           {display.meta.radius}m
