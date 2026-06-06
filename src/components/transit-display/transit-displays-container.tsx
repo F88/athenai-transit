@@ -18,7 +18,9 @@ import {
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
+import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 import type { AppRouteTypeValue } from '@/types/app/transit';
+import { TransitDisplays2 } from './transit-displays-2';
 
 /**
  * Route types whose boards are NOT split by direction: bus, trolleybus, and
@@ -36,6 +38,11 @@ const DIRECTION_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = ROUTE_TYPE_DIS
 );
 
 export interface TransitDisplaysContainerProps {
+  /**
+   * Which transit-display view is active: `transit-display` (classic split-flap
+   * board) or `transit-display-2` (modern design). Selects the presentation.
+   */
+  viewId: StopTimeViewId;
   stopTimes: StopWithContext[];
   /** Current wall-clock reference time for relative time display. */
   now: Date;
@@ -52,6 +59,7 @@ export interface TransitDisplaysContainerProps {
 }
 
 export function TransitDisplaysContainer({
+  viewId,
   stopTimes,
   now,
   mapCenter,
@@ -98,17 +106,33 @@ export function TransitDisplaysContainer({
       onScroll={scrollFade.handleScroll}
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      <TransitDisplays
-        dataWithMeta={transitDisplayData}
-        dataLangs={dataLangs}
-        emptyMessage={t('stop.timetable.allFilteredOut')}
-        now={now}
-        mapCenter={mapCenter}
-        infoLevel={infoLevel}
-        size={size}
-        onStopSelected={onStopSelected}
-        onInspectTrip={onInspectTrip}
-      />
+      {/* transit-display: the classic split-flap board. transit-display-2 (modern
+          design) is not implemented yet. */}
+      {viewId === 'transit-display' ? (
+        <TransitDisplays
+          dataWithMeta={transitDisplayData}
+          dataLangs={dataLangs}
+          emptyMessage={t('stop.timetable.allFilteredOut')}
+          now={now}
+          mapCenter={mapCenter}
+          infoLevel={infoLevel}
+          size={size}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
+      ) : (
+        <TransitDisplays2
+          dataWithMeta={transitDisplayData}
+          dataLangs={dataLangs}
+          emptyMessage={t('stop.timetable.allFilteredOut')}
+          now={now}
+          mapCenter={mapCenter}
+          infoLevel={infoLevel}
+          size={size}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
+      )}
       {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
     </div>
   );

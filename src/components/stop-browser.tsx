@@ -287,9 +287,10 @@ export function StopBrowser({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      {viewId === 'transit-display' ? (
+      {viewId === 'transit-display' || viewId === 'transit-display-2' ? (
         <TransitDisplaysContainer
           stopTimes={trimmedStopTimes}
+          viewId={viewId}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           size={headerSize}

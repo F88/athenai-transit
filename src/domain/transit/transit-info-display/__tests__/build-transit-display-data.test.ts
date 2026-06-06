@@ -75,7 +75,7 @@ const STUB_STOP: StopWithContext = {
 
 /** A candidate for a trip on the given route (route.route_type drives clustering). */
 function candidateOf(route: Route): TransitDisplayCandidate {
-  return { entry: makeContextualEntry({ route }), stopWithContext: STUB_STOP };
+  return { timetableEntry: makeContextualEntry({ route }), stop: STUB_STOP };
 }
 
 describe('sortByCategory', () => {
@@ -91,7 +91,7 @@ describe('sortByCategory', () => {
       arrivalMinutes: opts.arr ?? opts.dep,
       ...(opts.serviceDate ? { serviceDate: opts.serviceDate } : {}),
     });
-    return { entry, stopWithContext: STUB_STOP };
+    return { timetableEntry: entry, stop: STUB_STOP };
   }
 
   it("'departures': orders earliest departure first", () => {
@@ -103,7 +103,7 @@ describe('sortByCategory', () => {
       ],
       'departures',
     );
-    expect(result.map((c) => c.entry.schedule.departureMinutes)).toEqual([800, 850, 900]);
+    expect(result.map((c) => c.timetableEntry.schedule.departureMinutes)).toEqual([800, 850, 900]);
   });
 
   it("'arrivals': orders by arrival time, not departure time", () => {
@@ -111,12 +111,12 @@ describe('sortByCategory', () => {
     const b = candidateWithTimes({ dep: 850, arr: 810 });
     // departures uses departureMinutes -> a (800) before b (850)
     expect(
-      sortByCategory([a, b], 'departures').map((c) => c.entry.schedule.departureMinutes),
+      sortByCategory([a, b], 'departures').map((c) => c.timetableEntry.schedule.departureMinutes),
     ).toEqual([800, 850]);
     // arrivals uses arrivalMinutes -> b (810) before a (900)
-    expect(sortByCategory([a, b], 'arrivals').map((c) => c.entry.schedule.arrivalMinutes)).toEqual([
-      810, 900,
-    ]);
+    expect(
+      sortByCategory([a, b], 'arrivals').map((c) => c.timetableEntry.schedule.arrivalMinutes),
+    ).toEqual([810, 900]);
   });
 
   it('orders by service date then time (earlier date first even with a later time)', () => {
@@ -404,13 +404,13 @@ describe('groupCandidatesIntoBoards', () => {
     opts: { route?: Route; direction?: 0 | 1; isOrigin?: boolean; isTerminal?: boolean } = {},
   ): TransitDisplayCandidate {
     return {
-      entry: makeContextualEntry({
+      timetableEntry: makeContextualEntry({
         route: opts.route ?? busRoute,
         direction: opts.direction,
         isOrigin: opts.isOrigin,
         isTerminal: opts.isTerminal,
       }),
-      stopWithContext: STUB_STOP,
+      stop: STUB_STOP,
     };
   }
 
@@ -512,8 +512,12 @@ describe('sortAndCapTransitDisplayData', () => {
   /** A candidate with explicit departure / arrival minutes. */
   function candWithTimes(dep: number, arr: number = dep): TransitDisplayCandidate {
     return {
-      entry: makeContextualEntry({ route: busRoute, departureMinutes: dep, arrivalMinutes: arr }),
-      stopWithContext: STUB_STOP,
+      timetableEntry: makeContextualEntry({
+        route: busRoute,
+        departureMinutes: dep,
+        arrivalMinutes: arr,
+      }),
+      stop: STUB_STOP,
     };
   }
 
@@ -531,9 +535,11 @@ describe('sortAndCapTransitDisplayData', () => {
 
     const [sortedDep, sortedArr] = sortAndCapTransitDisplayData([dep, arr], 100);
 
-    expect(sortedDep.data.map((c) => c.entry.schedule.departureMinutes)).toEqual([800, 850, 900]);
+    expect(sortedDep.data.map((c) => c.timetableEntry.schedule.departureMinutes)).toEqual([
+      800, 850, 900,
+    ]);
     // arrivals board sorts by arrivalMinutes (810 before 900), not departure time
-    expect(sortedArr.data.map((c) => c.entry.schedule.arrivalMinutes)).toEqual([810, 900]);
+    expect(sortedArr.data.map((c) => c.timetableEntry.schedule.arrivalMinutes)).toEqual([810, 900]);
   });
 
   it('caps each board to maxEntries, keeping the earliest after sorting', () => {
@@ -546,7 +552,7 @@ describe('sortAndCapTransitDisplayData', () => {
 
     const [capped] = sortAndCapTransitDisplayData([board], 2);
 
-    expect(capped.data.map((c) => c.entry.schedule.departureMinutes)).toEqual([700, 800]);
+    expect(capped.data.map((c) => c.timetableEntry.schedule.departureMinutes)).toEqual([700, 800]);
   });
 
   it('preserves board metadata (routeTypes, directions, category)', () => {
@@ -597,8 +603,8 @@ describe('toTransitDisplayCandidates', () => {
     const stop = stopWith('s1', [e0, e1]);
 
     expect(toTransitDisplayCandidates([stop])).toEqual([
-      { entry: e0, stopWithContext: stop },
-      { entry: e1, stopWithContext: stop },
+      { timetableEntry: e0, stop: stop },
+      { timetableEntry: e1, stop: stop },
     ]);
   });
 
@@ -612,8 +618,8 @@ describe('toTransitDisplayCandidates', () => {
     const candidates = toTransitDisplayCandidates([stopA, stopB]);
 
     // Declaration order is kept (b0 at 500 stays last); each entry keeps its source stop.
-    expect(candidates.map((c) => c.entry)).toEqual([a0, a1, b0]);
-    expect(candidates.map((c) => c.stopWithContext)).toEqual([stopA, stopA, stopB]);
+    expect(candidates.map((c) => c.timetableEntry)).toEqual([a0, a1, b0]);
+    expect(candidates.map((c) => c.stop)).toEqual([stopA, stopA, stopB]);
   });
 
   it('contributes nothing for a stop with no stopTimes', () => {
@@ -622,7 +628,7 @@ describe('toTransitDisplayCandidates', () => {
     const withTimes = stopWith('s', [e0]);
 
     expect(toTransitDisplayCandidates([empty, withTimes])).toEqual([
-      { entry: e0, stopWithContext: withTimes },
+      { timetableEntry: e0, stop: withTimes },
     ]);
   });
 
