@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,8 +14,10 @@ import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
   type TransitDisplayDatum,
+  type TransitDisplayMeta,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
+import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -25,6 +27,9 @@ import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-d
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getAgencyDisplayNames } from '@/domain/transit/name-resolver/get-agency-display-name';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
+import { RouteBadge } from '../badge/route-badge';
+import { AgencyBadge } from '../badge/agency-badge';
+import { StopTimeTimeInfo } from '../stop-time-time-info';
 
 /**
  * Theme-aware color of the board frame: the thick outer bezel that encloses the
@@ -156,29 +161,15 @@ export function TransitDisplays2({
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
 
-  // Resolve every raw display's rows into UI data here -- TransitDisplays is the
-  // only consumer that needs the resolved rows. Resolve all up front, then let
-  // the category filter below narrow the already-resolved list.
-  const resolvedDataWithMeta = useMemo<readonly TransitDisplayDataWithMetaData[]>(
-    () =>
-      dataWithMeta.map((datum) => {
-        return datum;
-      }),
-    [dataWithMeta, dataLangs],
-  );
-
-  // Only offer toggles for categories that actually have a board, so the bar
-  // mirrors what is on screen rather than always showing both.
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
-    resolvedDataWithMeta.some((display) => display.meta.category === category),
-  );
-  const visibleData = resolvedDataWithMeta.filter(
-    (display) => shownCategories[display.meta.category],
+    dataWithMeta.some((display) => display.meta.category === category),
   );
 
   const toggleCategory = (category: TransitDisplayCategory) => {
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   };
+
+  const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
 
   return (
     <div className="font-dotgothic16 px-4 pb-0">
@@ -197,7 +188,7 @@ export function TransitDisplays2({
         // guaranteed unique.
         <TransitDisplay2
           key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
-          dataWithMeta={dataWithMeta}
+          transitDisplayDataWithMetaData={dataWithMeta}
           dataLangs={dataLangs}
           emptyMessage={emptyMessage}
           now={now}
@@ -318,7 +309,7 @@ function TransitDisplayCategoryFilter({
 }
 
 export interface TransitDisplay2Props {
-  dataWithMeta: TransitDisplayDataWithMetaData;
+  transitDisplayDataWithMetaData: TransitDisplayDataWithMetaData;
   dataLangs: readonly string[];
   emptyMessage: string;
   now: Date;
@@ -343,31 +334,29 @@ export interface TransitDisplay2Props {
  * above the rows, or an empty fallback when the board has no entries.
  */
 export function TransitDisplay2({
-  dataWithMeta,
+  transitDisplayDataWithMetaData,
   dataLangs,
   emptyMessage,
+  now,
   mapCenter,
   infoLevel,
   size,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplay2Props) {
+  const { meta, data: transitDisplayData } = transitDisplayDataWithMetaData;
+
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
   // Airport-board-style title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
-  const isArrivalBoard = dataWithMeta.meta.category === 'arrivals';
-  const routeTypeIcon = routeTypesEmoji(dataWithMeta.meta.routeTypes);
+  const isArrivalBoard = meta.category === 'arrivals';
+  const routeTypeIcon = routeTypesEmoji(meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   // A board that mixes route types: rows then show their own trip route-type emoji.
-  const hasMultiRoutes = dataWithMeta.meta.routeTypes.length >= 2;
-
-  // for debug
-  // if (dataWithMeta.meta.category === 'arrivals') {
-  //   return null;
-  // }
+  const hasMultiRoutes = meta.routeTypes.length >= 2;
 
   return (
     // Each board is framed like a classic airport signage panel: a thick,
@@ -392,9 +381,10 @@ export function TransitDisplay2({
         {infoLevelFlag.isVerboseEnabled && (
           <div className="flex items-baseline gap-3">
             <p className="m-0 ml-auto w-full min-w-0 text-right text-xs text-amber-200/80">
-              [{dataWithMeta.meta.category} / rt {dataWithMeta.meta.routeTypes.join(',')} / dir{' '}
-              {dataWithMeta.meta.directions.join(',')} (max:{dataWithMeta.meta.max},
-              {dataWithMeta.meta.radius}m)]
+              [{meta.category} / rt {meta.routeTypes.join(',')} / dir {meta.directions.join(',')}{' '}
+              (max:
+              {meta.max},{meta.radius}
+              m)]
             </p>
           </div>
         )}
@@ -430,29 +420,32 @@ export function TransitDisplay2({
               ROW_TEXT_CLASS_BY_SIZE[size],
             )}
           >
-            {dataWithMeta.meta.radius}m
+            {meta.radius}m
           </p>
         </div>
       </div>
       {/* Body: the rows (or the empty fallback). */}
       <div className="bg-neutral-950 p-0">
-        {dataWithMeta.data.data.length === 0 ? (
+        {transitDisplayData.data.length === 0 ? (
           <p className="m-0 px-1 py-2 text-xs tracking-[0.08em] text-amber-100/55">
             {emptyMessage}
           </p>
         ) : (
           <ul className="m-0 list-none p-0">
-            {dataWithMeta.data.data.map((row) => {
+            {transitDisplayData.data.map((row) => {
               const key = 'xxx';
               return (
                 <TransitDisplayEntry2
                   key={key}
-                  dataWithMeta={row}
+                  data={row}
+                  meta={meta}
                   dataLangs={dataLangs}
+                  now={now}
                   mapCenter={mapCenter}
                   infoLevel={infoLevel}
                   size={size}
                   hasMultiRoutes={hasMultiRoutes}
+                  // headsignMaxLength={20}
                   onStopSelected={onStopSelected}
                   onInspectTrip={onInspectTrip}
                 />
@@ -466,8 +459,10 @@ export function TransitDisplay2({
 }
 
 export interface TransitDisplay2EntryProps {
-  dataWithMeta: TransitDisplayDatum;
+  data: TransitDisplayDatum;
+  meta: TransitDisplayMeta;
   dataLangs: readonly string[];
+  now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   /** Display size; drives the row text size. */
@@ -478,24 +473,29 @@ export interface TransitDisplay2EntryProps {
    * apart; a single-type board does not need it.
    */
   hasMultiRoutes: boolean;
+  /** Maximum characters for headsign truncation. */
+  headsignMaxLength?: number;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry2({
-  dataWithMeta,
+  data,
+  meta,
   dataLangs,
+  now,
   mapCenter,
   infoLevel,
   size,
   hasMultiRoutes,
+  headsignMaxLength: _headsignMaxLength,
   onStopSelected,
-  onInspectTrip: _onInspectTrip,
+  onInspectTrip,
 }: TransitDisplay2EntryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
 
-  const { stop: stopWithContext, timetableEntry } = dataWithMeta;
+  const { stop: stopWithContext, timetableEntry } = data;
   // [IMPORTANT] Use domain logic to determine the starting/ending point.
   const attributes = getTimetableEntryAttributes(timetableEntry);
 
@@ -503,7 +503,7 @@ export function TransitDisplayEntry2({
   // current map center so the direction arrow tracks panning, like StopInfo.
   const distanceRounded =
     stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
-  const bearing = mapCenter ? getBearingDeg(mapCenter, dataWithMeta.stop.stop) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.stop) : null;
 
   const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
   // const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled || data.stop.context.routeTypes.length >= 2;
@@ -531,6 +531,8 @@ export function TransitDisplayEntry2({
       routeAgency.agency_id
     : '';
 
+  const { routeColor } = resolveRouteColors(timetableEntry.routeDirection.route, 'css-hex');
+
   const stopName = getStopDisplayNames(stopWithContext.stop, dataLangs, agencyLangs).name;
 
   return (
@@ -539,67 +541,127 @@ export function TransitDisplayEntry2({
     // scroll-to-selected effect for this view anyway.
     <li
       className={cn(
-        'cursor-pointer border-b border-neutral-800 px-3 py-2 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
+        'cursor-pointer border-b border-neutral-800 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
         ROW_TEXT_CLASS_BY_SIZE[size],
         BOARD_PANEL_BG,
+        'flex items-stretch overflow-hidden',
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
-      {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
-      <div className="flex items-center gap-2 whitespace-nowrap">
-        {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
-        {/* <StopTimeTimeInfo /> */}
+      <svg
+        aria-hidden
+        viewBox="0 0 1 1"
+        preserveAspectRatio="none"
+        className="w-2 shrink-0 self-stretch"
+      >
+        <rect x="0" y="0" width="1" height="1" fill={routeColor} />
+      </svg>
 
-        {showRouteTypeOfEntry && (
-          // Route type emoji for the trip
-          <span aria-hidden>{routeTypesEmoji(stopWithContext.routeTypes)}</span>
+      <div className="flex-1 px-3 py-2">
+        {/* board row: time, mode, route, agency, destination, stop, platform. */}
+
+        {infoLevelFlag.isVerboseEnabled && (
+          <div>
+            {routeName} /{agencyName}
+          </div>
         )}
 
-        {/* Headsign (destination) */}
-        {headsign}
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
+          <StopTimeTimeInfo
+            arrivalMinutes={timetableEntry.schedule.arrivalMinutes}
+            departureMinutes={timetableEntry.schedule.departureMinutes}
+            serviceDate={timetableEntry.serviceDate}
+            now={now}
+            size={'sm'}
+            align="right"
+            showArrivalTime={meta.category === 'arrivals'}
+            showDepartureTime={meta.category === 'departures'}
+            collapseToleranceMinutes={null}
+            // forceShowRelativeTime={true}
+            forceShowRelativeTime={false}
+            textAppearance={{
+              color: '#ffffff',
+            }}
+            onSelectStopById={onStopSelected}
+            onInspectTrip={onInspectTrip}
+          />
 
-        <TimetableEntryAttributesLabels
-          size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
-          attributes={attributes}
-          showDisplayTerminal={true}
-          showDisplayOrigin={true}
-          showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
-          showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
-        />
-
-        {/* Route name */}
-        {routeName}
-
-        {/* Agency name */}
-        {agencyName}
-
-        {/* Stop: stop-level mode emojis + stop name + platform code. */}
-        {showRouteTypeOfStop && (
-          // Stop-level mode emojis
-          <span aria-hidden>
-            {routeTypesEmoji([timetableEntry.routeDirection.route.route_type])}
-          </span>
-        )}
-
-        {/* Stop info kept together as one group (stop name, platform code, and
-            distance / direction) so the stop's details are not split across the row. */}
-        <span className="flex min-w-0 flex-1 items-center gap-1">
-          <span className="min-w-0 truncate">{stopName}</span>
-          {stopWithContext.stop.platform_code !== undefined && (
-            <span className="shrink-0 bg-neutral-800 px-1 text-amber-100">
-              {stopWithContext.stop.platform_code}
-            </span>
+          {showRouteTypeOfEntry && (
+            // Route type emoji for the trip
+            <span aria-hidden>{routeTypesEmoji(stopWithContext.routeTypes)}</span>
           )}
-          {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
-          {infoLevelFlag.isVerboseEnabled && distanceRounded != null && distanceRounded >= 10 && (
-            <DistanceBadge
-              meters={distanceRounded}
-              bearingDeg={bearing}
-              showDirection
-              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+
+          {/* Headsign (destination) */}
+          {headsign}
+          {/* <HeadsignBadge
+            //
+            routeDirection={timetableEntry.routeDirection}
+            size={'sm'}
+            dataLang={dataLangs}
+            maxLength={headsignMaxLength}
+            infoLevel={infoLevel}
+            showBorder={true}
+          /> */}
+
+          <TimetableEntryAttributesLabels
+            size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
+            attributes={attributes}
+            showDisplayTerminal={true}
+            showDisplayOrigin={true}
+            showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
+            showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
+          />
+
+          {/* Route name */}
+          <RouteBadge
+            route={timetableEntry.routeDirection.route}
+            size={'sm'}
+            dataLang={dataLangs}
+            infoLevel={infoLevel}
+            showBorder={false}
+          />
+
+          {/* Agency name */}
+          {routeAgency && (
+            <AgencyBadge
+              //
+              agency={routeAgency}
+              size={'sm'}
+              infoLevel={infoLevel}
+              dataLang={dataLangs}
+              showBorder={true}
             />
           )}
-        </span>
+
+          {/* Stop: stop-level mode emojis + stop name + platform code. */}
+          {showRouteTypeOfStop && (
+            // Stop-level mode emojis
+            <span aria-hidden>
+              {routeTypesEmoji([timetableEntry.routeDirection.route.route_type])}
+            </span>
+          )}
+
+          {/* Stop info kept together as one group (stop name, platform code, and
+              distance / direction) so the stop's details are not split across the row. */}
+          <span className="flex min-w-0 flex-1 items-center gap-1">
+            <span className="min-w-0 truncate">{stopName}</span>
+            {stopWithContext.stop.platform_code !== undefined && (
+              <span className="shrink-0 bg-neutral-800 px-1 text-amber-100">
+                {stopWithContext.stop.platform_code}
+              </span>
+            )}
+            {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
+            {infoLevelFlag.isVerboseEnabled && distanceRounded != null && distanceRounded >= 10 && (
+              <DistanceBadge
+                meters={distanceRounded}
+                bearingDeg={bearing}
+                size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+                showDirection
+              />
+            )}
+          </span>
+        </div>
       </div>
     </li>
   );
