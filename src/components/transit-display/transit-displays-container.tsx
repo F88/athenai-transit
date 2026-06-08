@@ -106,8 +106,8 @@ export function TransitDisplaysContainer({
       onScroll={scrollFade.handleScroll}
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      {/* transit-display: the classic split-flap board. transit-display-2 (modern
-          design) is not implemented yet. */}
+      {/* transit-display: the classic split-flap board. */}
+      {/* transit-display-2: the modern design board. */}
       {viewId === 'transit-display' ? (
         <TransitDisplays
           dataWithMeta={transitDisplayData}
