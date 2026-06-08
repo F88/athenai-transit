@@ -42,8 +42,8 @@ const TITLE_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xs: 'text-[10px]',
   sm: 'text-xs',
   md: 'text-base',
-  lg: 'text-4xl',
-  xl: 'text-6xl',
+  lg: 'text-2xl',
+  xl: 'text-4xl',
 };
 
 /**
@@ -185,11 +185,11 @@ export function TransitDisplays2({
  * Border color is applied separately (the shown / hidden state classes).
  */
 const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'border has-[>svg]:px-2 py-0.5',
-  sm: 'border-2 has-[>svg]:px-2.5 py-1',
-  md: 'border-4 has-[>svg]:px-3 py-1',
-  lg: 'border-8 has-[>svg]:px-5 py-2',
-  xl: 'border-12 has-[>svg]:px-8 py-4',
+  xs: 'border has-[>svg]:px-1 py-0',
+  sm: 'border-2 has-[>svg]:px-1.5 py-0',
+  md: 'border-4 has-[>svg]:px-2 py-0',
+  lg: 'border-6 has-[>svg]:px-4 py-0',
+  xl: 'border-8 has-[>svg]:px-8 py-0',
 };
 
 const FILTER_BUTTON_BASE_CLASS =
