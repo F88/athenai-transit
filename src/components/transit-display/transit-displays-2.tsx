@@ -17,7 +17,6 @@ import {
   type TransitDisplayMeta,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
-import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
@@ -25,9 +24,7 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
 import { formatDateKey } from '@/domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
-import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
-import { getAgencyDisplayNames } from '@/domain/transit/name-resolver/get-agency-display-name';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { RouteBadge } from '../badge/route-badge';
 import { AgencyBadge } from '../badge/agency-badge';
@@ -35,31 +32,8 @@ import { StopTimeTimeInfo } from '../stop-time-time-info';
 import { Separator } from '../ui/separator';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
 
-/**
- * Theme-aware color of the board frame: the thick outer bezel that encloses the
- * panel and the header / rows divider, which read as the same frame. A lighter
- * grey in light mode and a darker grey in dark mode so the frame sits well on
- * either background. Shared so the bezel and the inner divider always render the
- * same frame color.
- */
-// const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
-// const BOARD_FRAME_COLOR = 'border-background';
-const BOARD_FRAME_COLOR = 'border-background';
-// const BOARD_FRAME_COLOR = 'border-[#f5f7fa] dark:border-gray-800';
-
-/**
- * Theme-aware background for the board panel (the header band and rows that make
- * up the split-flap panel face). Stays dark in both themes so the panel keeps
- * its amber text, but is lifted slightly in light mode where the darkest shade
- * felt too heavy. Shared so the header and rows always render the same panel
- * color.
- */
-// const BOARD_PANEL_BG = 'bg-neutral-800 dark:bg-neutral-900';
-// const BOARD_PANEL_BG = 'bg-white dark:bg-gray-900';
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
-// const BOARD_PANEL_BG = 'border-background';
-// const BOARD_PANEL_BG = 'bg-background';
-// 'bg-[#f5f7fa] dark:bg-gray-800';
+
 /**
  * Title text size per display size, one step larger than the rows so headings
  * (the board title and the filter toggles) read above the data rows.
@@ -113,15 +87,6 @@ const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySi
   lg: 'md',
   xl: 'lg',
 };
-
-/** Headsign column width per display size (fixed: max == min so the column is stable). */
-// const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-//   xs: 'max-w-[10ch] min-w-[10ch]',
-//   sm: 'max-w-[12ch] min-w-[12ch]',
-//   md: 'max-w-[18ch] min-w-[18ch]',
-//   lg: 'max-w-[32ch] min-w-[32ch]',
-//   xl: 'max-w-[32ch] min-w-[32ch]',
-// };
 
 export interface TransitDisplays2Props {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
@@ -227,6 +192,20 @@ const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xl: 'border-12 has-[>svg]:px-8 py-4',
 };
 
+const FILTER_BUTTON_BASE_CLASS =
+  'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase hover:bg-info/20';
+
+  const FILTER_BUTTON_SHOWN_CLASS = cn(
+    BOARD_PANEL_BG,
+    'border-neutral-600 text-neutral-700 hover:text-neutral-900 dark:border-neutral-300 dark:text-neutral-200 dark:hover:text-neutral-100',
+  );
+  const FILTER_BUTTON_HIDDEN_CLASS = cn(
+    BOARD_PANEL_BG,
+    'border-neutral-300 text-neutral-400 hover:text-neutral-600 dark:border-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300',
+  );
+
+
+
 const FILTER_BOX_SIZE: Record<ExtendedDisplaySize, string> = {
   xs: 'py-2 px-3 gap-2',
   sm: 'py-2 px-3 gap-2.5',
@@ -283,16 +262,10 @@ function TransitDisplayCategoryFilter({
             size="default"
             onClick={() => onToggleCategory(category)}
             className={cn(
-              // grow + basis-0 makes both buttons equal width so they fill the
-              // bar evenly (basis-0 avoids fighting the Button base `shrink-0`).
-              // min-w-0 lets the label truncate instead of overflowing on narrow screens.
-              // h-auto lets the button grow with the size-scaled label text.
-              'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase',
+              FILTER_BUTTON_BASE_CLASS,
               FILTER_BUTTON_BOX_BY_SIZE[size],
               TITLE_TEXT_CLASS_BY_SIZE[size],
-              isShown
-                ? 'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700'
-                : 'border-neutral-700 bg-neutral-900 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-400 dark:hover:bg-neutral-800',
+              isShown ? FILTER_BUTTON_SHOWN_CLASS : FILTER_BUTTON_HIDDEN_CLASS,
             )}
           >
             {isArrival ? (
@@ -520,10 +493,6 @@ export function TransitDisplayEntry2({
     stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
   const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.stop) : null;
 
-  // const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
-  // const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled || data.stop.context.routeTypes.length >= 2;
-  const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled;
-
   const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
   const routeAgency = stopWithContext.agencies.find(
     (agency) => agency.agency_id === timetableEntry.routeDirection.route.agency_id,
@@ -559,15 +528,6 @@ export function TransitDisplayEntry2({
       className={cn(
         'cursor-pointer',
         'hover:bg-info/10',
-        // Fallback divider color when the agency has no color; the agency hex,
-        // when present, is applied via the inline style below.
-        // 'border-info/40 bg-info/10 border last:border-b-0',
-        // 'border-t-4',
-        // 'border-transparent'
-        // 'bg-transparent',
-        // BOARD_PANEL_BG,
-        // BOARD_FRAME_COLOR,
-
         'my-1 px-0 pt-0 pb-0',
         ROW_TEXT_CLASS_BY_SIZE[size],
         'flex items-stretch overflow-hidden',
@@ -621,7 +581,6 @@ export function TransitDisplayEntry2({
             infoLevel={infoLevel}
             showBorder={false}
           />
-
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
             attributes={attributes}
@@ -630,20 +589,7 @@ export function TransitDisplayEntry2({
             showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
             showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
           />
-
-          {/* Agency name */}
-          {/* {routeAgency && (
-            <AgencyBadge
-              //
-              agency={routeAgency}
-              size={'md'}
-              infoLevel={infoLevel}
-              dataLang={dataLangs}
-              showBorder={true}
-            />
-          )} */}
         </div>
-
         {/* 2nd row: Headsign (destination) */}
         <div className="border-0 pt-1">{headsign}</div>
       </div>
@@ -680,9 +626,8 @@ export function TransitDisplayEntry2({
             {stopName}
             {stopWithContext.stop.platform_code !== undefined && (
               <PlatformCodeLabel
-                className="ml-1 align-baseline"
+                className="ml-1 inline-block align-[0.15em]"
                 code={stopWithContext.stop.platform_code}
-                // size={'xs'}
                 size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
               />
             )}
