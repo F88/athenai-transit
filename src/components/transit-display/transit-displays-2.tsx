@@ -24,6 +24,7 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
 import { formatDateKey } from '@/domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
+import { buildTripInspectionTarget } from '@/domain/transit/trip-inspection-target';
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { RouteBadge } from '../badge/route-badge';
@@ -518,6 +519,12 @@ export function TransitDisplayEntry2({
 
   const stopName = getStopDisplayNames(stopWithContext.stop, dataLangs, agencyLangs).name;
 
+  // Inspection target for the time tap. The classic view gets this prebuilt by
+  // buildTransitDisplayDatumForUi; this view keeps rows raw, so build it here so
+  // StopTimeTimeInfo renders as an inspection button (it stays a plain div when
+  // inspectTarget is missing).
+  const inspectTarget = buildTripInspectionTarget(timetableEntry, timetableEntry.serviceDate);
+
   return (
     // No `data-stop-id` here: the same stop id can appear in several rows across
     // boards, so it cannot identify a single row -- and the stop browser skips its
@@ -563,6 +570,8 @@ export function TransitDisplayEntry2({
               // color: routeColor,
             }
           }
+          inspectTarget={inspectTarget}
+          stopId={stopWithContext.stop.stop_id}
           onSelectStopById={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
