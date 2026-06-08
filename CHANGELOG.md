@@ -16,6 +16,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Documentation: `PRD.md` にレスポンシブレイアウト要件 (mobile BottomSheet / desktop MultiPane)、`StopTimes` の複数 view (`stop` / `route-headsign`) の要件例、`Timetable` / `TripInfo` の機能概要、選択インタラクションと用語整理を追記した。
 - TransitDisplay: 出発便 / 到着便を「行先案内板」風 (split-flap) のボードで表示する TransitDisplay ビューを StopBrowser に追加した。route type ごとにボードを分け、鉄道系は方向 (direction) で分割、バス / トロリーバス / フェリーは分割せず、出発便を先に `ROUTE_TYPE_DISPLAY_ORDER` 順で並べる。
 - TransitDisplay: 出発便 / 到着便の表示を切り替える split-flap 風フィルタバーを追加した (表示サイズに応じて文字 / アイコン / 余白が拡縮)。
+- TransitDisplay: classic の split-flap ボードとは別に、Athenai 基本デザインをベースにした「モダンデザイン」の TransitDisplay (`transit-display-2`) ビューを追加し、StopBrowser の view 切替に選択肢として加えた。行データを下位まで raw のまま渡し、名前 / 色解決を末端 (`TransitDisplayEntry2`) で行う。時刻タップで stop 選択と trip inspection の起動を行う (#281)。
 
 ### Changed
 
@@ -23,6 +24,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopBrowser: 表示ビュー (タブ) と surface ローカルの route_type / agency フィルタ状態を `AppLayout` に持ち上げ、multi-pane と bottom-sheet のレイアウト切替をまたいで保持されるようにした。
 - TransitDisplay: signboard 意味論を導入し、出発ボードは乗車可能な便 (terminal / 乗車不可を除外)、到着ボードは降車可能な便 (origin / 降車不可を除外) のみを表示するようにした。乗降制限ラベルは verbose 表示時のみ出す。
 - TransitDisplay: transit display のデータ構築を、構造ビルダー (`build-transit-display-data`) と UI 行解決 (`build-transit-display-data-for-ui`) に分離し、行解決を表示側 (`TransitDisplays`) の責務にした。
+- StopTimeTimeInfo: 時刻列の固定幅 (`w-14`) を表示サイズ連動の最小幅 (`min-w-*`) に変更し、フォント / 内容に応じて列幅が広がるようにした (TransitDisplay / trip-pager / stop-time-item / trip-stops に共通で影響) (#281)。
+- RelativeTime: 相対時刻を 1 行に収め、折り返さない (`flex-nowrap` + `whitespace-nowrap`) ようにした (#281)。
+
+### Fixed
+
+- StopBrowser: `transit-display-2` もボードビューとして、選択 stop へのスクロール / 先頭リセット制御の対象外にし、stop 選択時にリストが先頭へ戻らないようにした (#281)。
 
 ## [2026.06.02]
 
