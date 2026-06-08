@@ -544,7 +544,7 @@ export function TransitDisplayEntry2({
 
       {/* Trip info / 3 columns: Time, Route, Stop */}
       {/* 1st columns: Time */}
-      <div className="flex flex-0 border-0 px-0 pt-1">
+      <div className="flex flex-0 border-0 px-0 pt-0">
         {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
         <StopTimeTimeInfo
           arrivalMinutes={timetableEntry.schedule.arrivalMinutes}
