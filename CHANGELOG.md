@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.06.08]
+
 ### Added
 
 - Documentation: システム構成の概要、deployment diagram、mobile / PWA guidance、README roadmap を追加・整理した。
