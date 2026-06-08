@@ -124,7 +124,6 @@ export function TransitDisplaysContainer({
         <TransitDisplays2
           dataWithMeta={transitDisplayData}
           dataLangs={dataLangs}
-          emptyMessage={t('stop.timetable.allFilteredOut')}
           now={now}
           mapCenter={mapCenter}
           infoLevel={infoLevel}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,11 +17,13 @@ import {
   type TransitDisplayMeta,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
+import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
+import { formatDateKey } from '@/domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
@@ -30,6 +32,8 @@ import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-dis
 import { RouteBadge } from '../badge/route-badge';
 import { AgencyBadge } from '../badge/agency-badge';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { Separator } from '../ui/separator';
+import { PlatformCodeLabel } from '../stop/platform-code-label';
 
 /**
  * Theme-aware color of the board frame: the thick outer bezel that encloses the
@@ -38,7 +42,10 @@ import { StopTimeTimeInfo } from '../stop-time-time-info';
  * either background. Shared so the bezel and the inner divider always render the
  * same frame color.
  */
-const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
+// const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
+// const BOARD_FRAME_COLOR = 'border-background';
+const BOARD_FRAME_COLOR = 'border-background';
+// const BOARD_FRAME_COLOR = 'border-[#f5f7fa] dark:border-gray-800';
 
 /**
  * Theme-aware background for the board panel (the header band and rows that make
@@ -47,8 +54,12 @@ const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
  * felt too heavy. Shared so the header and rows always render the same panel
  * color.
  */
-const BOARD_PANEL_BG = 'bg-neutral-800 dark:bg-neutral-900';
-
+// const BOARD_PANEL_BG = 'bg-neutral-800 dark:bg-neutral-900';
+// const BOARD_PANEL_BG = 'bg-white dark:bg-gray-900';
+const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
+// const BOARD_PANEL_BG = 'border-background';
+// const BOARD_PANEL_BG = 'bg-background';
+// 'bg-[#f5f7fa] dark:bg-gray-800';
 /**
  * Title text size per display size, one step larger than the rows so headings
  * (the board title and the filter toggles) read above the data rows.
@@ -77,10 +88,10 @@ const TITLE_ICON_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 
 /** Row text size per display size; the larger the container, the larger the rows. */
 const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'text-[8px]',
-  sm: 'text-[10px]',
+  xs: 'text-[10px]',
+  sm: 'text-xs',
   md: 'text-xs',
-  lg: 'text-lg',
+  lg: 'text-xl',
   xl: 'text-2xl',
 };
 
@@ -98,9 +109,9 @@ const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
 const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
   xs: 'xs',
   sm: 'xs',
-  md: 'xs',
-  lg: 'lg',
-  xl: 'xl',
+  md: 'sm',
+  lg: 'md',
+  xl: 'lg',
 };
 
 /** Headsign column width per display size (fixed: max == min so the column is stable). */
@@ -117,7 +128,6 @@ export interface TransitDisplays2Props {
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
   /** Display language chain passed to {@link buildTransitDisplayDatumForUi} for row resolution. */
   dataLangs: readonly string[];
-  emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -150,7 +160,6 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 export function TransitDisplays2({
   dataWithMeta,
   dataLangs,
-  emptyMessage,
   now,
   mapCenter,
   infoLevel,
@@ -172,7 +181,8 @@ export function TransitDisplays2({
   const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
 
   return (
-    <div className="font-dotgothic16 px-4 pb-0">
+    // <div className="font-dotgothic16 px-4 pb-0">
+    <div className="px-4 pb-0">
       {presentCategories.length > 0 && (
         <TransitDisplayCategoryFilter
           categories={presentCategories}
@@ -190,7 +200,6 @@ export function TransitDisplays2({
           key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
           transitDisplayDataWithMetaData={dataWithMeta}
           dataLangs={dataLangs}
-          emptyMessage={emptyMessage}
           now={now}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
@@ -254,7 +263,8 @@ function TransitDisplayCategoryFilter({
       role="group"
       aria-label={t('transitDisplay.filter.label')}
       className={cn(
-        'mb-2 flex items-center rounded-sm border-0',
+        'mb-2 flex items-center rounded-sm',
+        'border-0',
         FILTER_BOX_SIZE[size],
         // BOARD_FRAME_COLOR,
         // BOARD_PANEL_BG,
@@ -311,7 +321,6 @@ function TransitDisplayCategoryFilter({
 export interface TransitDisplay2Props {
   transitDisplayDataWithMetaData: TransitDisplayDataWithMetaData;
   dataLangs: readonly string[];
-  emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -336,7 +345,6 @@ export interface TransitDisplay2Props {
 export function TransitDisplay2({
   transitDisplayDataWithMetaData,
   dataLangs,
-  emptyMessage,
   now,
   mapCenter,
   infoLevel,
@@ -356,7 +364,7 @@ export function TransitDisplay2({
   const routeTypeIcon = routeTypesEmoji(meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   // A board that mixes route types: rows then show their own trip route-type emoji.
-  const hasMultiRoutes = meta.routeTypes.length >= 2;
+  // const hasMultiRoutes = meta.routeTypes.length >= 2;
 
   return (
     // Each board is framed like a classic airport signage panel: a thick,
@@ -364,23 +372,25 @@ export function TransitDisplay2({
     // boards explicit.
     <section
       className={cn(
-        'mb-4 overflow-hidden rounded-sm border-12 bg-neutral-950 last:mb-0',
-        BOARD_FRAME_COLOR,
+        'mb-4 overflow-hidden rounded-sm',
+        'border-0',
+        BOARD_PANEL_BG,
+        // BOARD_FRAME_COLOR,
       )}
     >
       {/* Header band: title left, description right, on a single line. A dark band
           with letter-spaced amber text, like a split-flap header. */}
       <div
         className={cn(
-          'flex flex-col gap-1 border-b-8 px-3 py-2.5',
-          BOARD_PANEL_BG,
-          BOARD_FRAME_COLOR,
+          'flex flex-col gap-1 border-b-0 px-4 py-2',
+          // BOARD_PANEL_BG,
+          // BOARD_FRAME_COLOR,
         )}
       >
         {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
         {infoLevelFlag.isVerboseEnabled && (
           <div className="flex items-baseline gap-3">
-            <p className="m-0 ml-auto w-full min-w-0 text-right text-xs text-amber-200/80">
+            <p className="m-0 ml-auto w-full min-w-0 text-right text-xs">
               [{meta.category} / rt {meta.routeTypes.join(',')} / dir {meta.directions.join(',')}{' '}
               (max:
               {meta.max},{meta.radius}
@@ -393,7 +403,7 @@ export function TransitDisplay2({
               The arrow is decorative; the phrase already states departures/arrivals. */}
           <h3
             className={cn(
-              'flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase',
+              'flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] uppercase',
               TITLE_TEXT_CLASS_BY_SIZE[size],
             )}
           >
@@ -416,7 +426,7 @@ export function TransitDisplay2({
           {/* Radius the board's stops were selected within (count is intentionally omitted). */}
           <p
             className={cn(
-              'm-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80',
+              'm-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap',
               ROW_TEXT_CLASS_BY_SIZE[size],
             )}
           >
@@ -424,19 +434,24 @@ export function TransitDisplay2({
           </p>
         </div>
       </div>
+
       {/* Body: the rows (or the empty fallback). */}
-      <div className="bg-neutral-950 p-0">
-        {transitDisplayData.data.length === 0 ? (
-          <p className="m-0 px-1 py-2 text-xs tracking-[0.08em] text-amber-100/55">
-            {emptyMessage}
-          </p>
-        ) : (
-          <ul className="m-0 list-none p-0">
-            {transitDisplayData.data.map((row) => {
-              const key = 'xxx';
-              return (
+      <div className={cn(BOARD_PANEL_BG, 'p-0')}>
+        <ul className="m-0 list-none p-0">
+          {transitDisplayData.data.map((row) => {
+            const { timetableEntry, stop: stopWithContext } = row;
+            const key = [
+              formatDateKey(timetableEntry.serviceDate),
+              timetableEntry.tripLocator.patternId,
+              timetableEntry.tripLocator.serviceId,
+              timetableEntry.tripLocator.tripIndex,
+              timetableEntry.patternPosition.stopIndex,
+              stopWithContext.stop.stop_id,
+            ].join('__');
+            return (
+              <Fragment key={key}>
+                <Separator orientation="horizontal" className="mx-4 h-2" />
                 <TransitDisplayEntry2
-                  key={key}
                   data={row}
                   meta={meta}
                   dataLangs={dataLangs}
@@ -444,15 +459,15 @@ export function TransitDisplay2({
                   mapCenter={mapCenter}
                   infoLevel={infoLevel}
                   size={size}
-                  hasMultiRoutes={hasMultiRoutes}
+                  // hasMultiRoutes={hasMultiRoutes}
                   // headsignMaxLength={20}
                   onStopSelected={onStopSelected}
                   onInspectTrip={onInspectTrip}
                 />
-              );
-            })}
-          </ul>
-        )}
+              </Fragment>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );
@@ -472,7 +487,7 @@ export interface TransitDisplay2EntryProps {
    * true, each row shows its trip's route-type emoji so mixed types can be told
    * apart; a single-type board does not need it.
    */
-  hasMultiRoutes: boolean;
+  // hasMultiRoutes: boolean;
   /** Maximum characters for headsign truncation. */
   headsignMaxLength?: number;
   onStopSelected: (stopId: string) => void;
@@ -488,7 +503,7 @@ export function TransitDisplayEntry2({
   mapCenter,
   infoLevel,
   size,
-  hasMultiRoutes,
+  // hasMultiRoutes,
   headsignMaxLength: _headsignMaxLength,
   onStopSelected,
   onInspectTrip,
@@ -505,7 +520,7 @@ export function TransitDisplayEntry2({
     stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
   const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.stop) : null;
 
-  const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
+  // const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
   // const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled || data.stop.context.routeTypes.length >= 2;
   const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled;
 
@@ -514,24 +529,25 @@ export function TransitDisplayEntry2({
     (agency) => agency.agency_id === timetableEntry.routeDirection.route.agency_id,
   );
   const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
-  const routeName = getRouteDisplayNames(
-    timetableEntry.routeDirection.route,
-    dataLangs,
-    routeAgencyLangs,
-    'short',
-  ).resolved.name;
+  // const routeName = getRouteDisplayNames(
+  //   timetableEntry.routeDirection.route,
+  //   dataLangs,
+  //   routeAgencyLangs,
+  //   'short',
+  // ).resolved.name;
   const headsign = getHeadsignDisplayNames(
     timetableEntry.routeDirection,
     dataLangs,
     routeAgencyLangs,
     'stop',
   ).resolved.name;
-  const agencyName = routeAgency
-    ? getAgencyDisplayNames(routeAgency, dataLangs, routeAgencyLangs, 'short').resolved.name ||
-      routeAgency.agency_id
-    : '';
+  // const agencyName = routeAgency
+  //   ? getAgencyDisplayNames(routeAgency, dataLangs, routeAgencyLangs, 'short').resolved.name ||
+  //     routeAgency.agency_id
+  //   : '';
 
   const { routeColor } = resolveRouteColors(timetableEntry.routeDirection.route, 'css-hex');
+  // const { agencyColor } = routeAgency ? resolveAgencyColors(routeAgency, 'css-hex') : {};
 
   const stopName = getStopDisplayNames(stopWithContext.stop, dataLangs, agencyLangs).name;
 
@@ -541,13 +557,24 @@ export function TransitDisplayEntry2({
     // scroll-to-selected effect for this view anyway.
     <li
       className={cn(
-        'cursor-pointer border-b border-neutral-800 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
+        'cursor-pointer',
+        'hover:bg-info/10',
+        // Fallback divider color when the agency has no color; the agency hex,
+        // when present, is applied via the inline style below.
+        // 'border-info/40 bg-info/10 border last:border-b-0',
+        // 'border-t-4',
+        // 'border-transparent'
+        // 'bg-transparent',
+        // BOARD_PANEL_BG,
+        // BOARD_FRAME_COLOR,
+
+        'my-1 px-0 pt-0 pb-0',
         ROW_TEXT_CLASS_BY_SIZE[size],
-        BOARD_PANEL_BG,
         'flex items-stretch overflow-hidden',
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
+      {/* Route color head bar */}
       <svg
         aria-hidden
         viewBox="0 0 1 1"
@@ -557,52 +584,43 @@ export function TransitDisplayEntry2({
         <rect x="0" y="0" width="1" height="1" fill={routeColor} />
       </svg>
 
-      <div className="flex-1 px-3 py-2">
-        {/* board row: time, mode, route, agency, destination, stop, platform. */}
+      {/* Trip info / 3 columns: Time, Route, Stop */}
+      {/* 1st columns: Time */}
+      <div className="flex border-0 px-0 py-1">
+        {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
+        <StopTimeTimeInfo
+          arrivalMinutes={timetableEntry.schedule.arrivalMinutes}
+          departureMinutes={timetableEntry.schedule.departureMinutes}
+          serviceDate={timetableEntry.serviceDate}
+          now={now}
+          size={size}
+          align="right"
+          showArrivalTime={meta.category === 'arrivals'}
+          showDepartureTime={meta.category === 'departures'}
+          collapseToleranceMinutes={null}
+          // forceShowRelativeTime={true}
+          forceShowRelativeTime={false}
+          textAppearance={
+            {
+              // color: routeColor,
+            }
+          }
+          onSelectStopById={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
+      </div>
 
-        {infoLevelFlag.isVerboseEnabled && (
-          <div>
-            {routeName} /{agencyName}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 whitespace-nowrap">
-          {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
-          <StopTimeTimeInfo
-            arrivalMinutes={timetableEntry.schedule.arrivalMinutes}
-            departureMinutes={timetableEntry.schedule.departureMinutes}
-            serviceDate={timetableEntry.serviceDate}
-            now={now}
-            size={'sm'}
-            align="right"
-            showArrivalTime={meta.category === 'arrivals'}
-            showDepartureTime={meta.category === 'departures'}
-            collapseToleranceMinutes={null}
-            // forceShowRelativeTime={true}
-            forceShowRelativeTime={false}
-            textAppearance={{
-              color: '#ffffff',
-            }}
-            onSelectStopById={onStopSelected}
-            onInspectTrip={onInspectTrip}
-          />
-
-          {showRouteTypeOfEntry && (
-            // Route type emoji for the trip
-            <span aria-hidden>{routeTypesEmoji(stopWithContext.routeTypes)}</span>
-          )}
-
-          {/* Headsign (destination) */}
-          {headsign}
-          {/* <HeadsignBadge
-            //
-            routeDirection={timetableEntry.routeDirection}
-            size={'sm'}
+      {/* 2nd column (2 rows) */}
+      <div className="flex-2 px-2 py-2">
+        {/* 1st row: Route info (Route name, Headsign, ...) */}
+        <div className="flex items-center gap-2">
+          <RouteBadge
+            route={timetableEntry.routeDirection.route}
+            size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
             dataLang={dataLangs}
-            maxLength={headsignMaxLength}
             infoLevel={infoLevel}
-            showBorder={true}
-          /> */}
+            showBorder={false}
+          />
 
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
@@ -613,56 +631,74 @@ export function TransitDisplayEntry2({
             showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
           />
 
-          {/* Route name */}
-          <RouteBadge
-            route={timetableEntry.routeDirection.route}
-            size={'sm'}
-            dataLang={dataLangs}
-            infoLevel={infoLevel}
-            showBorder={false}
-          />
+          {/* Agency name */}
+          {/* {routeAgency && (
+            <AgencyBadge
+              //
+              agency={routeAgency}
+              size={'md'}
+              infoLevel={infoLevel}
+              dataLang={dataLangs}
+              showBorder={true}
+            />
+          )} */}
+        </div>
 
+        {/* 2nd row: Headsign (destination) */}
+        <div className="border-0 pt-1">{headsign}</div>
+      </div>
+
+      {/* 3rd column: 2 rows - Route agengy / Stop */}
+      <div className="flex-1 border-0 px-2 py-2">
+        {/* 1st row: Rote agency */}
+        <div className="flex items-center gap-2 border-0 px-0 py-0">
           {/* Agency name */}
           {routeAgency && (
             <AgencyBadge
               //
               agency={routeAgency}
-              size={'sm'}
+              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+              // size={'xs'}
               infoLevel={infoLevel}
               dataLang={dataLangs}
               showBorder={true}
             />
           )}
-
-          {/* Stop: stop-level mode emojis + stop name + platform code. */}
-          {showRouteTypeOfStop && (
-            // Stop-level mode emojis
-            <span aria-hidden>
-              {routeTypesEmoji([timetableEntry.routeDirection.route.route_type])}
-            </span>
+          {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
+          {infoLevelFlag.isVerboseEnabled && distanceRounded != null && distanceRounded >= 10 && (
+            <DistanceBadge
+              meters={distanceRounded}
+              bearingDeg={bearing}
+              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+              showDirection
+            />
           )}
-
-          {/* Stop info kept together as one group (stop name, platform code, and
-              distance / direction) so the stop's details are not split across the row. */}
-          <span className="flex min-w-0 flex-1 items-center gap-1">
-            <span className="min-w-0 truncate">{stopName}</span>
+        </div>
+        {/* 2nd row: Stop */}
+        <div className="border-0 pt-1">
+          <span className="block min-w-0 leading-tight wrap-break-word whitespace-normal">
+            {stopName}
             {stopWithContext.stop.platform_code !== undefined && (
-              <span className="shrink-0 bg-neutral-800 px-1 text-amber-100">
-                {stopWithContext.stop.platform_code}
-              </span>
-            )}
-            {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
-            {infoLevelFlag.isVerboseEnabled && distanceRounded != null && distanceRounded >= 10 && (
-              <DistanceBadge
-                meters={distanceRounded}
-                bearingDeg={bearing}
+              <PlatformCodeLabel
+                className="ml-1 align-baseline"
+                code={stopWithContext.stop.platform_code}
+                // size={'xs'}
                 size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
-                showDirection
               />
             )}
           </span>
         </div>
       </div>
+
+      {/* Right edge: agency color bar, mirroring the left route-color bar. */}
+      {/* <svg
+        aria-hidden
+        viewBox="0 0 1 1"
+        preserveAspectRatio="none"
+        className="w-1 shrink-0 self-stretch"
+      >
+        <rect x="0" y="0" width="1" height="1" fill={agencyColor} />
+      </svg> */}
     </li>
   );
 }
