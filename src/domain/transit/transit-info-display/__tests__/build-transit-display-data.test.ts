@@ -45,8 +45,8 @@ vi.mock('../../timetable-entry-attributes', () => ({
 
 describe('transitDisplayMaxEntriesFor', () => {
   it('returns the configured row cap for each info level', () => {
-    expect(transitDisplayMaxEntriesFor('simple')).toBe(10);
-    expect(transitDisplayMaxEntriesFor('normal')).toBe(10);
+    expect(transitDisplayMaxEntriesFor('simple')).toBe(20);
+    expect(transitDisplayMaxEntriesFor('normal')).toBe(20);
     expect(transitDisplayMaxEntriesFor('detailed')).toBe(20);
     expect(transitDisplayMaxEntriesFor('verbose')).toBe(20);
   });
