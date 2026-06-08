@@ -90,9 +90,9 @@ const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySi
 };
 
 export interface TransitDisplays2Props {
-  /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
+  /** Raw displays (meta + unresolved board); rows are passed down and resolved at the leaf ({@link TransitDisplayEntry2}). */
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
-  /** Display language chain passed to {@link buildTransitDisplayDatumForUi} for row resolution. */
+  /** Display language chain forwarded down to the leaf ({@link TransitDisplayEntry2}) for name / color resolution. */
   dataLangs: readonly string[];
   now: Date;
   mapCenter: LatLng | null;
@@ -116,10 +116,11 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 };
 
 /**
- * Resolves each {@link TransitDisplayDataWithMetaData} into UI rows (via
- * {@link buildTransitDisplayDatumForUi} -- this is the only consumer that needs
- * them) and renders it as its own stacked board, with a filter bar on top for
- * choosing which categories (departures / arrivals) to show. The filter is
+ * Renders each {@link TransitDisplayDataWithMetaData} as its own stacked board,
+ * with a filter bar on top for choosing which categories (departures / arrivals)
+ * to show. Unlike the classic view, rows are not pre-resolved via
+ * buildTransitDisplayDatumForUi; the raw board and dataLangs are passed down and
+ * resolved at the leaf ({@link TransitDisplayEntry2}). The filter is
  * presentation-only local state: it narrows the rendered displays, it does not
  * change how they are built or fetched.
  */
@@ -224,10 +225,9 @@ interface TransitDisplayCategoryFilterProps {
 }
 
 /**
- * Split-flap-styled filter bar: one flap toggle per category. Styled to match
- * the boards (same frame and panel face, amber text) rather than the generic
- * chip filter. A lit flap means the category is shown; a dimmed one means it is
- * hidden.
+ * Filter bar: one toggle per category, styled to match the boards (same
+ * theme-aware panel face) rather than the generic chip filter. A prominent
+ * toggle means the category is shown; a dimmed one means it is hidden.
  */
 function TransitDisplayCategoryFilter({
   categories,
@@ -253,8 +253,8 @@ function TransitDisplayCategoryFilter({
         const isArrival = category === 'arrivals';
         return (
           // Shared ui/button (ghost) reused for structure and focus handling,
-          // restyled to the split-flap palette: a lit flap means the category is
-          // shown, a dimmed one means it is hidden.
+          // restyled to the board palette: a prominent toggle means the category
+          // is shown, a dimmed one means it is hidden.
           <Button
             key={category}
             variant="ghost"
@@ -304,15 +304,12 @@ export interface TransitDisplay2Props {
 /**
  * One transit board: a single departure or arrival display.
  *
- * Design basis: a slightly classical split-flap signage panel (the "Solari" /
- * flip-board mechanical flap displays once used in stations and airports). The
- * current styling evokes that look statically -- a thick, square-cornered frame
- * and a header band that shares the frame color -- rather than animating real
- * flaps. Typography (fonts, monospacing) and finer split-flap details are
- * intended to be refined later.
+ * Design basis: Athenai's modern, theme-aware design language (the classic
+ * `transit-display` view carries the split-flap look instead). The board is a
+ * theme-aware panel with a soft rounded border.
  *
- * Layout: a header band (title on the left, recent-count / radius on the right)
- * above the rows, or an empty fallback when the board has no entries.
+ * Layout: a header band (title on the left, radius on the right) above the rows,
+ * or an empty fallback when the board has no entries.
  */
 export function TransitDisplay2({
   transitDisplayDataWithMetaData,
@@ -328,7 +325,7 @@ export function TransitDisplay2({
 
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
-  // Airport-board-style title: mode emoji + departures/arrivals phrase. The
+  // Board title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
@@ -339,9 +336,8 @@ export function TransitDisplay2({
   // const hasMultiRoutes = meta.routeTypes.length >= 2;
 
   return (
-    // Each board is framed like a classic airport signage panel: a thick,
-    // square (no rounded corners) border makes the boundary between stacked
-    // boards explicit.
+    // Each board is a theme-aware panel with a soft rounded border; stacked
+    // boards are separated by their own surface and margin.
     <section
       className={cn(
         'mb-4 overflow-hidden rounded-sm',
@@ -350,8 +346,8 @@ export function TransitDisplay2({
         // BOARD_FRAME_COLOR,
       )}
     >
-      {/* Header band: title left, description right, on a single line. A dark band
-          with letter-spaced amber text, like a split-flap header. */}
+      {/* Header band: title left, radius right, on a single line, on the board's
+          theme-aware panel face. */}
       <div
         className={cn(
           'flex flex-col gap-1 border-b-0 px-4 py-2',
@@ -601,9 +597,9 @@ export function TransitDisplayEntry2({
         <div className="border-0 pt-1">{headsign}</div>
       </div>
 
-      {/* 3rd column: 2 rows - Route agengy / Stop */}
+      {/* 3rd column: 2 rows - Route agency / Stop */}
       <div className="flex-1 border-0 px-2 pt-1">
-        {/* 1st row: Rote agency */}
+        {/* 1st row: Route agency */}
         <div className="flex items-center gap-2 border-0 px-0 py-0">
           {/* Agency name */}
           {routeAgency && (
