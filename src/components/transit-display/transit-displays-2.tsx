@@ -411,14 +411,14 @@ export function TransitDisplay2({
         <ul className="m-0 list-none p-0">
           {transitDisplayData.data.map((row) => {
             const { timetableEntry, stop: stopWithContext } = row;
-            const key = [
+            const key = JSON.stringify([
+              stopWithContext.stop.stop_id,
               formatDateKey(timetableEntry.serviceDate),
               timetableEntry.tripLocator.patternId,
               timetableEntry.tripLocator.serviceId,
               timetableEntry.tripLocator.tripIndex,
               timetableEntry.patternPosition.stopIndex,
-              stopWithContext.stop.stop_id,
-            ].join('__');
+            ]);
             return (
               <Fragment key={key}>
                 <Separator orientation="horizontal" className="mx-4 h-2" />
