@@ -178,6 +178,20 @@ export const AlignComparison: Story = {
 
 // --- Size variants ---
 export const SizeComparison: Story = {
+  // Widest-content data so the column width is exercised at its maximum across
+  // sizes: the relative time at its widest form that still keeps the localized
+  // prefix (the prefix is dropped past 90 minutes, so 90 is the max with a
+  // prefix, e.g. "in 90 min"), plus both absolute rows carrying the arrival /
+  // departure suffix markers. arrival and departure differ by a minute so both
+  // absolute rows always render.
+  args: {
+    arrivalMinutes: offset(89),
+    departureMinutes: offset(90),
+    showArrivalTime: true,
+    showDepartureTime: true,
+    collapseToleranceMinutes: null,
+    forceShowRelativeTime: true,
+  },
   render: (args) => (
     <div className="flex flex-col gap-2">
       {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((size) => (

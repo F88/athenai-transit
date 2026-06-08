@@ -105,20 +105,20 @@ export function buildTransitDisplayDatumForUi(
     return name;
   };
 
-  return datum.map(({ entry, stopWithContext }) => {
+  return datum.map(({ timetableEntry, stop: stopWithContext }) => {
     const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
     const routeAgency = stopWithContext.agencies.find(
-      (agency) => agency.agency_id === entry.routeDirection.route.agency_id,
+      (agency) => agency.agency_id === timetableEntry.routeDirection.route.agency_id,
     );
     const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
     const routeName = getRouteDisplayNames(
-      entry.routeDirection.route,
+      timetableEntry.routeDirection.route,
       preferredDisplayLangs,
       routeAgencyLangs,
       'short',
     ).resolved.name;
     const headsign = getHeadsignDisplayNames(
-      entry.routeDirection,
+      timetableEntry.routeDirection,
       preferredDisplayLangs,
       routeAgencyLangs,
       'stop',
@@ -135,13 +135,16 @@ export function buildTransitDisplayDatumForUi(
     // separator could let different tuples stringify to the same key.
     const key = JSON.stringify([
       stopWithContext.stop.stop_id,
-      formatDateKey(entry.serviceDate),
-      entry.tripLocator.patternId,
-      entry.tripLocator.serviceId,
-      entry.tripLocator.tripIndex,
-      entry.patternPosition.stopIndex,
+      formatDateKey(timetableEntry.serviceDate),
+      timetableEntry.tripLocator.patternId,
+      timetableEntry.tripLocator.serviceId,
+      timetableEntry.tripLocator.tripIndex,
+      timetableEntry.patternPosition.stopIndex,
     ]);
-    const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
+    const tripInspectionTarget = buildTripInspectionTarget(
+      timetableEntry,
+      timetableEntry.serviceDate,
+    );
     return {
       key,
       stop: {
@@ -152,17 +155,17 @@ export function buildTransitDisplayDatumForUi(
         routeTypesEmoji: routeTypesEmoji(stopWithContext.routeTypes),
         context: stopWithContext,
       },
-      routeTypeEmoji: routeTypesEmoji([entry.routeDirection.route.route_type]),
+      routeTypeEmoji: routeTypesEmoji([timetableEntry.routeDirection.route.route_type]),
       routeName,
       agencyName,
       headsign,
       timeText: formatAbsoluteTime(
-        minutesToDate(entry.serviceDate, categoryMinutes(entry, category)),
+        minutesToDate(timetableEntry.serviceDate, categoryMinutes(timetableEntry, category)),
       ),
-      attributes: getTimetableEntryAttributes(entry),
-      arrivalMinutes: entry.schedule.arrivalMinutes,
-      departureMinutes: entry.schedule.departureMinutes,
-      serviceDate: entry.serviceDate,
+      attributes: getTimetableEntryAttributes(timetableEntry),
+      arrivalMinutes: timetableEntry.schedule.arrivalMinutes,
+      departureMinutes: timetableEntry.schedule.departureMinutes,
+      serviceDate: timetableEntry.serviceDate,
       inspectionTarget: tripInspectionTarget,
     };
   });

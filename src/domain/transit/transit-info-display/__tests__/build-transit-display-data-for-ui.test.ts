@@ -95,8 +95,14 @@ describe('buildTransitDisplayDatumForUi', () => {
 
   it('maps each datum to one UI row, in order', () => {
     const datum: TransitDisplayDatum[] = [
-      { entry: makeContextualEntry({ departureMinutes: 480 }), stopWithContext: makeStopContext() },
-      { entry: makeContextualEntry({ departureMinutes: 540 }), stopWithContext: makeStopContext() },
+      {
+        timetableEntry: makeContextualEntry({ departureMinutes: 480 }),
+        stop: makeStopContext(),
+      },
+      {
+        timetableEntry: makeContextualEntry({ departureMinutes: 540 }),
+        stop: makeStopContext(),
+      },
     ];
 
     const rows = buildTransitDisplayDatumForUi(datum, ['ja'], 'departures');
@@ -109,8 +115,8 @@ describe('buildTransitDisplayDatumForUi', () => {
     const route: Route = { ...makeRoute('r1', 3), agency_id: 'A1' };
     const datum: TransitDisplayDatum[] = [
       {
-        entry: makeContextualEntry({ route, departureMinutes: 480, arrivalMinutes: 510 }),
-        stopWithContext: makeStopContext({
+        timetableEntry: makeContextualEntry({ route, departureMinutes: 480, arrivalMinutes: 510 }),
+        stop: makeStopContext({
           stopId: 'stop-9',
           distance: 250,
           routeTypes: [3, 2],
@@ -132,7 +138,7 @@ describe('buildTransitDisplayDatumForUi', () => {
       platformCode: undefined,
       distance: 250,
       routeTypesEmoji: 'emoji(3,2)', // stop-level: all the stop's route types
-      context: datum[0].stopWithContext,
+      context: datum[0].stop,
     });
     // Passthrough fields.
     expect(row.arrivalMinutes).toBe(510);
@@ -147,8 +153,8 @@ describe('buildTransitDisplayDatumForUi', () => {
     const datum: TransitDisplayDatum[] = [
       {
         // stop context carries no agencies -> no match for agency_id 'A1'
-        entry: makeContextualEntry({ route }),
-        stopWithContext: makeStopContext({ agencies: [] }),
+        timetableEntry: makeContextualEntry({ route }),
+        stop: makeStopContext({ agencies: [] }),
       },
     ];
 
@@ -161,7 +167,7 @@ describe('buildTransitDisplayDatumForUi', () => {
   it('uses the category time for timeText: departures -> departure, arrivals -> arrival', () => {
     const serviceDate = new Date('2026-01-01');
     const entry = makeContextualEntry({ departureMinutes: 480, arrivalMinutes: 510, serviceDate });
-    const datum: TransitDisplayDatum[] = [{ entry, stopWithContext: makeStopContext() }];
+    const datum: TransitDisplayDatum[] = [{ timetableEntry: entry, stop: makeStopContext() }];
 
     const [departuresRow] = buildTransitDisplayDatumForUi(datum, ['ja'], 'departures');
     const [arrivalsRow] = buildTransitDisplayDatumForUi(datum, ['ja'], 'arrivals');
@@ -174,8 +180,14 @@ describe('buildTransitDisplayDatumForUi', () => {
   it('resolves each stop name at most once and shares it across that stop entries', () => {
     const sharedStop = makeStopContext({ stopId: 'shared' });
     const datum: TransitDisplayDatum[] = [
-      { entry: makeContextualEntry({ departureMinutes: 480 }), stopWithContext: sharedStop },
-      { entry: makeContextualEntry({ departureMinutes: 540 }), stopWithContext: sharedStop },
+      {
+        timetableEntry: makeContextualEntry({ departureMinutes: 480 }),
+        stop: sharedStop,
+      },
+      {
+        timetableEntry: makeContextualEntry({ departureMinutes: 540 }),
+        stop: sharedStop,
+      },
     ];
 
     const rows = buildTransitDisplayDatumForUi(datum, ['ja'], 'departures');
@@ -188,12 +200,12 @@ describe('buildTransitDisplayDatumForUi', () => {
   it('builds distinct keys for the same trip on different service dates', () => {
     const stopWithContext = makeStopContext({ stopId: 'k' });
     const day1: TransitDisplayDatum = {
-      entry: makeContextualEntry({ serviceDate: new Date('2026-01-01') }),
-      stopWithContext,
+      timetableEntry: makeContextualEntry({ serviceDate: new Date('2026-01-01') }),
+      stop: stopWithContext,
     };
     const day2: TransitDisplayDatum = {
-      entry: makeContextualEntry({ serviceDate: new Date('2026-01-02') }),
-      stopWithContext,
+      timetableEntry: makeContextualEntry({ serviceDate: new Date('2026-01-02') }),
+      stop: stopWithContext,
     };
 
     const [row1] = buildTransitDisplayDatumForUi([day1], ['ja'], 'departures');

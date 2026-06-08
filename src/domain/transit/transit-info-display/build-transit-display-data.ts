@@ -14,8 +14,8 @@ import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
  * {@link buildTransitDisplayDataSet}.
  */
 const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
-  simple: 10,
-  normal: 10,
+  simple: 20,
+  normal: 20,
   detailed: 20,
   verbose: 20,
   // verbose: 10,
@@ -95,8 +95,8 @@ export interface TransitDisplayDataWithMetaData {
 
 /** One stop event paired with the stop context it came from, before name resolution. */
 export interface TransitDisplayCandidate {
-  entry: ContextualTimetableEntry;
-  stopWithContext: StopWithContext;
+  timetableEntry: ContextualTimetableEntry;
+  stop: StopWithContext;
 }
 
 /**
@@ -148,10 +148,12 @@ export interface TransitDisplayCondition {
  * non-terminal stops); a departures board uses departure time.
  */
 export function categoryMinutes(
-  entry: ContextualTimetableEntry,
+  timetableEntry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): number {
-  return category === 'arrivals' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
+  return category === 'arrivals'
+    ? timetableEntry.schedule.arrivalMinutes
+    : timetableEntry.schedule.departureMinutes;
 }
 
 /**
@@ -162,11 +164,11 @@ export function categoryMinutes(
  * the boardable / alightable rule.
  */
 export function categoryQualifies(
-  entry: ContextualTimetableEntry,
+  timetableEntry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): boolean {
   // [IMPORTANT] Use domain logic to determine the starting/ending point.
-  const attributes = getTimetableEntryAttributes(entry);
+  const attributes = getTimetableEntryAttributes(timetableEntry);
 
   if (category === 'departures') {
     // A departures board lists trips you can actually leave on: not the terminal
@@ -199,8 +201,8 @@ export function filterStopsWithinRadius(
 export function toTransitDisplayCandidates(
   stops: readonly StopWithContext[],
 ): TransitDisplayCandidate[] {
-  return stops.flatMap((stopWithContext) =>
-    stopWithContext.stopTimes.map((entry) => ({ entry, stopWithContext })),
+  return stops.flatMap((stop) =>
+    stop.stopTimes.map((timetableEntry) => ({ timetableEntry, stop })),
   );
 }
 
@@ -209,7 +211,7 @@ export function selectByRouteType(
   candidates: readonly TransitDisplayCandidate[],
   routeType: AppRouteTypeValue,
 ): TransitDisplayCandidate[] {
-  return candidates.filter((c) => c.entry.routeDirection.route.route_type === routeType);
+  return candidates.filter((c) => c.timetableEntry.routeDirection.route.route_type === routeType);
 }
 
 /**
@@ -222,8 +224,14 @@ export function sortByCategory(
 ): TransitDisplayCandidate[] {
   return [...candidates].sort(
     (a, b) =>
-      minutesToDate(a.entry.serviceDate, categoryMinutes(a.entry, category)).getTime() -
-      minutesToDate(b.entry.serviceDate, categoryMinutes(b.entry, category)).getTime(),
+      minutesToDate(
+        a.timetableEntry.serviceDate,
+        categoryMinutes(a.timetableEntry, category),
+      ).getTime() -
+      minutesToDate(
+        b.timetableEntry.serviceDate,
+        categoryMinutes(b.timetableEntry, category),
+      ).getTime(),
   );
 }
 
@@ -251,7 +259,7 @@ const DIRECTIONS: readonly (0 | 1 | undefined)[] = [undefined, 0, 1];
 function presentDirections(
   candidates: readonly TransitDisplayCandidate[],
 ): readonly (0 | 1 | 'none')[] {
-  const present = new Set(candidates.map((c) => c.entry.routeDirection.direction));
+  const present = new Set(candidates.map((c) => c.timetableEntry.routeDirection.direction));
   return DIRECTIONS.filter((direction) => present.has(direction)).map(
     (direction) => direction ?? 'none',
   );
@@ -261,7 +269,7 @@ function presentDirections(
 function presentRouteTypesInDisplayOrder(
   candidates: readonly TransitDisplayCandidate[],
 ): AppRouteTypeValue[] {
-  const present = new Set(candidates.map((c) => c.entry.routeDirection.route.route_type));
+  const present = new Set(candidates.map((c) => c.timetableEntry.routeDirection.route.route_type));
   return ROUTE_TYPE_DISPLAY_ORDER.filter((routeType) => present.has(routeType));
 }
 
@@ -298,7 +306,9 @@ export function clusterCandidatesByRouteType(
     const groupSet = new Set<number>(group);
     return {
       routeTypes: group.filter((routeType) => presentSet.has(routeType)),
-      candidates: candidates.filter((c) => groupSet.has(c.entry.routeDirection.route.route_type)),
+      candidates: candidates.filter((c) =>
+        groupSet.has(c.timetableEntry.routeDirection.route.route_type),
+      ),
     };
   });
 }
@@ -331,7 +341,7 @@ export function groupCandidatesIntoBoards(
       // Not split: one board per category, covering the directions present.
       for (const category of CATEGORIES) {
         const boardCandidates = cluster.candidates.filter((c) =>
-          categoryQualifies(c.entry, category),
+          categoryQualifies(c.timetableEntry, category),
         );
         if (boardCandidates.length === 0) {
           continue;
@@ -355,7 +365,8 @@ export function groupCandidatesIntoBoards(
       for (const direction of DIRECTIONS) {
         const boardCandidates = cluster.candidates.filter(
           (c) =>
-            c.entry.routeDirection.direction === direction && categoryQualifies(c.entry, category),
+            c.timetableEntry.routeDirection.direction === direction &&
+            categoryQualifies(c.timetableEntry, category),
         );
         if (boardCandidates.length === 0) {
           continue;

@@ -73,7 +73,12 @@
     "transitDisplay": {
       "label": "発着案内",
       "title": "発着案内",
-      "description": "近くの複数のりばの便を時系列で表示します"
+      "description": "近くののりばの便をまとめて表示します"
+    },
+    "transitDisplay2": {
+      "label": "発着案内",
+      "title": "発着案内",
+      "description": "近くののりばの便をまとめて表示します"
     }
   },
   "history": {

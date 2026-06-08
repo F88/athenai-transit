@@ -239,7 +239,7 @@ export function StopBrowser({
       return;
     }
 
-    if (viewId === 'transit-display') {
+    if (viewId === 'transit-display' || viewId === 'transit-display-2') {
       // The transit-display (board) view is not stop-oriented: the same stop id can
       // appear in multiple rows (one stop shows up across several boards), so a stop
       // cannot be targeted for scrolling. Leave its scroll position alone -- do not
@@ -287,9 +287,10 @@ export function StopBrowser({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      {viewId === 'transit-display' ? (
+      {viewId === 'transit-display' || viewId === 'transit-display-2' ? (
         <TransitDisplaysContainer
           stopTimes={trimmedStopTimes}
+          viewId={viewId}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           size={headerSize}
