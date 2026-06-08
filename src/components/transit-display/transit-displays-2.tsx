@@ -195,16 +195,14 @@ const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 const FILTER_BUTTON_BASE_CLASS =
   'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase hover:bg-info/20';
 
-  const FILTER_BUTTON_SHOWN_CLASS = cn(
-    BOARD_PANEL_BG,
-    'border-neutral-600 text-neutral-700 hover:text-neutral-900 dark:border-neutral-300 dark:text-neutral-200 dark:hover:text-neutral-100',
-  );
-  const FILTER_BUTTON_HIDDEN_CLASS = cn(
-    BOARD_PANEL_BG,
-    'border-neutral-300 text-neutral-400 hover:text-neutral-600 dark:border-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300',
-  );
-
-
+const FILTER_BUTTON_SHOWN_CLASS = cn(
+  BOARD_PANEL_BG,
+  'border-neutral-600 text-neutral-700 hover:text-neutral-900 dark:border-neutral-300 dark:text-neutral-200 dark:hover:text-neutral-100',
+);
+const FILTER_BUTTON_HIDDEN_CLASS = cn(
+  BOARD_PANEL_BG,
+  'border-neutral-300 text-neutral-400 hover:text-neutral-600 dark:border-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300',
+);
 
 const FILTER_BOX_SIZE: Record<ExtendedDisplaySize, string> = {
   xs: 'py-2 px-3 gap-2',
@@ -528,7 +526,7 @@ export function TransitDisplayEntry2({
       className={cn(
         'cursor-pointer',
         'hover:bg-info/10',
-        'my-1 px-0 pt-0 pb-0',
+        'my-0.5 px-0 pt-0 pb-0',
         ROW_TEXT_CLASS_BY_SIZE[size],
         'flex items-stretch overflow-hidden',
       )}
@@ -546,7 +544,7 @@ export function TransitDisplayEntry2({
 
       {/* Trip info / 3 columns: Time, Route, Stop */}
       {/* 1st columns: Time */}
-      <div className="flex border-0 px-0 py-1">
+      <div className="flex flex-0 border-0 px-0 pt-1">
         {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
         <StopTimeTimeInfo
           arrivalMinutes={timetableEntry.schedule.arrivalMinutes}
@@ -571,7 +569,7 @@ export function TransitDisplayEntry2({
       </div>
 
       {/* 2nd column (2 rows) */}
-      <div className="flex-2 px-2 py-2">
+      <div className="flex-2 border-0 pt-1 pl-4">
         {/* 1st row: Route info (Route name, Headsign, ...) */}
         <div className="flex items-center gap-2">
           <RouteBadge
@@ -595,7 +593,7 @@ export function TransitDisplayEntry2({
       </div>
 
       {/* 3rd column: 2 rows - Route agengy / Stop */}
-      <div className="flex-1 border-0 px-2 py-2">
+      <div className="flex-1 border-0 px-2 pt-1">
         {/* 1st row: Rote agency */}
         <div className="flex items-center gap-2 border-0 px-0 py-0">
           {/* Agency name */}

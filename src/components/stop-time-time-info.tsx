@@ -111,10 +111,22 @@ export function StopTimeTimeInfo({
 
   const textAlignClassName =
     align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right';
+
+  const ROOT_MIN_WIDTH_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+    xs: 'min-w-12',
+    sm: 'min-w-14',
+    md: 'min-w-16',
+    lg: 'min-w-18',
+    xl: 'min-w-20',
+  };
+
   const rootClassName = cn(
-    'flex min-h-8 w-14 shrink-0 flex-col justify-center leading-none',
+    'flex min-h-8 shrink-0 flex-col justify-center leading-none',
+    // 'border-1',
+    ROOT_MIN_WIDTH_BY_SIZE[size],
     textAlignClassName,
   );
+
   const timeTextClassName = cn(
     textAppearance?.weight === 'normal' ? 'font-normal' : 'font-bold',
     textAppearance?.className,

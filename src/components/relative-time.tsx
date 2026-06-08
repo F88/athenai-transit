@@ -75,7 +75,7 @@ export function RelativeTime({
   return (
     <span
       className={cn(
-        'flex flex-wrap items-baseline leading-none font-bold',
+        'flex flex-nowrap items-baseline leading-none font-bold whitespace-nowrap',
         justifyClassName,
         className,
       )}
