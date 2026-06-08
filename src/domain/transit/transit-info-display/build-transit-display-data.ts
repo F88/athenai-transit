@@ -14,8 +14,8 @@ import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
  * {@link buildTransitDisplayDataSet}.
  */
 const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
-  simple: 10,
-  normal: 10,
+  simple: 20,
+  normal: 20,
   detailed: 20,
   verbose: 20,
   // verbose: 10,
