@@ -44,24 +44,7 @@ export const STOP_TIMES_VIEWS = [
     enabled: true,
     visible: true,
   },
-  /**
-   * Transit display view -- classic design.
-   *
-   * Display unit: multiple stops.
-   *
-   * The classic split-flap signage board: shows service events in timeline order
-   * across a nearby stop cluster, similar to a public transit information display.
-   * Approximates a shared display by grouping stops within a nearby radius.
-   */
-  {
-    id: 'transit-display',
-    icon: '📟',
-    labelKey: 'view.transitDisplay.label',
-    titleKey: 'view.transitDisplay.title',
-    descriptionKey: 'view.transitDisplay.description',
-    enabled: true,
-    visible: true,
-  },
+
   /**
    * Transit display view -- modern design.
    *
@@ -80,6 +63,26 @@ export const STOP_TIMES_VIEWS = [
     enabled: true,
     visible: true,
   },
+
+  /**
+   * Transit display view -- classic design.
+   *
+   * Display unit: multiple stops.
+   *
+   * The classic split-flap signage board: shows service events in timeline order
+   * across a nearby stop cluster, similar to a public transit information display.
+   * Approximates a shared display by grouping stops within a nearby radius.
+   */
+  {
+    id: 'transit-display',
+    icon: '📟',
+    labelKey: 'view.transitDisplay.label',
+    titleKey: 'view.transitDisplay.title',
+    descriptionKey: 'view.transitDisplay.description',
+    enabled: true,
+    visible: true,
+  },
+
   /**
    * Route grouped view.
    *
