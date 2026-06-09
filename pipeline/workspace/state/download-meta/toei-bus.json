@@ -2,12 +2,12 @@
   "sourceName": "toei-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-08T05:46:34.583Z",
+  "downloadedAt": "2026-06-09T05:33:08.383Z",
   "url": "https://api-public.odpt.org/api/v4/files/Toei/data/ToeiBus-GTFS.zip",
-  "size": 7393020,
+  "size": 7393135,
   "contentType": "application/octet-stream",
-  "durationMs": 4541,
-  "archivePath": "workspace/_archives/gtfs/toei-bus/ToeiBus-GTFS_20260608-054638.zip",
+  "durationMs": 4710,
+  "archivePath": "workspace/_archives/gtfs/toei-bus/ToeiBus-GTFS_20260609-053312.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -74,8 +74,8 @@
     "publisherName": "東京都交通局",
     "publisherUrl": "https://www.kotsu.metro.tokyo.jp/",
     "lang": "ja",
-    "startDate": "20260608",
-    "endDate": "20290607",
-    "version": "20260608_030730"
+    "startDate": "20260609",
+    "endDate": "20290608",
+    "version": "20260609_030734"
   }
 }
