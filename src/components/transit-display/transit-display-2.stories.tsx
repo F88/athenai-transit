@@ -20,6 +20,7 @@ import {
   stopHeadsignShort,
   storyMapCenter,
   storyNow,
+  storyTransitDisplayStats,
   tripHeadsignLong,
 } from '../../stories/fixtures';
 import type { Agency, Route, Stop } from '../../types/app/transit';
@@ -100,6 +101,7 @@ function makeDisplay(
       category: meta.category,
       data: [...rows],
     },
+    stats: storyTransitDisplayStats,
   };
 }
 

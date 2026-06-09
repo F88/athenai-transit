@@ -349,7 +349,6 @@ export function TransitDisplay({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayProps) {
-  const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
   // Airport-board-style title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
@@ -385,16 +384,6 @@ export function TransitDisplay({
           BOARD_FRAME_COLOR,
         )}
       >
-        {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
-        {infoLevelFlag.isVerboseEnabled && (
-          <div className="flex items-baseline gap-3">
-            <p className="m-0 ml-auto w-full min-w-0 text-right text-xs text-amber-200/80">
-              [{dataWithMeta.meta.category} / rt {dataWithMeta.meta.routeTypes.join(',')} / dir{' '}
-              {dataWithMeta.meta.directions.join(',')} (max:{dataWithMeta.meta.max},
-              {dataWithMeta.meta.radius}m)]
-            </p>
-          </div>
-        )}
         <div className="flex items-baseline justify-between gap-3">
           {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
               The arrow is decorative; the phrase already states departures/arrivals. */}

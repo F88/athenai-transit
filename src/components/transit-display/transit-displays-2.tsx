@@ -1,12 +1,13 @@
 import { Fragment, useState } from 'react';
 
-import { ArrowRight, ArrowUp } from 'lucide-react';
+import { ArrowRight, ArrowUp, Building2, Clock, Radio, Route, Signpost } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { DistanceBadge } from '@/components/badge/distance-badge';
+import { IconTextBadge } from '@/components/badge/icon-text-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import {
   type TransitDisplayDatum,
   type TransitDisplayMeta,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import { computeTransitDisplayDatumStats } from '@/domain/transit/compute-transit-display-datum-stats';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
@@ -33,6 +35,7 @@ import { StopTimeTimeInfo } from '../stop-time-time-info';
 import { Separator } from '../ui/separator';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
+import i18n from '@/i18n';
 
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
 
@@ -88,6 +91,51 @@ const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySi
   md: 'sm',
   lg: 'md',
   xl: 'lg',
+};
+
+/**
+ * Styling for one header IconTextBadge: the component `size` (padding / base
+ * scale) plus class overrides for the text half and the icon svg (to scale
+ * beyond the component's built-in presets, which cap at ~14px).
+ */
+interface HeaderBadgeStyle {
+  size: ExtendedDisplaySize;
+  textClass: string;
+  iconClass: string;
+}
+
+/**
+ * Header badge styling per display size, in two variants:
+ * - `small`: the four stats badges ({@link StatsBadges}).
+ * - `large`: the radius badge.
+ *
+ * `props.size` is the single input; consumers pick `small` / `large` internally.
+ * Starting values -- tune here.
+ */
+const HEADER_STATS_ICONS_BY_SIZE: Record<
+  ExtendedDisplaySize,
+  { small: HeaderBadgeStyle; large: HeaderBadgeStyle }
+> = {
+  xs: {
+    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+    large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+  },
+  sm: {
+    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+    large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+  },
+  md: {
+    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+    large: { size: 'xs', textClass: 'text-xs', iconClass: '[&>svg]:size-3' },
+  },
+  lg: {
+    small: { size: 'sm', textClass: 'text-base', iconClass: '[&>svg]:size-4' },
+    large: { size: 'sm', textClass: 'text-xl', iconClass: '[&>svg]:size-5' },
+  },
+  xl: {
+    small: { size: 'md', textClass: 'text-2xl', iconClass: '[&>svg]:size-6' },
+    large: { size: 'md', textClass: 'text-3xl', iconClass: '[&>svg]:size-8' },
+  },
 };
 
 export interface TransitDisplays2Props {
@@ -240,7 +288,7 @@ function TransitDisplayCategoryFilter({
   return (
     <div
       role="group"
-      aria-label={t('transitDisplay.filter.label')}
+      aria-label={t('transitDisplay2.filter.label')}
       className={cn(
         'mb-2 flex items-center rounded-sm',
         'border-0',
@@ -282,7 +330,9 @@ function TransitDisplayCategoryFilter({
               />
             )}
             <span className="truncate">
-              {t(isArrival ? 'transitDisplay.filter.arrivals' : 'transitDisplay.filter.departures')}
+              {t(
+                isArrival ? 'transitDisplay2.filter.arrivals' : 'transitDisplay2.filter.departures',
+              )}
             </span>
           </Button>
         );
@@ -300,6 +350,73 @@ export interface TransitDisplay2Props {
   size: ExtendedDisplaySize;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
+}
+
+/**
+ * Verbose-only badge row that renders a stats scope as icon badges. Icon choices
+ * follow the data-source group summary convention: Signpost = stops, Route =
+ * routes, Building2 = agencies, Shapes = route types, Clock = entries.
+ * `entryCount` is omitted for the stop-set scope (which has no entry count).
+ */
+function StatsBadges({
+  size,
+  entryCount,
+  stopCount,
+  routeCount,
+  agencyCount,
+}: {
+  size: ExtendedDisplaySize;
+  entryCount?: number;
+  stopCount: number;
+  routeCount: number;
+  agencyCount: number;
+}) {
+  const { size: badgeSize, textClass, iconClass } = HEADER_STATS_ICONS_BY_SIZE[size].small;
+
+  return (
+    <div className="flex flex-col items-end gap-0.5 border-0">
+      {/* Row 1: entries (optional) + stops. */}
+      <div className="flex flex-wrap items-center justify-end gap-1">
+        {entryCount !== undefined && (
+          <IconTextBadge
+            size={badgeSize}
+            icon={<Clock />}
+            text={`${entryCount.toLocaleString(i18n.language)}`}
+            textClassName={textClass}
+            iconClassName={iconClass}
+            aria-label="entries"
+          />
+        )}
+        <IconTextBadge
+          size={badgeSize}
+          icon={<Signpost />}
+          text={`${stopCount.toLocaleString(i18n.language)}`}
+          textClassName={textClass}
+          iconClassName={iconClass}
+          aria-label="stops"
+        />
+      </div>
+      {/* Row 2: routes + agencies. */}
+      <div className="flex flex-wrap items-center justify-end gap-1">
+        <IconTextBadge
+          size={badgeSize}
+          icon={<Route />}
+          text={`${routeCount.toLocaleString(i18n.language)}`}
+          textClassName={textClass}
+          iconClassName={iconClass}
+          aria-label="routes"
+        />
+        <IconTextBadge
+          size={badgeSize}
+          icon={<Building2 />}
+          text={`${agencyCount.toLocaleString(i18n.language)}`}
+          textClassName={textClass}
+          iconClassName={iconClass}
+          aria-label="agencies"
+        />
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -322,7 +439,7 @@ export function TransitDisplay2({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplay2Props) {
-  const { meta, data: transitDisplayData } = transitDisplayDataWithMetaData;
+  const { meta, data: transitDisplayData, stats } = transitDisplayDataWithMetaData;
 
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
@@ -332,7 +449,10 @@ export function TransitDisplay2({
   // repeat it: each row shows a single time (the board's basis) without a label.
   const isArrivalBoard = meta.category === 'arrivals';
   const routeTypeIcon = routeTypesEmoji(meta.routeTypes);
-  const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
+  const title = t(isArrivalBoard ? 'transitDisplay2.arrivals' : 'transitDisplay2.departures');
+  // Displayed (post-cap) stats are derivable from the rendered rows, so the
+  // component computes them here rather than carrying them on `stats`.
+  const displayedStats = computeTransitDisplayDatumStats(transitDisplayData.data);
   // A board that mixes route types: rows then show their own trip route-type emoji.
   // const hasMultiRoutes = meta.routeTypes.length >= 2;
 
@@ -347,32 +467,46 @@ export function TransitDisplay2({
         // BOARD_FRAME_COLOR,
       )}
     >
+      {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
+      {infoLevelFlag.isVerboseEnabled && (
+        <div className="flex flex-col items-end gap-0.5 text-[8px]">
+          <p className="m-0 w-full min-w-0 text-right">
+            [{meta.category} / rt {meta.routeTypes.join(',')} / dir {meta.directions.join(',')} /
+            (max:{meta.max}/{meta.radius}m)]
+          </p>
+          {/* <p className="m-0 w-full min-w-0 text-right">
+            [withinRadius: {stats.stopsInRadius.stopCount} stops / {stats.stopsInRadius.routeCount}{' '}
+            routes / {stats.stopsInRadius.agencyCount} agencies /{' '}
+            {stats.stopsInRadius.routeTypeCount} types]
+          </p> */}
+          {/* <p className="m-0 w-full min-w-0 text-right">
+            [qualifying: {stats.qualifying.entryCount} entries / {stats.qualifying.stopCount} stops
+            / {stats.qualifying.routeCount} routes / {stats.qualifying.agencyCount} agencies /{' '}
+            {stats.qualifying.routeTypeCount} types]
+          </p> */}
+          <p className="m-0 w-full min-w-0 text-right">
+            [shown: {displayedStats.entryCount} entries / {displayedStats.stopCount} stops /{' '}
+            {displayedStats.routeCount} routes / {displayedStats.agencyCount} agencies /{' '}
+            {displayedStats.routeTypeCount} types]
+          </p>
+        </div>
+      )}
       {/* Header band: title left, radius right, on a single line, on the board's
           theme-aware panel face. */}
       <div
         className={cn(
-          'flex flex-col gap-1 border-b-0 px-4 py-2',
+          'flex flex-col gap-1 border-b-0 py-1 pr-2 pl-4',
+          // 'border',
           // BOARD_PANEL_BG,
           // BOARD_FRAME_COLOR,
         )}
       >
-        {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
-        {infoLevelFlag.isVerboseEnabled && (
-          <div className="flex items-baseline gap-3">
-            <p className="m-0 ml-auto w-full min-w-0 text-right text-xs">
-              [{meta.category} / rt {meta.routeTypes.join(',')} / dir {meta.directions.join(',')}{' '}
-              (max:
-              {meta.max},{meta.radius}
-              m)]
-            </p>
-          </div>
-        )}
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 border-0">
           {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
               The arrow is decorative; the phrase already states departures/arrivals. */}
           <h3
             className={cn(
-              'flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] uppercase',
+              'flex min-w-0 items-center gap-2 font-bold tracking-[0.18em] uppercase',
               TITLE_TEXT_CLASS_BY_SIZE[size],
             )}
           >
@@ -392,18 +526,30 @@ export function TransitDisplay2({
             {routeTypeIcon}
             <span className="truncate">{title}</span>
           </h3>
-          {/* Radius the board's stops were selected within (count is intentionally omitted). */}
-          <p
-            className={cn(
-              'm-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap',
-              ROW_TEXT_CLASS_BY_SIZE[size],
+
+          {/* Right side: stats badges + radius, grouped and right-aligned. */}
+          <div className="flex shrink-0 items-center gap-1">
+            <IconTextBadge
+              size={HEADER_STATS_ICONS_BY_SIZE[size].large.size}
+              icon={<Radio />}
+              text={`${meta.radius.toLocaleString(i18n.language)}m`}
+              textClassName={HEADER_STATS_ICONS_BY_SIZE[size].large.textClass}
+              iconClassName={HEADER_STATS_ICONS_BY_SIZE[size].large.iconClass}
+              frameClassName="p-1 border-none"
+              aria-label="radius"
+            />
+            {infoLevelFlag.isDetailedEnabled && (
+              <StatsBadges
+                size={size}
+                entryCount={stats.qualifying.entryCount}
+                stopCount={stats.qualifying.stopCount}
+                routeCount={stats.qualifying.routeCount}
+                agencyCount={stats.qualifying.agencyCount}
+              />
             )}
-          >
-            {meta.radius}m
-          </p>
+          </div>
         </div>
       </div>
-
       {/* Body: the rows (or the empty fallback). */}
       <div className={cn(BOARD_PANEL_BG, 'p-0')}>
         <ul className="m-0 list-none p-0">
