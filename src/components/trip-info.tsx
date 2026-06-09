@@ -14,6 +14,7 @@ import type { InfoLevelFlags } from '../utils/create-info-level';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
+import type { BaseLabelSize } from './label/base-label';
 import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 
 const sizeVariants = {
@@ -39,6 +40,16 @@ const sizeVariants = {
     label: 'text-[0.5rem]',
   },
 } as const;
+
+/**
+ * Size passed to {@link TimetableEntryAttributesLabels}, mapped from TripInfo's
+ * own `size`. Currently an identity mapping; per-size values are tuned here.
+ */
+const ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<keyof typeof sizeVariants, BaseLabelSize> = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'sm',
+};
 
 /**
  * Headsign display within TripInfo.
@@ -208,7 +219,7 @@ export function TripInfo({
 
       {attributes && (
         <TimetableEntryAttributesLabels
-          size={size}
+          size={ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
           attributes={attributes}
           showDisplayTerminal={true}
           showDisplayOrigin={true}

@@ -80,7 +80,7 @@ export function StopTimeItem({
   const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
 
   return (
-    <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
+    <div className="border-b border-[#e0e0e0] py-1 pl-0 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
         <StopTimeTimeInfo
           arrivalMinutes={entry.schedule.arrivalMinutes}
@@ -88,6 +88,7 @@ export function StopTimeItem({
           serviceDate={entry.serviceDate}
           now={now}
           size="md"
+          align="right"
           showArrivalTime={display.showArrivalTime}
           showDepartureTime={display.showDepartureTime}
           collapseToleranceMinutes={display.collapseToleranceMinutes}

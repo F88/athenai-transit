@@ -94,7 +94,7 @@ export function StopTimesItem({
           showAgency={showAgency}
         />
       </div>
-      <div className="flex items-center gap-3 pl-1">
+      <div className="flex items-center gap-2 pl-2">
         {/* Relative time hint — easy to scan at a glance (e.g. "あと5分").
             Kept as a non-wrapping single unit so the prefix stays glued to
             the value even on narrow screens. */}
@@ -123,7 +123,9 @@ export function StopTimesItem({
               <>
                 <AbsoluteStopTime
                   timeText={formatAbsoluteTime(displayTimes[i])}
-                  size="md"
+                  // size="md"
+                  size="lg"
+                  // size="xl"
                   showArrivalMarker={entry.patternPosition.isTerminal}
                   showDepartureMarker={false}
                   className="text-muted-foreground"

@@ -9,6 +9,18 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Storybook: `TransitDisplayEntry2` / `TransitDisplay2` の stories を追加した (#281)。
+- Storybook: `AbsoluteStopTime` の stories を追加した。
+
+### Changed
+
+- TransitDisplay2: route と stop で事業者言語の解決を分離し、headsign は route の運行事業者言語 (なければ `DEFAULT_AGENCY_LANG`) で、stop 名 / route badge は停留所の全事業者言語で解決するようにした (#281)。
+- Badge: `RouteBadge` / `AgencyBadge` の `showBorder` 既定値を `true` に変更した (全呼び出し元が明示指定済みのため既存表示は不変)。
+- StopTimeTimeInfo / TripInfo: 絶対 / 相対時刻および属性ラベルへ渡す表示サイズを、コンポーネントの `size` から per-size の変換テーブル経由で解決する形にした (#281)。
+- StopTimes: bottom sheet 行の絶対時刻サイズと余白を微調整した (#281)。
+
 ## [2026.06.08]
 
 ### Added
