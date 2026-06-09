@@ -645,8 +645,24 @@ describe('sortTransitDisplayDataWithMetaData', () => {
     directions: readonly (0 | 1 | 'none')[] = ['none'],
   ): TransitDisplayDataWithMetaData {
     return {
-      meta: { category, routeTypes: [routeType], directions, max: 10, radius: 100 },
+      meta: {
+        category,
+        routeTypes: [routeType],
+        directions,
+        max: 10,
+        radius: 100,
+      },
       data: { routeTypes: [routeType], directions, category, data: [] },
+      stats: {
+        stopsInRadius: { stopCount: 0, agencyCount: 0, routeCount: 0, routeTypeCount: 0 },
+        qualifying: {
+          entryCount: 0,
+          stopCount: 0,
+          agencyCount: 0,
+          routeCount: 0,
+          routeTypeCount: 0,
+        },
+      },
     };
   }
 

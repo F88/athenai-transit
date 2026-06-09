@@ -1,29 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { makeStop, makeStopWithContext } from '../../../__tests__/helpers';
-import type { Agency, AppRouteTypeValue } from '../../../types/app/transit';
-import type { StopWithContext } from '../../../types/app/transit-composed';
+import { makeRoute, makeStop } from '../../../__tests__/helpers';
+import type { AppRouteTypeValue, Route } from '../../../types/app/transit';
+import type { StopWithMeta } from '../../../types/app/transit-composed';
 import { computeStopWithMetaStats } from '../compute-stop-with-meta-stats';
 
-function makeAgency(id: string): Agency {
-  return {
-    agency_id: id,
-    agency_name: `Agency ${id}`,
-    agency_long_name: `Agency ${id}`,
-    agency_short_name: '',
-    agency_names: {},
-    agency_long_names: {},
-    agency_short_names: {},
-    agency_url: '',
-    agency_lang: 'ja',
-    agency_timezone: 'Asia/Tokyo',
-    agency_fare_url: '',
-    agency_colors: [],
-  };
+/** A route with an explicit agency_id (agencyCount derives from each route). */
+function routeOf(id: string, routeType: AppRouteTypeValue, agencyId: string): Route {
+  return { ...makeRoute(id, routeType), agency_id: agencyId };
 }
 
-function withAgencies(swc: StopWithContext, agencies: Agency[]): StopWithContext {
-  return { ...swc, agencies };
+/** A minimal StopWithMeta carrying the given routes (the only field summarized). */
+function stopWith(routes: Route[]): StopWithMeta {
+  return { stop: makeStop('s'), agencies: [], routes };
 }
 
 describe('computeStopWithMetaStats', () => {
@@ -36,24 +25,17 @@ describe('computeStopWithMetaStats', () => {
     });
   });
 
-  // A multi-stop set exercising every field at once, with cross-stop AND
-  // intra-stop repeats of agencies / routes / route types, asserted as a whole
-  // so a metric leaking into the wrong field is caught.
+  // Multi-stop set exercising every field at once, with cross-stop AND intra-stop
+  // repeats of routes / agencies / route types, asserted as a whole so a metric
+  // leaking into the wrong field is caught.
   it('aggregates all metrics together, deduping every entity dimension', () => {
-    const agencyA = makeAgency('a');
-    const agencyB = makeAgency('b');
-    const agencyC = makeAgency('c');
-    const stops: StopWithContext[] = [
-      // routes r1,r2 both type 3; agencies a,b (a duplicated within the stop)
-      withAgencies(makeStopWithContext(makeStop('s1'), ['r1', 'r2'], [3]), [
-        agencyA,
-        agencyA,
-        agencyB,
-      ]),
-      // routes r2 (repeat, type 3), r3 (type 2); agency b (repeat across stops)
-      withAgencies(makeStopWithContext(makeStop('s2'), ['r2', 'r3'], [3, 2]), [agencyB]),
-      // route r4 (type 11); agency c
-      withAgencies(makeStopWithContext(makeStop('s3'), ['r4'], [11]), [agencyC]),
+    const stops: StopWithMeta[] = [
+      // r1 (listed twice in this stop), r2 -- both type 3, agency a
+      stopWith([routeOf('r1', 3, 'a'), routeOf('r1', 3, 'a'), routeOf('r2', 3, 'a')]),
+      // r2 (repeat across stops), r3 type 2 agency b
+      stopWith([routeOf('r2', 3, 'a'), routeOf('r3', 2, 'b')]),
+      // r4 type 11 agency c
+      stopWith([routeOf('r4', 11, 'c')]),
     ];
 
     expect(computeStopWithMetaStats(stops)).toEqual({
@@ -64,11 +46,10 @@ describe('computeStopWithMetaStats', () => {
     });
   });
 
-  it('counts a service-less stop in stopCount but contributes no agencies/routes', () => {
-    const agencyA = makeAgency('a');
-    const stops: StopWithContext[] = [
-      withAgencies(makeStopWithContext(makeStop('s1'), ['r1'], [3]), [agencyA]),
-      makeStopWithContext(makeStop('empty'), []), // no routes/agencies, no service
+  it('counts a route-less stop in stopCount but not in route/agency counts', () => {
+    const stops: StopWithMeta[] = [
+      stopWith([routeOf('r1', 3, 'a')]),
+      stopWith([]), // no routes
     ];
     expect(computeStopWithMetaStats(stops)).toEqual({
       stopCount: 2,
@@ -78,42 +59,27 @@ describe('computeStopWithMetaStats', () => {
     });
   });
 
-  it('dedupes duplicate routes within a single stop', () => {
-    const stats = computeStopWithMetaStats([
-      makeStopWithContext(makeStop('s1'), ['r1', 'r1'], [3]),
-    ]);
-    expect(stats.routeCount).toBe(1);
-    expect(stats.routeTypeCount).toBe(1);
-  });
-
   it('counts falsy-but-valid route types (0, -1)', () => {
-    // The `!= null` guard must keep 0 (tram) and -1 (unknown); a truthy check
-    // would wrongly drop them.
+    // The `!= null` guard must keep 0 (tram) and -1 (unknown).
     const stats = computeStopWithMetaStats([
-      makeStopWithContext(makeStop('s1'), ['r0', 'rm1'], [0, -1]),
+      stopWith([routeOf('r0', 0, 'a'), routeOf('rm1', -1, 'a')]),
     ]);
     expect(stats.routeTypeCount).toBe(2);
   });
 
   it('skips a route with a missing route_type without counting it as a type', () => {
-    const swc = makeStopWithContext(makeStop('s1'), ['r1'], [3]);
-    // Malformed data: a route whose route_type is absent at runtime.
-    const malformed: StopWithContext = {
-      ...swc,
-      routes: [{ ...swc.routes[0], route_type: undefined as unknown as AppRouteTypeValue }],
+    const malformed: Route = {
+      ...routeOf('r1', 3, 'a'),
+      route_type: undefined as unknown as AppRouteTypeValue,
     };
-    const stats = computeStopWithMetaStats([malformed]);
-    expect(stats.routeCount).toBe(1); // route still counted by id
+    const stats = computeStopWithMetaStats([stopWith([malformed])]);
+    expect(stats.routeCount).toBe(1); // still counted by id
     expect(stats.routeTypeCount).toBe(0); // missing type not counted
   });
 
   it('counts stopCount by element, not by distinct stop_id', () => {
-    // Two entries with the same stop_id still count as two stops: callers are
-    // expected to pass one entry per stop, so stopCount is `stops.length`.
-    const stops = [
-      makeStopWithContext(makeStop('dup'), ['r1'], [3]),
-      makeStopWithContext(makeStop('dup'), ['r2'], [2]),
-    ];
+    // Both stops share a stop_id; stopCount is stops.length, so they count as two.
+    const stops = [stopWith([routeOf('r1', 3, 'a')]), stopWith([routeOf('r2', 2, 'a')])];
     expect(computeStopWithMetaStats(stops).stopCount).toBe(2);
   });
 });

@@ -6,6 +6,11 @@ import type {
 } from '../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
 import { minutesToDate } from '../calendar-utils';
+import { computeStopWithMetaStats, type StopWithMetaStats } from '../compute-stop-with-meta-stats';
+import {
+  computeTransitDisplayDatumStats,
+  type TransitDisplayDatumStats,
+} from '../compute-transit-display-datum-stats';
 import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
 
 /**
@@ -82,15 +87,33 @@ export interface RouteTypeCluster {
 }
 
 /**
- * A display: its {@link TransitDisplayMeta} descriptor plus the structural board
- * it describes in `data`. `meta` restates the board's category / routeTypes /
- * directions and adds `max` / `radius`.
+ * Derived aggregate stats attached to one display, kept because they cannot be
+ * recovered from the capped rows in `data`. Two scopes:
+ * - `stopsInRadius`: dataset-level (all stops within the board's radius; the same
+ *   value on every board of one build, like {@link TransitDisplayMeta.radius}).
+ * - `qualifying`: per-board, the pre-cap ("qualifying") entry stats; consumers
+ *   compare it against the rendered rows to detect truncation.
+ */
+export interface TransitDisplayStats {
+  /** Stats for ALL stops within the board's radius (dataset-level). */
+  stopsInRadius: StopWithMetaStats;
+  /** Pre-cap stats of the board's entries (per-board). */
+  qualifying: TransitDisplayDatumStats;
+}
+
+/**
+ * A display: its {@link TransitDisplayMeta} descriptor, the structural board it
+ * describes in `data`, and the derived {@link TransitDisplayStats}. `meta`
+ * restates the board's category / routeTypes / directions and adds `max` /
+ * `radius`.
  */
 export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The structural board this display describes. */
   data: TransitDisplayData;
+  /** Derived aggregate stats (radius-scope + per-board pre-cap). */
+  stats: TransitDisplayStats;
 }
 
 /** One stop event paired with the stop context it came from, before name resolution. */
@@ -433,7 +456,14 @@ export function buildTransitDisplayDataSet(
     condition.maxEntries,
   );
 
-  const dataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map((data) => ({
+  // Dataset-level stats for all stops in radius (computed once, shared by every
+  // board). Includes service-less stops, so it cannot be derived from the capped
+  // per-board rows.
+  const stopsInRadius = computeStopWithMetaStats(nearbyStops);
+
+  // sortAndCapTransitDisplayData maps `boards` in order, so sortedAndCapped[i]
+  // corresponds to boards[i]; the pre-cap ("qualifying") stats come from boards[i].
+  const dataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map((data, i) => ({
     meta: {
       category: data.category,
       routeTypes: data.routeTypes,
@@ -442,6 +472,10 @@ export function buildTransitDisplayDataSet(
       radius: radiusMeters,
     },
     data: data,
+    stats: {
+      stopsInRadius,
+      qualifying: computeTransitDisplayDatumStats(boards[i].data),
+    },
   }));
   return dataWithMetaData;
 }
