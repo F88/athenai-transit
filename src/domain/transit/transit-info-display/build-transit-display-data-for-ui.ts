@@ -22,6 +22,7 @@ import {
   type TransitDisplayDatum,
   type TransitDisplayMeta,
 } from './build-transit-display-data';
+import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 
 /**
  * Stop-level fields of a {@link TransitDisplayDatumForUi}, grouped so consumers can
@@ -99,34 +100,42 @@ export function buildTransitDisplayDatumForUi(
     if (cached !== undefined) {
       return cached;
     }
-    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
-    const name = getStopDisplayNames(stopWithContext.stop, preferredDisplayLangs, agencyLangs).name;
-    stopNameCache.set(stopWithContext.stop.stop_id, name);
-    return name;
+    const stopAgencies = stopWithContext.agencies;
+    const stopAgencyLangs = stopAgencies.map((agency) => agency.agency_lang);
+    const stopName = getStopDisplayNames(
+      stopWithContext.stop,
+      preferredDisplayLangs,
+      stopAgencyLangs,
+    ).name;
+    stopNameCache.set(stopWithContext.stop.stop_id, stopName);
+    return stopName;
   };
 
   return datum.map(({ timetableEntry, stop: stopWithContext }) => {
-    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
+    // [IMPORTANT] Use domain logic to determine the starting/ending point.
+    const attributes = getTimetableEntryAttributes(timetableEntry);
+
+    // Route
+    const route = timetableEntry.routeDirection.route;
     const routeAgency = stopWithContext.agencies.find(
-      (agency) => agency.agency_id === timetableEntry.routeDirection.route.agency_id,
+      (agency) => agency.agency_id === route.agency_id,
     );
-    const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
-    const routeName = getRouteDisplayNames(
-      timetableEntry.routeDirection.route,
-      preferredDisplayLangs,
-      routeAgencyLangs,
-      'short',
-    ).resolved.name;
+    const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
+    const routeName = getRouteDisplayNames(route, preferredDisplayLangs, routeAgencyLangs, 'short')
+      .resolved.name;
+    const agencyName = routeAgency
+      ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
+          .resolved.name || routeAgency.agency_id
+      : '';
+
+    // Headsign
     const headsign = getHeadsignDisplayNames(
       timetableEntry.routeDirection,
       preferredDisplayLangs,
       routeAgencyLangs,
       'stop',
     ).resolved.name;
-    const agencyName = routeAgency
-      ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
-          .resolved.name || routeAgency.agency_id
-      : '';
+
     // Include the service date: TripLocator is per-service (not per-day), so the
     // same (patternId, serviceId, tripIndex, stopIndex) can recur on different
     // service dates within one board, which would collide as a React key.
@@ -145,6 +154,7 @@ export function buildTransitDisplayDatumForUi(
       timetableEntry,
       timetableEntry.serviceDate,
     );
+
     return {
       key,
       stop: {
@@ -162,7 +172,7 @@ export function buildTransitDisplayDatumForUi(
       timeText: formatAbsoluteTime(
         minutesToDate(timetableEntry.serviceDate, categoryMinutes(timetableEntry, category)),
       ),
-      attributes: getTimetableEntryAttributes(timetableEntry),
+      attributes,
       arrivalMinutes: timetableEntry.schedule.arrivalMinutes,
       departureMinutes: timetableEntry.schedule.departureMinutes,
       serviceDate: timetableEntry.serviceDate,
