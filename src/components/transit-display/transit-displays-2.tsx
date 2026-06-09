@@ -32,6 +32,7 @@ import { AgencyBadge } from '../badge/agency-badge';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 import { Separator } from '../ui/separator';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
+import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
 
@@ -479,41 +480,40 @@ export function TransitDisplayEntry2({
   const infoLevelFlag = useInfoLevel(infoLevel);
 
   const { stop: stopWithContext, timetableEntry } = data;
+
   // [IMPORTANT] Use domain logic to determine the starting/ending point.
   const attributes = getTimetableEntryAttributes(timetableEntry);
 
-  // Distance is baked on the row (query-time); bearing is computed live from the
-  // current map center so the direction arrow tracks panning, like StopInfo.
-  const distanceRounded =
-    stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
-  const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.stop) : null;
-
-  const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
+  // Route
+  const route = timetableEntry.routeDirection.route;
   const routeAgency = stopWithContext.agencies.find(
-    (agency) => agency.agency_id === timetableEntry.routeDirection.route.agency_id,
+    (agency) => agency.agency_id === route.agency_id,
   );
-  const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
-  // const routeName = getRouteDisplayNames(
-  //   timetableEntry.routeDirection.route,
-  //   dataLangs,
-  //   routeAgencyLangs,
-  //   'short',
-  // ).resolved.name;
+  const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
+  const { routeColor } = resolveRouteColors(route, 'css-hex');
+
+  // Headsign
   const headsign = getHeadsignDisplayNames(
     timetableEntry.routeDirection,
     dataLangs,
     routeAgencyLangs,
     'stop',
   ).resolved.name;
-  // const agencyName = routeAgency
-  //   ? getAgencyDisplayNames(routeAgency, dataLangs, routeAgencyLangs, 'short').resolved.name ||
-  //     routeAgency.agency_id
-  //   : '';
 
-  const { routeColor } = resolveRouteColors(timetableEntry.routeDirection.route, 'css-hex');
+  // Stop agency
+  const stopAgencies = stopWithContext.agencies;
+  const stopAgencyLangs = stopAgencies.map((agency) => agency.agency_lang);
   // const { agencyColor } = routeAgency ? resolveAgencyColors(routeAgency, 'css-hex') : {};
 
-  const stopName = getStopDisplayNames(stopWithContext.stop, dataLangs, agencyLangs).name;
+  // Stop
+  const stop = stopWithContext.stop;
+  const stopName = getStopDisplayNames(stop, dataLangs, stopAgencyLangs).name;
+
+  // Distance is baked on the row (query-time); bearing is computed live from the
+  // current map center so the direction arrow tracks panning, like StopInfo.
+  const distanceRounded =
+    stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, stop) : null;
 
   // Inspection target for the time tap. The classic view gets this prebuilt by
   // buildTransitDisplayDatumForUi; this view keeps rows raw, so build it here so
@@ -579,10 +579,11 @@ export function TransitDisplayEntry2({
         <div className="flex items-center gap-2">
           <RouteBadge
             route={timetableEntry.routeDirection.route}
-            size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
             dataLang={dataLangs}
+            agencyLangs={stopAgencyLangs}
             infoLevel={infoLevel}
-            showBorder={false}
+            size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+            showBorder={true}
           />
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
