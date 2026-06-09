@@ -47,7 +47,7 @@ export function RouteBadge({
   dataLang,
   agencyLangs = DEFAULT_AGENCY_LANG,
   infoLevel,
-  showBorder = false,
+  showBorder = true,
   enableVerboseExtras = false,
   className,
 }: RouteBadgeProps) {
