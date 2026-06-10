@@ -18,8 +18,8 @@ const chiyodaBus: GtfsSourceDefinition = {
       datasetUrl:
         'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines/resource/0dfb9750-ed72-4f5a-9368-76ad4a5adea9',
-      resourceId: '0dfb9750-ed72-4f5a-9368-76ad4a5adea9',
+        'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines/resource/45cab9b6-8e6a-405e-812d-20503c622326',
+      resourceId: '45cab9b6-8e6a-405e-812d-20503c622326',
     },
     provider: {
       name: {
@@ -36,7 +36,7 @@ const chiyodaBus: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     downloadUrl:
-      'https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20260401',
+      'https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20260601',
   },
   pipeline: {
     outDir: 'chiyoda-bus',

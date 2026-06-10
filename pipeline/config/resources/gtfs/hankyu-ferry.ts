@@ -17,8 +17,8 @@ const hankyuFerry: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/hankyu_ferry',
       datasetUrl: 'https://ckan.odpt.org/dataset/hankyu_ferry_schedul_hankyu',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/hankyu_ferry_schedul_hankyu/resource/1c1fa67f-7a81-4107-b7f3-fe098096cb27',
-      resourceId: '1c1fa67f-7a81-4107-b7f3-fe098096cb27',
+        'https://ckan.odpt.org/dataset/hankyu_ferry_schedul_hankyu/resource/96223965-11e6-4b52-9662-9413a0f32f52',
+      resourceId: '96223965-11e6-4b52-9662-9413a0f32f52',
     },
     provider: {
       name: {
@@ -39,7 +39,7 @@ const hankyuFerry: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522',
+      'https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260610',
   },
   pipeline: {
     outDir: 'hankyu-ferry',

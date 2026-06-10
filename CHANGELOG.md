@@ -27,6 +27,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - TransitDisplay2: ヘッダのバッジサイズ / レイアウトを表示サイズ連動に整理した (#281)。
 - TransitDisplay2: 地図ドラッグ中に発生していた board / 行の不要な再計算 (名前 / 色 / 行先解決、表示 stats) を `useMemo` 化して削減した (#281)。
 - transit display のデータ構築を整理した: 距離フィルタを `stop-meta-filter` の `filterStopsWithinDistance` に分離し、`groupCandidatesIntoBoards` の方向分岐を統合、`buildTransitDisplayDataSet` の TSDoc / tests を整備した (#281)。
+- Data-source: hankyu-ferry の GTFS resource を 20260610 版へ更新。
+- Data-source: chiyoda-bus の GTFS resource を 20260601 版へ更新。
+- Data-source: kyoto-bus の GTFS resource を 20260613 版へ更新。
 
 ## [2026.06.08]
 

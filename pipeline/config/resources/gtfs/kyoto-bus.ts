@@ -17,8 +17,8 @@ const kyotoBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/kyoto_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/kyoto_bus_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/kyoto_bus_all_lines/resource/59778778-ecc0-4146-89b6-c7e275cf9c48',
-      resourceId: '59778778-ecc0-4146-89b6-c7e275cf9c48',
+        'https://ckan.odpt.org/dataset/kyoto_bus_all_lines/resource/586d66a4-1562-49bc-92d1-5b1e50cc13bd',
+      resourceId: '586d66a4-1562-49bc-92d1-5b1e50cc13bd',
     },
     provider: {
       name: {
@@ -38,7 +38,7 @@ const kyotoBus: GtfsSourceDefinition = {
     routeTypes: ['bus'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260516',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260613',
   },
   pipeline: {
     outDir: 'kyoto-bus',
