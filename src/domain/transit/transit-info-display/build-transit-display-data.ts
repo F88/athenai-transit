@@ -277,6 +277,18 @@ function presentDirections(
   );
 }
 
+/**
+ * One direction bucket for {@link groupCandidatesIntoBoards}: which candidates
+ * belong to it (`matches`) and how to label the resulting board's `directions`
+ * (`directionsOf`). Not split = a single bucket spanning all present directions;
+ * split = one bucket per direction value. Modeling both as a list lets the
+ * category / filter / skip / push logic run once instead of being duplicated.
+ */
+interface DirectionGroup {
+  matches: (candidate: TransitDisplayCandidate) => boolean;
+  directionsOf: (selected: readonly TransitDisplayCandidate[]) => readonly (0 | 1 | 'none')[];
+}
+
 /** Present route types among candidates, in `ROUTE_TYPE_DISPLAY_ORDER`. */
 function presentRouteTypesInDisplayOrder(
   candidates: readonly TransitDisplayCandidate[],
@@ -348,57 +360,31 @@ export function groupCandidatesIntoBoards(
   const clusters = clusterCandidatesByRouteType(candidates, condition.routeGrouping);
   const boards: TransitDisplayData[] = [];
 
+  // Direction buckets: not split = a single bucket spanning all present
+  // directions; split = one bucket per direction. Category-major iteration
+  // (departures, then arrivals) keeps a board's departures before its arrivals,
+  // e.g. at a terminus where one direction is arrivals-only and another is
+  // departures-only. Empty cells are skipped.
+  const directionGroups: readonly DirectionGroup[] = condition.splitByDirection
+    ? DIRECTIONS.map((direction) => ({
+        matches: (c) => c.timetableEntry.routeDirection.direction === direction,
+        directionsOf: () => [direction ?? 'none'],
+      }))
+    : [{ matches: () => true, directionsOf: presentDirections }];
+
   for (const cluster of clusters) {
-    if (!condition.splitByDirection) {
-      // Not split: one board per category, covering the directions present.
-      for (const category of CATEGORIES) {
-        const boardCandidates = cluster.candidates.filter((c) =>
-          categoryQualifies(c.timetableEntry, category),
-        );
-
-        console.debug(
-          `Board candidates for route types ${cluster.routeTypes.join(',')}, category ${category}, no direction split: ${boardCandidates.length}`,
-        );
-
-        if (boardCandidates.length === 0) {
-          continue;
-        }
-        boards.push({
-          routeTypes: cluster.routeTypes,
-          directions: presentDirections(boardCandidates),
-          category,
-          data: boardCandidates,
-        });
-      }
-      continue;
-    }
-
-    // Split: one board per (category, direction) bucket. Category-major
-    // (departures, then arrivals) so a board's departures always precede its
-    // arrivals -- e.g. at a terminus where one direction is arrivals-only and
-    // another is departures-only, the departures still list first. Empty buckets
-    // are skipped.
     for (const category of CATEGORIES) {
-      for (const direction of DIRECTIONS) {
+      for (const group of directionGroups) {
         const boardCandidates = cluster.candidates.filter(
-          (c) =>
-            c.timetableEntry.routeDirection.direction === direction &&
-            categoryQualifies(c.timetableEntry, category),
-        );
-
-        console.debug(
-          `Board candidates for route types ${cluster.routeTypes.join(',')}, category ${category}, direction ${
-            direction ?? 'none'
-          }: ${boardCandidates.length}`,
+          (c) => group.matches(c) && categoryQualifies(c.timetableEntry, category),
         );
 
         if (boardCandidates.length === 0) {
           continue;
         }
-        const directions: readonly (0 | 1 | 'none')[] = [direction ?? 'none'];
         boards.push({
           routeTypes: cluster.routeTypes,
-          directions,
+          directions: group.directionsOf(boardCandidates),
           category,
           data: boardCandidates,
         });
