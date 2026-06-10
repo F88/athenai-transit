@@ -247,9 +247,6 @@ export function sortByCategory(
   );
 }
 
-/** Conventional radius (metres) for the nearby-stops displays; callers pass this explicitly. */
-export const NEARBY_RADIUS_M = 100;
-
 /** Board categories, in the order they appear within a route type (departures then arrivals). */
 const CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
@@ -290,14 +287,24 @@ interface DirectionGroup {
 }
 
 /**
- * Clusters candidates by route type, per the grouping strategy:
- * - `route`: one cluster per route type (in `ROUTE_TYPE_DISPLAY_ORDER`)
- * - `none`: a single cluster of all candidates (its `routeTypes` are the present types)
+ * Clusters candidates by route type, per the grouping strategy. `effectiveRouteTypes`
+ * is the set of route types eligible to appear -- typically the route types served
+ * by the nearby stops -- so a board's `routeTypes` reflect what the stops offer. It
+ * is intersected with `ROUTE_TYPE_DISPLAY_ORDER` for ordering and dedup.
+ *
+ * - `route`: one cluster per eligible route type (display order); an eligible type
+ *   with no candidates yields an empty cluster.
+ * - `none`: a single cluster of all candidates; its `routeTypes` are the eligible
+ *   types in display order.
  * - `custom`: one cluster per caller-supplied group, in the given order. Each
- *   board's `routeTypes` keep the group's order (present types only), not the
- *   display order, so the caller controls the emoji order. Groups may overlap --
- *   each cluster independently keeps the candidates whose route type is in its
- *   group, so a route type listed in two groups appears on both boards.
+ *   cluster's `routeTypes` are the group's eligible types (group order preserved,
+ *   not display order), and a group with no eligible type is dropped. Groups may
+ *   overlap -- each cluster independently keeps the candidates whose route type is
+ *   in its group, so a route type listed in two groups appears on both boards.
+ *
+ * Eligibility only constrains which route types form clusters and how they are
+ * labelled; empty clusters are NOT turned into boards --
+ * {@link groupCandidatesIntoBoards} drops empty category cells.
  *
  * Clustering is lossy, so the caller chooses the strategy via the condition.
  */
@@ -306,40 +313,30 @@ export function clusterCandidatesByRouteType(
   grouping: TransitDisplayRouteGrouping,
   effectiveRouteTypes: readonly AppRouteTypeValue[],
 ): RouteTypeCluster[] {
-  // This value represents the route types to output even when candidates is empty.
-  const requiredRouteTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((rt) =>
+  // Eligible route types in display order (those served by the stops).
+  const eligibleRouteTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((rt) =>
     effectiveRouteTypes.includes(rt),
   );
 
-  // per route type
   if (grouping.kind === 'route') {
-    return requiredRouteTypes.map((routeType) => {
-      return {
-        routeTypes: [routeType],
-        candidates: selectByRouteType(candidates, routeType),
-      };
-    });
+    return eligibleRouteTypes.map((routeType) => ({
+      routeTypes: [routeType],
+      candidates: selectByRouteType(candidates, routeType),
+    }));
   }
 
-  // no grouping
   if (grouping.kind === 'none') {
-    return [
-      {
-        routeTypes: requiredRouteTypes.flat(),
-        candidates: [...candidates],
-      },
-    ];
+    return [{ routeTypes: eligibleRouteTypes, candidates: [...candidates] }];
   }
 
   // 'custom': one cluster per group (groups may overlap). Keep each group's own
-  // order for routeTypes (present types only), so the caller's order is honored.
-  // const presentSet = new Set<number>(presentRouteTypes);
-  const presentSet = new Set<number>(requiredRouteTypes);
+  // order for routeTypes (eligible types only), so the caller's order is honored.
+  const eligibleSet = new Set<number>(eligibleRouteTypes);
   return grouping.groups
     .map((group) => {
       const groupSet = new Set<number>(group);
       return {
-        routeTypes: group.filter((routeType) => presentSet.has(routeType)),
+        routeTypes: group.filter((routeType) => eligibleSet.has(routeType)),
         candidates: candidates.filter((c) =>
           groupSet.has(c.timetableEntry.routeDirection.route.route_type),
         ),
@@ -349,9 +346,15 @@ export function clusterCandidatesByRouteType(
 }
 
 /**
- * Groups candidates into boards: clusters them by route type (per
- * `routeGrouping`), optionally by direction of travel (when `splitByDirection`),
- * then by category, yielding one board per non-empty cell.
+ * Groups candidates into boards: derives the eligible route types from `stops`
+ * (each stop's `routeTypes`, independent of whether trips remain), clusters
+ * candidates by route type (per `routeGrouping`), optionally by direction of
+ * travel (when `splitByDirection`), then by category, yielding one board per
+ * non-empty cell.
+ *
+ * `stops` are the (already distance-filtered) nearby stops. As a guard it returns
+ * no boards when there are no stops, or none are in service today -- the same
+ * empty cases the caller surfaces via {@link resolveTransitDisplayState}.
  *
  * A trip's `routeDirection.direction` (which mirrors GTFS `direction_id` where
  * the source provides it) is route-local and arbitrary across routes, so a
@@ -367,12 +370,16 @@ export function clusterCandidatesByRouteType(
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   condition: TransitDisplayCondition,
-  // effectiveRouteTypes: readonly AppRouteTypeValue[],
   stops: readonly StopWithContext[],
 ): TransitDisplayData[] {
-  // All route types served by the stops (from each stop's `routeTypes`,
-  // independent of whether any trips remain), in display order -- so a route type
-  // present at a stop can be surfaced as an empty board even with no candidates.
+  // Nothing to show when there are no stops, or none are in service today.
+  if (stops.length === 0 || stops.every((stop) => stop.stopServiceState === 'no-service')) {
+    return [];
+  }
+
+  // Route types served by the stops (from each stop's `routeTypes`, independent
+  // of whether any trips remain), in display order -- so a board's routeTypes
+  // reflect what the stops offer.
   const effectiveRouteTypes: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
     (routeType) => stops.some((stop) => stop.routeTypes.includes(routeType)),
   );
@@ -403,14 +410,6 @@ export function groupCandidatesIntoBoards(
         const boardCandidates = cluster.candidates.filter(
           (c) => group.matches(c) && categoryQualifies(c.timetableEntry, category),
         );
-
-        if (stops.length === 0) {
-          continue;
-        }
-
-        if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
-          continue;
-        }
 
         if (boardCandidates.length === 0) {
           continue;
@@ -448,17 +447,23 @@ export function sortAndCapTransitDisplayData(
 /**
  * Runs the structural board-building steps in sequence: distance filter ->
  * flatten -> group into boards (route-type / category clustering) -> sort + cap,
- * then attaches each display's `meta` descriptor. Each step is single-purpose so
- * the next one's concern does not leak into it.
+ * then attaches each display's `meta` descriptor and derived `stats`. Each step
+ * is single-purpose so the next one's concern does not leak into it.
+ *
+ * Returns an empty array when no boards result -- e.g. no stops within the radius,
+ * none in service today, or no candidate qualifies for any cell (see
+ * {@link groupCandidatesIntoBoards}); the caller decides the empty-state UI (see
+ * {@link resolveTransitDisplayState}).
  *
  * Rows are intentionally left RAW: the returned `data` holds the structural
  * board, not resolved UI rows. Resolving display names / times into UI data is
- * the caller's choice, so this stays i18n-free and the UI owns rendering.
+ * the caller's choice, so this stays i18n-free and the UI owns rendering. Each
+ * display also carries {@link TransitDisplayStats} (radius-scope stop stats plus
+ * the per-board pre-cap entry stats) that cannot be recovered from the capped rows.
  *
  * `radiusMeters` (the range stops are selected within; also each display's
  * `meta.radius`) and `condition` (the per-display selection condition) are both
  * required so the caller states the selection scope explicitly.
- * {@link NEARBY_RADIUS_M} is the conventional radius to pass.
  */
 export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
@@ -536,21 +541,20 @@ export function sortTransitDisplayDataWithMetaData(
   });
 }
 
-  export type TransitDisplayStopsState = 'ready' | 'no-stops' | 'no-service';
-  export type TransitDisplayStatus = {
-    radius: number;
-    state: TransitDisplayStopsState;
-  };
+export type TransitDisplayStopsState = 'ready' | 'no-stops' | 'no-service';
+export type TransitDisplayStatus = {
+  radius: number;
+  state: TransitDisplayStopsState;
+};
 
-  export function resolveTransitDisplayState(
-    stops: readonly StopWithContext[],
-  ): TransitDisplayStopsState {
-    if (stops.length === 0) {
-      return 'no-stops';
-    }
-    if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
-      return 'no-service';
-    }
-    return 'ready';
+export function resolveTransitDisplayState(
+  stops: readonly StopWithContext[],
+): TransitDisplayStopsState {
+  if (stops.length === 0) {
+    return 'no-stops';
   }
-
+  if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
+    return 'no-service';
+  }
+  return 'ready';
+}

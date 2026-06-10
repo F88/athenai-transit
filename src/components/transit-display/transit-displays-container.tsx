@@ -13,7 +13,6 @@ import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
-  NEARBY_RADIUS_M,
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
@@ -26,6 +25,8 @@ import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('TransitDisplaysContainer');
+
+export const NEARBY_RADIUS_M = 100;
 
 /**
  * Route types whose boards are NOT split by direction: bus, trolleybus, and

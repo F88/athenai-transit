@@ -235,14 +235,15 @@ describe('categoryQualifies', () => {
 });
 
 describe('clusterCandidatesByRouteType', () => {
-  it("'route': one cluster per route type in display order, candidates placed by type", () => {
+  it("'route': one cluster per eligible route type in display order, candidates placed by type", () => {
     const subway = candidateOf(subwayRoute); // route_type 1
     const bus = candidateOf(busRoute); // route_type 3
 
-    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'route' });
+    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'route' }, [1, 3]);
 
-    // One cluster per ROUTE_TYPE_DISPLAY_ORDER entry, each a single-type cluster.
-    expect(clusters.map((c) => c.routeTypes)).toEqual(ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]));
+    // One single-type cluster per eligible type, in display order.
+    const eligible = ROUTE_TYPE_DISPLAY_ORDER.filter((t) => t === 1 || t === 3);
+    expect(clusters.map((c) => c.routeTypes)).toEqual(eligible.map((t) => [t]));
     expect(clusters.find((c) => c.routeTypes[0] === busRoute.route_type)?.candidates).toEqual([
       bus,
     ]);
@@ -251,11 +252,28 @@ describe('clusterCandidatesByRouteType', () => {
     ]);
   });
 
-  it("'none': a single cluster of all candidates; routeTypes are present types in display order", () => {
+  it("'route': an eligible route type with no candidates yields an empty cluster", () => {
+    const bus = candidateOf(busRoute); // 3; route_type 2 is eligible but has no candidate
+
+    const clusters = clusterCandidatesByRouteType([bus], { kind: 'route' }, [2, 3]);
+
+    const railCluster = clusters.find((c) => c.routeTypes[0] === railRoute.route_type);
+    expect(railCluster?.candidates).toEqual([]);
+  });
+
+  it("'route': ignores route types not in effectiveRouteTypes", () => {
+    const bus = candidateOf(busRoute); // 3
+
+    const clusters = clusterCandidatesByRouteType([bus], { kind: 'route' }, [3]);
+
+    expect(clusters.map((c) => c.routeTypes)).toEqual([[3]]);
+  });
+
+  it("'none': a single cluster of all candidates; routeTypes are eligible types in display order", () => {
     const subway = candidateOf(subwayRoute); // 1
     const bus = candidateOf(busRoute); // 3
 
-    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'none' });
+    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'none' }, [1, 3]);
 
     expect(clusters).toHaveLength(1);
     // 3 precedes 1 in ROUTE_TYPE_DISPLAY_ORDER.
@@ -268,10 +286,11 @@ describe('clusterCandidatesByRouteType', () => {
     const rail = candidateOf(railRoute); // 2
     const bus = candidateOf(busRoute); // 3
 
-    const clusters = clusterCandidatesByRouteType([subway, rail, bus], {
-      kind: 'custom',
-      groups: [[1], [1, 2], [3, 1]],
-    });
+    const clusters = clusterCandidatesByRouteType(
+      [subway, rail, bus],
+      { kind: 'custom', groups: [[1], [1, 2], [3, 1]] },
+      [1, 2, 3],
+    );
 
     expect(clusters).toHaveLength(3);
     // [1, 2] stays [1, 2] (group order), not the display order [2, 1].
@@ -282,53 +301,64 @@ describe('clusterCandidatesByRouteType', () => {
     const subway = candidateOf(subwayRoute); // 1
     const rail = candidateOf(railRoute); // 2
 
-    const clusters = clusterCandidatesByRouteType([subway, rail], {
-      kind: 'custom',
-      groups: [[1], [1, 2]],
-    });
+    const clusters = clusterCandidatesByRouteType(
+      [subway, rail],
+      { kind: 'custom', groups: [[1], [1, 2]] },
+      [1, 2],
+    );
 
     // subway (1) appears in both clusters; candidates keep the input order.
     expect(clusters[0].candidates).toEqual([subway]);
     expect(clusters[1].candidates).toEqual([subway, rail]);
   });
 
-  it("'custom': drops route types absent from the candidates", () => {
-    const subway = candidateOf(subwayRoute); // 1; route_type 2 is absent
+  it("'custom': drops route types not eligible, and a group left with none", () => {
+    const subway = candidateOf(subwayRoute); // 1; only route_type 1 is eligible
 
-    const clusters = clusterCandidatesByRouteType([subway], { kind: 'custom', groups: [[2, 1]] });
+    const partial = clusterCandidatesByRouteType(
+      [subway],
+      { kind: 'custom', groups: [[2, 1]] },
+      [1],
+    );
+    expect(partial[0].routeTypes).toEqual([1]); // 2 dropped (not eligible)
+    expect(partial[0].candidates).toEqual([subway]);
 
-    expect(clusters[0].routeTypes).toEqual([1]); // 2 dropped (not present)
-    expect(clusters[0].candidates).toEqual([subway]);
+    const dropped = clusterCandidatesByRouteType([subway], { kind: 'custom', groups: [[2]] }, [1]);
+    expect(dropped).toEqual([]); // whole group ineligible -> no cluster
   });
 
   it("'route': keeps the input order of candidates within a single type's cluster", () => {
     const bus1 = candidateOf(busRoute); // 3
     const bus2 = candidateOf(busRoute); // 3
 
-    const clusters = clusterCandidatesByRouteType([bus1, bus2], { kind: 'route' });
+    const clusters = clusterCandidatesByRouteType([bus1, bus2], { kind: 'route' }, [3]);
 
     const busCluster = clusters.find((c) => c.routeTypes[0] === busRoute.route_type);
     expect(busCluster?.candidates).toEqual([bus1, bus2]);
   });
 
-  it("'route': returns the full display-order skeleton even with no candidates (all clusters empty)", () => {
-    const clusters = clusterCandidatesByRouteType([], { kind: 'route' });
+  it("'route': returns a cluster per eligible type even with no candidates (all empty)", () => {
+    const clusters = clusterCandidatesByRouteType([], { kind: 'route' }, [1, 2, 3]);
 
-    // Structure is data-independent: one single-type cluster per display-order entry.
-    expect(clusters.map((c) => c.routeTypes)).toEqual(ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]));
+    const eligible = ROUTE_TYPE_DISPLAY_ORDER.filter((t) => t === 1 || t === 2 || t === 3);
+    expect(clusters.map((c) => c.routeTypes)).toEqual(eligible.map((t) => [t]));
     expect(clusters.every((c) => c.candidates.length === 0)).toBe(true);
   });
 
-  it("'none': returns a single empty cluster with no route types for no candidates", () => {
-    const clusters = clusterCandidatesByRouteType([], { kind: 'none' });
-
-    expect(clusters).toEqual([{ routeTypes: [], candidates: [] }]);
+  it('returns no eligible clusters when effectiveRouteTypes is empty', () => {
+    expect(clusterCandidatesByRouteType([], { kind: 'route' }, [])).toEqual([]);
+    // 'none' still returns its single cluster, but with no route types.
+    expect(clusterCandidatesByRouteType([], { kind: 'none' }, [])).toEqual([
+      { routeTypes: [], candidates: [] },
+    ]);
+    const bus = candidateOf(busRoute);
+    expect(clusterCandidatesByRouteType([bus], { kind: 'custom', groups: [[3]] }, [])).toEqual([]);
   });
 
   it("'custom': returns no clusters for an empty groups list", () => {
     const bus = candidateOf(busRoute);
 
-    expect(clusterCandidatesByRouteType([bus], { kind: 'custom', groups: [] })).toEqual([]);
+    expect(clusterCandidatesByRouteType([bus], { kind: 'custom', groups: [] }, [3])).toEqual([]);
   });
 });
 
@@ -368,11 +398,16 @@ describe('groupCandidatesIntoBoards', () => {
   };
   const split: TransitDisplayCondition = { ...notSplit, splitByDirection: true };
 
+  // Nearby stops the boards are built for. `effectiveRouteTypes` is derived from
+  // these stops' `routeTypes`, so they must cover the candidates' route types.
+  const busStops: readonly StopWithContext[] = [STUB_STOP]; // routeTypes [3], boardable
+  const busAndSubwayStops: readonly StopWithContext[] = [{ ...STUB_STOP, routeTypes: [1, 3] }];
+
   it('not split: produces a departures and an arrivals board per cluster', () => {
     const a = cand({ direction: 0 });
     const b = cand({ direction: 1 });
 
-    const boards = groupCandidatesIntoBoards([a, b], notSplit);
+    const boards = groupCandidatesIntoBoards([a, b], notSplit, busStops);
 
     expect(boards).toHaveLength(2);
     expect(boards.map((bd) => bd.category)).toEqual(['departures', 'arrivals']);
@@ -387,7 +422,7 @@ describe('groupCandidatesIntoBoards', () => {
     const plain0 = cand({ direction: 0 }); // qualifies both
     const terminal1 = cand({ direction: 1, isTerminal: true }); // arrivals only
 
-    const boards = groupCandidatesIntoBoards([plain0, terminal1], notSplit);
+    const boards = groupCandidatesIntoBoards([plain0, terminal1], notSplit, busStops);
 
     const departures = boards.find((bd) => bd.category === 'departures');
     const arrivals = boards.find((bd) => bd.category === 'arrivals');
@@ -403,7 +438,7 @@ describe('groupCandidatesIntoBoards', () => {
     const dir0 = cand({ direction: 0 });
     // no direction 1 -> its buckets are empty and dropped
 
-    const boards = groupCandidatesIntoBoards([noDir, dir0], split);
+    const boards = groupCandidatesIntoBoards([noDir, dir0], split, busStops);
 
     // Category-major: all departures (in direction order) before all arrivals.
     expect(boards.map((bd) => ({ directions: bd.directions, category: bd.category }))).toEqual([
@@ -420,7 +455,7 @@ describe('groupCandidatesIntoBoards', () => {
   it('split: drops a board left empty after category qualification', () => {
     const terminal0 = cand({ direction: 0, isTerminal: true }); // arrivals only
 
-    const boards = groupCandidatesIntoBoards([terminal0], split);
+    const boards = groupCandidatesIntoBoards([terminal0], split, busStops);
 
     // direction-0 departures board is empty (terminal excluded) and dropped.
     expect(boards).toHaveLength(1);
@@ -429,23 +464,38 @@ describe('groupCandidatesIntoBoards', () => {
     expect(boards[0].data).toEqual([terminal0]);
   });
 
-  it('returns no boards for empty input', () => {
-    expect(groupCandidatesIntoBoards([], notSplit)).toEqual([]);
-    expect(groupCandidatesIntoBoards([], split)).toEqual([]);
+  it('returns no boards when there are candidates but the cells are empty', () => {
+    // Stops in service, but no candidates -> every cell is empty -> no boards.
+    expect(groupCandidatesIntoBoards([], notSplit, busStops)).toEqual([]);
+    expect(groupCandidatesIntoBoards([], split, busStops)).toEqual([]);
+  });
+
+  it('returns no boards when there are no stops', () => {
+    expect(groupCandidatesIntoBoards([cand({ direction: 0 })], notSplit, [])).toEqual([]);
+  });
+
+  it('returns no boards when every stop is out of service today', () => {
+    const noServiceStops: readonly StopWithContext[] = [
+      { ...STUB_STOP, stopServiceState: 'no-service' },
+    ];
+
+    expect(groupCandidatesIntoBoards([cand({ direction: 0 })], notSplit, noServiceStops)).toEqual(
+      [],
+    );
   });
 
   it("respects the route grouping: 'route' yields per-route-type boards in display order", () => {
     const bus = cand({ route: busRoute }); // 3
     const subway = cand({ route: subwayRoute }); // 1
 
-    const boards = groupCandidatesIntoBoards([bus, subway], {
-      maxEntries: 100,
-      routeGrouping: { kind: 'route' },
-      splitByDirection: false,
-    });
+    const boards = groupCandidatesIntoBoards(
+      [bus, subway],
+      { maxEntries: 100, routeGrouping: { kind: 'route' }, splitByDirection: false },
+      busAndSubwayStops,
+    );
 
-    // Empty route-type clusters are dropped; 3 precedes 1 in display order, and
-    // each surviving type yields a departures + arrivals board.
+    // Empty cells are dropped; 3 precedes 1 in display order, and each route type
+    // with candidates yields a departures + arrivals board.
     expect(boards.map((bd) => ({ routeTypes: bd.routeTypes, category: bd.category }))).toEqual([
       { routeTypes: [3], category: 'departures' },
       { routeTypes: [3], category: 'arrivals' },
