@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.06.10]
+
 ### Added
 
 - Storybook: `TransitDisplayEntry2` / `TransitDisplay2` の stories を追加した (#281)。
