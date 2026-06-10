@@ -1,4 +1,4 @@
-import { useMemo, type RefObject } from 'react';
+import { useEffect, useMemo, type RefObject } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -80,14 +80,25 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
-  // distance filter: stops within radiusMeters of the center
-  const nearbyStops: StopWithContext[] = filterStopsWithinDistance(stopTimes, NEARBY_RADIUS_M);
+  // distance filter: stops within radiusMeters of the center. Memoized so its
+  // reference is stable while stopTimes are unchanged -- otherwise the
+  // transitDisplayData useMemo below (which depends on it) would rebuild every render.
+  const nearbyStops = useMemo(
+    () => filterStopsWithinDistance(stopTimes, NEARBY_RADIUS_M),
+    [stopTimes],
+  );
 
-  const transitDisplayStatus = {
-    radius: NEARBY_RADIUS_M,
-    state: resolveTransitDisplayState(nearbyStops),
-  };
-  logger.debug(`TransitDisplayStatus: ${JSON.stringify(transitDisplayStatus)}`);
+  const transitDisplayStatus = useMemo(
+    () => ({ radius: NEARBY_RADIUS_M, state: resolveTransitDisplayState(nearbyStops) }),
+    [nearbyStops],
+  );
+
+  // Log only when the status value (radius / state) changes, not every render.
+  useEffect(() => {
+    logger.debug(
+      `TransitDisplayStatus: radius=${transitDisplayStatus.radius}, state=${transitDisplayStatus.state}`,
+    );
+  }, [transitDisplayStatus.radius, transitDisplayStatus.state]);
 
   const transitDisplayData = useMemo(() => {
     // Build boards only when there is something to show; `no-stops` / `no-service`
