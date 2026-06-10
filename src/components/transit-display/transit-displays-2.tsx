@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import { ArrowRight, ArrowUp, Building2, Clock, Radio, Route, Signpost } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -203,8 +203,6 @@ export function TransitDisplays2({
       </div>
     );
   }
-
-  // console.debug(`TransitDisplayStatus: radius=${status.radius}, state=${status.state}`);
 
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
     dataWithMeta.some((display) => display.meta.category === category),
@@ -463,19 +461,27 @@ export function TransitDisplay2({
 
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
+
   // Board title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
   const isArrivalBoard = meta.category === 'arrivals';
+
   const routeTypeIcon = routeTypesEmoji(meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay2.arrivals' : 'transitDisplay2.departures');
+
   // Displayed (post-cap) stats are derivable from the rendered rows, so the
-  // component computes them here rather than carrying them on `stats`.
-  const displayedStats = computeTransitDisplayDatumStats(transitDisplayData.data);
+  // component computes them here rather than carrying them on `stats`. Memoized on
+  // the rows: it depends only on the board data, not on mapCenter / now, so a map
+  // drag does not recompute it.
+  const displayedStats = useMemo(
+    () => computeTransitDisplayDatumStats(transitDisplayData.data),
+    [transitDisplayData.data],
+  );
+
   // A board that mixes route types: rows then show their own trip route-type emoji.
   // const hasMultiRoutes = meta.routeTypes.length >= 2;
-
   return (
     // Each board is a theme-aware panel with a soft rounded border; stacked
     // boards are separated by their own surface and margin.
@@ -647,45 +653,58 @@ export function TransitDisplayEntry2({
 
   const { stop: stopWithContext, timetableEntry } = data;
 
-  // [IMPORTANT] Use domain logic to determine the starting/ending point.
-  const attributes = getTimetableEntryAttributes(timetableEntry);
+  // Attribute / route color / headsign / stop name resolution depends only on the
+  // row data and the display languages -- NOT on mapCenter or now. Memoize it so a
+  // map drag (which re-renders the row to update `bearing`) does not re-run this
+  // resolution while data / dataLangs are unchanged.
+  const resolved = useMemo(() => {
+    const { stop: swc, timetableEntry: entry } = data;
+    // [IMPORTANT] Use domain logic to determine the starting/ending point.
+    const attributes = getTimetableEntryAttributes(entry);
+    const route = entry.routeDirection.route;
+    const routeAgency = swc.agencies.find((agency) => agency.agency_id === route.agency_id);
+    const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
+    const { routeColor } = resolveRouteColors(route, 'css-hex');
+    const headsign = getHeadsignDisplayNames(
+      entry.routeDirection,
+      dataLangs,
+      routeAgencyLangs,
+      'stop',
+    ).resolved.name;
+    const stopAgencyLangs = swc.agencies.map((agency) => agency.agency_lang);
+    const stopName = getStopDisplayNames(swc.stop, dataLangs, stopAgencyLangs).name;
+    // Distance is baked on the row (query-time), so it is data, not mapCenter.
+    const distanceRounded = swc.distance != null ? Math.round(swc.distance) : null;
+    // Inspection target for the time tap. The classic view gets this prebuilt by
+    // buildTransitDisplayDatumForUi; this view keeps rows raw, so build it here so
+    // StopTimeTimeInfo renders as an inspection button (it stays a plain div when
+    // inspectTarget is missing).
+    const inspectTarget = buildTripInspectionTarget(entry, entry.serviceDate);
+    return {
+      attributes,
+      routeAgency,
+      routeColor,
+      headsign,
+      stopAgencyLangs,
+      stopName,
+      distanceRounded,
+      inspectTarget,
+    };
+  }, [data, dataLangs]);
+  const {
+    attributes,
+    routeAgency,
+    routeColor,
+    headsign,
+    stopAgencyLangs,
+    stopName,
+    distanceRounded,
+    inspectTarget,
+  } = resolved;
 
-  // Route
-  const route = timetableEntry.routeDirection.route;
-  const routeAgency = stopWithContext.agencies.find(
-    (agency) => agency.agency_id === route.agency_id,
-  );
-  const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
-  const { routeColor } = resolveRouteColors(route, 'css-hex');
-
-  // Headsign
-  const headsign = getHeadsignDisplayNames(
-    timetableEntry.routeDirection,
-    dataLangs,
-    routeAgencyLangs,
-    'stop',
-  ).resolved.name;
-
-  // Stop agency
-  const stopAgencies = stopWithContext.agencies;
-  const stopAgencyLangs = stopAgencies.map((agency) => agency.agency_lang);
-  // const { agencyColor } = routeAgency ? resolveAgencyColors(routeAgency, 'css-hex') : {};
-
-  // Stop
-  const stop = stopWithContext.stop;
-  const stopName = getStopDisplayNames(stop, dataLangs, stopAgencyLangs).name;
-
-  // Distance is baked on the row (query-time); bearing is computed live from the
-  // current map center so the direction arrow tracks panning, like StopInfo.
-  const distanceRounded =
-    stopWithContext.distance != null ? Math.round(stopWithContext.distance) : null;
-  const bearing = mapCenter ? getBearingDeg(mapCenter, stop) : null;
-
-  // Inspection target for the time tap. The classic view gets this prebuilt by
-  // buildTransitDisplayDatumForUi; this view keeps rows raw, so build it here so
-  // StopTimeTimeInfo renders as an inspection button (it stays a plain div when
-  // inspectTarget is missing).
-  const inspectTarget = buildTripInspectionTarget(timetableEntry, timetableEntry.serviceDate);
+  // Bearing is computed live from the current map center so the direction arrow
+  // tracks panning (like StopInfo); it stays outside the memo.
+  const bearing = mapCenter ? getBearingDeg(mapCenter, stopWithContext.stop) : null;
 
   return (
     // No `data-stop-id` here: the same stop id can appear in several rows across
