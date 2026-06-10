@@ -1,4 +1,4 @@
-import { useMemo, type RefObject } from 'react';
+import { useEffect, useMemo, type RefObject } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +13,7 @@ import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
-  NEARBY_RADIUS_M,
+  resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
@@ -21,6 +21,12 @@ import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-or
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 import type { AppRouteTypeValue } from '@/types/app/transit';
 import { TransitDisplays2 } from './transit-displays-2';
+import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('TransitDisplaysContainer');
+
+export const NEARBY_RADIUS_M = 100;
 
 /**
  * Route types whose boards are NOT split by direction: bus, trolleybus, and
@@ -74,7 +80,34 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
+  // distance filter: stops within radiusMeters of the center. Memoized so its
+  // reference is stable while stopTimes are unchanged -- otherwise the
+  // transitDisplayData useMemo below (which depends on it) would rebuild every render.
+  const nearbyStops = useMemo(
+    () => filterStopsWithinDistance(stopTimes, NEARBY_RADIUS_M),
+    [stopTimes],
+  );
+
+  const transitDisplayStatus = useMemo(
+    () => ({ radius: NEARBY_RADIUS_M, state: resolveTransitDisplayState(nearbyStops) }),
+    [nearbyStops],
+  );
+
+  // Log only when the status value (radius / state) changes, not every render.
+  useEffect(() => {
+    logger.debug(
+      `TransitDisplayStatus: radius=${transitDisplayStatus.radius}, state=${transitDisplayStatus.state}`,
+    );
+  }, [transitDisplayStatus.radius, transitDisplayStatus.state]);
+
   const transitDisplayData = useMemo(() => {
+    // Build boards only when there is something to show; `no-stops` / `no-service`
+    // produce no boards, so skip the work and let TransitDisplays2 render the
+    // reason from `transitDisplayStatus`.
+    if (transitDisplayStatus.state !== 'ready') {
+      return [];
+    }
+
     const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
 
     // Per-mode direction policy is composed here rather than inside the builder:
@@ -86,18 +119,24 @@ export function TransitDisplaysContainer({
     // sortTransitDisplayDataWithMetaData (so the order is correct
     // regardless of which modes share a stop -- the raw concat is not in display
     // order). Rows stay raw here; TransitDisplays resolves them into UI data.
-    const directionUnsplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+
+    const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
       routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByDirection: false,
     });
-    const directionSplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+    const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
       routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByDirection: true,
     });
-    return sortTransitDisplayDataWithMetaData([...directionUnsplitRaw, ...directionSplitRaw]);
-  }, [stopTimes, infoLevel]);
+
+    return sortTransitDisplayDataWithMetaData([
+      //
+      ...directionUnsplitRaw,
+      ...directionSplitRaw,
+    ]);
+  }, [infoLevel, nearbyStops, transitDisplayStatus.state]);
 
   return (
     <div
@@ -111,6 +150,7 @@ export function TransitDisplaysContainer({
       {viewId === 'transit-display' ? (
         <TransitDisplays
           dataWithMeta={transitDisplayData}
+          status={transitDisplayStatus}
           dataLangs={dataLangs}
           emptyMessage={t('stop.timetable.allFilteredOut')}
           now={now}
@@ -123,6 +163,7 @@ export function TransitDisplaysContainer({
       ) : (
         <TransitDisplays2
           dataWithMeta={transitDisplayData}
+          status={transitDisplayStatus}
           dataLangs={dataLangs}
           now={now}
           mapCenter={mapCenter}

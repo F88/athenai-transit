@@ -152,6 +152,21 @@
   "transitDisplay": {
     "recentCount": "Latest {{count}} ({{radius}}m)",
     "entryCount": "{{count}} ({{radius}}m)",
+    "stopCount": "{{count}} stops",
+    "departures": "DEPARTURES",
+    "arrivals": "ARRIVALS",
+    "filter": {
+      "label": "Boards to show",
+      "departures": "Departures",
+      "arrivals": "Arrivals"
+    }
+  },
+  "transitDisplay2": {
+    "recentCount": "Latest {{count}} ({{radius}}m)",
+    "entryCount": "{{count}} ({{radius}}m)",
+    "stopCount": "{{count}} stops",
+    "empty": "Transit display covers stops within {{radius}}m",
+    "noService": "No service today at stops",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS",
     "filter": {

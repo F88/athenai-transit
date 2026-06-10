@@ -74,6 +74,34 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
+/**
+ * Absolute-time text size per container display size. Maps the component-level
+ * `size` to the size passed to {@link AbsoluteStopTime}. Currently an identity
+ * mapping; per-size values are tuned here independently of
+ * {@link REL_TIME_SIZE_BY_SIZE}.
+ */
+const ABS_TIME_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
+  xs: 'sm',
+  sm: 'md',
+  md: 'lg',
+  lg: 'xl',
+  xl: 'xl',
+};
+
+/**
+ * Relative-time text size per container display size. Maps the component-level
+ * `size` to the size passed to {@link RelativeTime}. Currently an identity
+ * mapping; per-size values are tuned here independently of
+ * {@link ABS_TIME_SIZE_BY_SIZE}.
+ */
+const REL_TIME_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  xl: 'xl',
+};
+
 export function StopTimeTimeInfo({
   arrivalMinutes,
   departureMinutes,
@@ -107,7 +135,8 @@ export function StopTimeTimeInfo({
   const shouldShowArrivalAbsolute = showArrivalTime && !arrivalCollapsed;
   const shouldShowDepartureAbsolute = showDepartureTime;
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
-  const timeSize: ExtendedDisplaySize = size;
+  const absTimeSize = ABS_TIME_SIZE_BY_SIZE[size];
+  const relTimeSize = REL_TIME_SIZE_BY_SIZE[size];
 
   const textAlignClassName =
     align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right';
@@ -157,7 +186,7 @@ export function StopTimeTimeInfo({
         <RelativeTime
           time={time}
           now={now}
-          size={timeSize}
+          size={relTimeSize}
           align={align}
           showPastTime={true}
           hidePrefix={diffMs > 90 * 60 * 1000}
@@ -174,7 +203,7 @@ export function StopTimeTimeInfo({
             key={variant.key}
             timeText={variant.timeText}
             textColor={textAppearance?.color}
-            size={timeSize}
+            size={absTimeSize}
             weight={textAppearance?.weight}
             className={textAppearance?.className}
             showDepartureMarker={variant.showDepartureMarker}
@@ -193,6 +222,7 @@ export function StopTimeTimeInfo({
     <button
       type="button"
       className={cn(
+        // 'border',
         rootClassName,
         'cursor-pointer rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
       )}

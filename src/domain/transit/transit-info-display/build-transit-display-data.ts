@@ -6,6 +6,12 @@ import type {
 } from '../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
 import { minutesToDate } from '../calendar-utils';
+import { computeStopWithMetaStats, type StopWithMetaStats } from '../compute-stop-with-meta-stats';
+import { filterStopsWithinDistance } from '../stop-meta-filter';
+import {
+  computeTransitDisplayDatumStats,
+  type TransitDisplayDatumStats,
+} from '../compute-transit-display-datum-stats';
 import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
 
 /**
@@ -82,15 +88,33 @@ export interface RouteTypeCluster {
 }
 
 /**
- * A display: its {@link TransitDisplayMeta} descriptor plus the structural board
- * it describes in `data`. `meta` restates the board's category / routeTypes /
- * directions and adds `max` / `radius`.
+ * Derived aggregate stats attached to one display, kept because they cannot be
+ * recovered from the capped rows in `data`. Two scopes:
+ * - `stopsInRadius`: dataset-level (all stops within the board's radius; the same
+ *   value on every board of one build, like {@link TransitDisplayMeta.radius}).
+ * - `qualifying`: per-board, the pre-cap ("qualifying") entry stats; consumers
+ *   compare it against the rendered rows to detect truncation.
+ */
+export interface TransitDisplayStats {
+  /** Stats for ALL stops within the board's radius (dataset-level). */
+  stopsInRadius: StopWithMetaStats;
+  /** Pre-cap stats of the board's entries (per-board). */
+  qualifying: TransitDisplayDatumStats;
+}
+
+/**
+ * A display: its {@link TransitDisplayMeta} descriptor, the structural board it
+ * describes in `data`, and the derived {@link TransitDisplayStats}. `meta`
+ * restates the board's category / routeTypes / directions and adds `max` /
+ * `radius`.
  */
 export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The structural board this display describes. */
   data: TransitDisplayData;
+  /** Derived aggregate stats (radius-scope + per-board pre-cap). */
+  stats: TransitDisplayStats;
 }
 
 /** One stop event paired with the stop context it came from, before name resolution. */
@@ -183,18 +207,6 @@ export function categoryQualifies(
 }
 
 /**
- * Distance filter: stops whose precomputed `distance` is within
- * `radiusMeters` of the query centre. `distance` is precomputed (metres), so no
- * coordinate maths is needed here.
- */
-export function filterStopsWithinRadius(
-  stops: readonly StopWithContext[],
-  radiusMeters: number,
-): StopWithContext[] {
-  return stops.filter((stop) => stop.distance !== undefined && stop.distance <= radiusMeters);
-}
-
-/**
  * Flattens every stop's `stopTimes` into candidates, each paired with its source
  * stop context: the single candidate type the selectors below operate on.
  */
@@ -235,9 +247,6 @@ export function sortByCategory(
   );
 }
 
-/** Conventional radius (metres) for the nearby-stops displays; callers pass this explicitly. */
-export const NEARBY_RADIUS_M = 100;
-
 /** Board categories, in the order they appear within a route type (departures then arrivals). */
 const CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
@@ -265,58 +274,87 @@ function presentDirections(
   );
 }
 
-/** Present route types among candidates, in `ROUTE_TYPE_DISPLAY_ORDER`. */
-function presentRouteTypesInDisplayOrder(
-  candidates: readonly TransitDisplayCandidate[],
-): AppRouteTypeValue[] {
-  const present = new Set(candidates.map((c) => c.timetableEntry.routeDirection.route.route_type));
-  return ROUTE_TYPE_DISPLAY_ORDER.filter((routeType) => present.has(routeType));
+/**
+ * One direction bucket for {@link groupCandidatesIntoBoards}: which candidates
+ * belong to it (`matches`) and how to label the resulting board's `directions`
+ * (`directionsOf`). Not split = a single bucket spanning all present directions;
+ * split = one bucket per direction value. Modeling both as a list lets the
+ * category / filter / skip / push logic run once instead of being duplicated.
+ */
+interface DirectionGroup {
+  matches: (candidate: TransitDisplayCandidate) => boolean;
+  directionsOf: (selected: readonly TransitDisplayCandidate[]) => readonly (0 | 1 | 'none')[];
 }
 
 /**
- * Clusters candidates by route type, per the grouping strategy:
- * - `route`: one cluster per route type (in `ROUTE_TYPE_DISPLAY_ORDER`)
- * - `none`: a single cluster of all candidates (its `routeTypes` are the present types)
+ * Clusters candidates by route type, per the grouping strategy. `effectiveRouteTypes`
+ * is the set of route types eligible to appear -- typically the route types served
+ * by the nearby stops -- so a board's `routeTypes` reflect what the stops offer. It
+ * is intersected with `ROUTE_TYPE_DISPLAY_ORDER` for ordering and dedup.
+ *
+ * - `route`: one cluster per eligible route type (display order); an eligible type
+ *   with no candidates yields an empty cluster.
+ * - `none`: a single cluster of all candidates; its `routeTypes` are the eligible
+ *   types in display order.
  * - `custom`: one cluster per caller-supplied group, in the given order. Each
- *   board's `routeTypes` keep the group's order (present types only), not the
- *   display order, so the caller controls the emoji order. Groups may overlap --
- *   each cluster independently keeps the candidates whose route type is in its
- *   group, so a route type listed in two groups appears on both boards.
+ *   cluster's `routeTypes` are the group's eligible types (group order preserved,
+ *   not display order), and a group with no eligible type is dropped. Groups may
+ *   overlap -- each cluster independently keeps the candidates whose route type is
+ *   in its group, so a route type listed in two groups appears on both boards.
+ *
+ * Eligibility only constrains which route types form clusters and how they are
+ * labelled; empty clusters are NOT turned into boards --
+ * {@link groupCandidatesIntoBoards} drops empty category cells.
  *
  * Clustering is lossy, so the caller chooses the strategy via the condition.
  */
 export function clusterCandidatesByRouteType(
   candidates: readonly TransitDisplayCandidate[],
   grouping: TransitDisplayRouteGrouping,
+  effectiveRouteTypes: readonly AppRouteTypeValue[],
 ): RouteTypeCluster[] {
+  // Eligible route types in display order (those served by the stops).
+  const eligibleRouteTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((rt) =>
+    effectiveRouteTypes.includes(rt),
+  );
+
   if (grouping.kind === 'route') {
-    return ROUTE_TYPE_DISPLAY_ORDER.map((routeType) => ({
+    return eligibleRouteTypes.map((routeType) => ({
       routeTypes: [routeType],
       candidates: selectByRouteType(candidates, routeType),
     }));
   }
-  const presentTypes = presentRouteTypesInDisplayOrder(candidates);
+
   if (grouping.kind === 'none') {
-    return [{ routeTypes: presentTypes, candidates: [...candidates] }];
+    return [{ routeTypes: eligibleRouteTypes, candidates: [...candidates] }];
   }
+
   // 'custom': one cluster per group (groups may overlap). Keep each group's own
-  // order for routeTypes (present types only), so the caller's order is honored.
-  const presentSet = new Set<number>(presentTypes);
-  return grouping.groups.map((group) => {
-    const groupSet = new Set<number>(group);
-    return {
-      routeTypes: group.filter((routeType) => presentSet.has(routeType)),
-      candidates: candidates.filter((c) =>
-        groupSet.has(c.timetableEntry.routeDirection.route.route_type),
-      ),
-    };
-  });
+  // order for routeTypes (eligible types only), so the caller's order is honored.
+  const eligibleSet = new Set<number>(eligibleRouteTypes);
+  return grouping.groups
+    .map((group) => {
+      const groupSet = new Set<number>(group);
+      return {
+        routeTypes: group.filter((routeType) => eligibleSet.has(routeType)),
+        candidates: candidates.filter((c) =>
+          groupSet.has(c.timetableEntry.routeDirection.route.route_type),
+        ),
+      };
+    })
+    .filter((cluster) => cluster.routeTypes.length > 0);
 }
 
 /**
- * Groups candidates into boards: clusters them by route type (per
- * `routeGrouping`), optionally by direction of travel (when `splitByDirection`),
- * then by category, yielding one board per non-empty cell.
+ * Groups candidates into boards: derives the eligible route types from `stops`
+ * (each stop's `routeTypes`, independent of whether trips remain), clusters
+ * candidates by route type (per `routeGrouping`), optionally by direction of
+ * travel (when `splitByDirection`), then by category, yielding one board per
+ * non-empty cell.
+ *
+ * `stops` are the (already distance-filtered) nearby stops. As a guard it returns
+ * no boards when there are no stops, or none are in service today -- the same
+ * empty cases the caller surfaces via {@link resolveTransitDisplayState}.
  *
  * A trip's `routeDirection.direction` (which mirrors GTFS `direction_id` where
  * the source provides it) is route-local and arbitrary across routes, so a
@@ -332,49 +370,54 @@ export function clusterCandidatesByRouteType(
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   condition: TransitDisplayCondition,
+  stops: readonly StopWithContext[],
 ): TransitDisplayData[] {
-  const clusters = clusterCandidatesByRouteType(candidates, condition.routeGrouping);
+  // Nothing to show when there are no stops, or none are in service today.
+  if (stops.length === 0 || stops.every((stop) => stop.stopServiceState === 'no-service')) {
+    return [];
+  }
+
+  // Route types served by the stops (from each stop's `routeTypes`, independent
+  // of whether any trips remain), in display order -- so a board's routeTypes
+  // reflect what the stops offer.
+  const effectiveRouteTypes: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
+    (routeType) => stops.some((stop) => stop.routeTypes.includes(routeType)),
+  );
+
+  const clusters = clusterCandidatesByRouteType(
+    candidates,
+    condition.routeGrouping,
+    effectiveRouteTypes,
+  );
+
   const boards: TransitDisplayData[] = [];
 
-  for (const cluster of clusters) {
-    if (!condition.splitByDirection) {
-      // Not split: one board per category, covering the directions present.
-      for (const category of CATEGORIES) {
-        const boardCandidates = cluster.candidates.filter((c) =>
-          categoryQualifies(c.timetableEntry, category),
-        );
-        if (boardCandidates.length === 0) {
-          continue;
-        }
-        boards.push({
-          routeTypes: cluster.routeTypes,
-          directions: presentDirections(boardCandidates),
-          category,
-          data: boardCandidates,
-        });
-      }
-      continue;
-    }
+  // Direction buckets: not split = a single bucket spanning all present
+  // directions; split = one bucket per direction. Category-major iteration
+  // (departures, then arrivals) keeps a board's departures before its arrivals,
+  // e.g. at a terminus where one direction is arrivals-only and another is
+  // departures-only. Empty cells are skipped.
+  const directionGroups: readonly DirectionGroup[] = condition.splitByDirection
+    ? DIRECTIONS.map((direction) => ({
+        matches: (c) => c.timetableEntry.routeDirection.direction === direction,
+        directionsOf: () => [direction ?? 'none'],
+      }))
+    : [{ matches: () => true, directionsOf: presentDirections }];
 
-    // Split: one board per (category, direction) bucket. Category-major
-    // (departures, then arrivals) so a board's departures always precede its
-    // arrivals -- e.g. at a terminus where one direction is arrivals-only and
-    // another is departures-only, the departures still list first. Empty buckets
-    // are skipped.
+  for (const cluster of clusters) {
     for (const category of CATEGORIES) {
-      for (const direction of DIRECTIONS) {
+      for (const group of directionGroups) {
         const boardCandidates = cluster.candidates.filter(
-          (c) =>
-            c.timetableEntry.routeDirection.direction === direction &&
-            categoryQualifies(c.timetableEntry, category),
+          (c) => group.matches(c) && categoryQualifies(c.timetableEntry, category),
         );
+
         if (boardCandidates.length === 0) {
           continue;
         }
-        const directions: readonly (0 | 1 | 'none')[] = [direction ?? 'none'];
+
         boards.push({
           routeTypes: cluster.routeTypes,
-          directions,
+          directions: group.directionsOf(boardCandidates),
           category,
           data: boardCandidates,
         });
@@ -404,17 +447,23 @@ export function sortAndCapTransitDisplayData(
 /**
  * Runs the structural board-building steps in sequence: distance filter ->
  * flatten -> group into boards (route-type / category clustering) -> sort + cap,
- * then attaches each display's `meta` descriptor. Each step is single-purpose so
- * the next one's concern does not leak into it.
+ * then attaches each display's `meta` descriptor and derived `stats`. Each step
+ * is single-purpose so the next one's concern does not leak into it.
+ *
+ * Returns an empty array when no boards result -- e.g. no stops within the radius,
+ * none in service today, or no candidate qualifies for any cell (see
+ * {@link groupCandidatesIntoBoards}); the caller decides the empty-state UI (see
+ * {@link resolveTransitDisplayState}).
  *
  * Rows are intentionally left RAW: the returned `data` holds the structural
  * board, not resolved UI rows. Resolving display names / times into UI data is
- * the caller's choice, so this stays i18n-free and the UI owns rendering.
+ * the caller's choice, so this stays i18n-free and the UI owns rendering. Each
+ * display also carries {@link TransitDisplayStats} (radius-scope stop stats plus
+ * the per-board pre-cap entry stats) that cannot be recovered from the capped rows.
  *
  * `radiusMeters` (the range stops are selected within; also each display's
  * `meta.radius`) and `condition` (the per-display selection condition) are both
  * required so the caller states the selection scope explicitly.
- * {@link NEARBY_RADIUS_M} is the conventional radius to pass.
  */
 export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
@@ -422,18 +471,31 @@ export function buildTransitDisplayDataSet(
   condition: TransitDisplayCondition,
 ): TransitDisplayDataWithMetaData[] {
   // distance filter: stops within radiusMeters of the center
-  const nearbyStops: StopWithContext[] = filterStopsWithinRadius(stops, radiusMeters);
+  const nearbyStops: StopWithContext[] = filterStopsWithinDistance(stops, radiusMeters);
+
   // flatten each stop's stopTimes into candidates
   const candidates: TransitDisplayCandidate[] = toTransitDisplayCandidates(nearbyStops);
+
   // cluster by route type, optionally by direction, then split by category
-  const boards: TransitDisplayData[] = groupCandidatesIntoBoards(candidates, condition);
-  // sort by time, cap each board
+  const boards: TransitDisplayData[] = groupCandidatesIntoBoards(
+    candidates,
+    condition,
+    nearbyStops,
+  );
+
   const sortedAndCapped: TransitDisplayData[] = sortAndCapTransitDisplayData(
     boards,
     condition.maxEntries,
   );
 
-  const dataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map((data) => ({
+  // Dataset-level stats for all stops in radius (computed once, shared by every
+  // board). Includes service-less stops, so it cannot be derived from the capped
+  // per-board rows.
+  const stopsInRadius = computeStopWithMetaStats(nearbyStops);
+
+  // sortAndCapTransitDisplayData maps `boards` in order, so sortedAndCapped[i]
+  // corresponds to boards[i]; the pre-cap ("qualifying") stats come from boards[i].
+  const dataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map((data, i) => ({
     meta: {
       category: data.category,
       routeTypes: data.routeTypes,
@@ -442,6 +504,10 @@ export function buildTransitDisplayDataSet(
       radius: radiusMeters,
     },
     data: data,
+    stats: {
+      stopsInRadius,
+      qualifying: computeTransitDisplayDatumStats(boards[i].data),
+    },
   }));
   return dataWithMetaData;
 }
@@ -473,4 +539,22 @@ export function sortTransitDisplayDataWithMetaData(
     const kb = orderKey(b);
     return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
   });
+}
+
+export type TransitDisplayStopsState = 'ready' | 'no-stops' | 'no-service';
+export type TransitDisplayStatus = {
+  radius: number;
+  state: TransitDisplayStopsState;
+};
+
+export function resolveTransitDisplayState(
+  stops: readonly StopWithContext[],
+): TransitDisplayStopsState {
+  if (stops.length === 0) {
+    return 'no-stops';
+  }
+  if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
+    return 'no-service';
+  }
+  return 'ready';
 }

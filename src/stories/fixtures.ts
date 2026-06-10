@@ -4,6 +4,8 @@
  * Provides realistic test data based on actual GTFS sources.
  * Import from `src/stories/fixtures` in story files.
  */
+import type { StopWithMetaStats } from '../domain/transit/compute-stop-with-meta-stats';
+import type { TransitDisplayStats } from '../domain/transit/transit-info-display/build-transit-display-data';
 import type { Agency, Route, Stop } from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
@@ -1298,6 +1300,23 @@ export const headsignLong: TranslatableText = {
     'ja-Hrkt': 'ひじょうに ながい もくてきち けいゆ ちてん を たすう ふくむ いきさき',
     en: 'Very Long Destination Via Many Intermediate Points',
   },
+};
+
+/**
+ * Default radius-scope stop stats for TransitDisplay meta in stories.
+ * Mirrors a small multi-agency cluster (the exact figures are illustrative).
+ */
+export const storyStopStats: StopWithMetaStats = {
+  stopCount: 6,
+  agencyCount: 2,
+  routeCount: 3,
+  routeTypeCount: 1,
+};
+
+/** Default derived stats bundle for a TransitDisplay (radius-scope + per-board). */
+export const storyTransitDisplayStats: TransitDisplayStats = {
+  stopsInRadius: storyStopStats,
+  qualifying: { entryCount: 8, stopCount: 6, routeCount: 3, agencyCount: 2, routeTypeCount: 1 },
 };
 
 /** Default service date for stories. */

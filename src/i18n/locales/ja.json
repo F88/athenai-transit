@@ -152,8 +152,23 @@
   "transitDisplay": {
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
     "entryCount": "{{count}} 件 ({{radius}}m)",
+    "stopCount": "{{count}} のりば",
     "departures": "出発 Departures",
     "arrivals": "到着 Arrivals",
+    "filter": {
+      "label": "表示する便",
+      "departures": "出発",
+      "arrivals": "到着"
+    }
+  },
+  "transitDisplay2": {
+    "recentCount": "直近 {{count}} 件 ({{radius}}m)",
+    "entryCount": "{{count}} 件 ({{radius}}m)",
+    "stopCount": "{{count}} のりば",
+    "empty": "{{radius}}m 以内にのりばがありません",
+    "noService": "本日の運行便はありません",
+    "departures": "出発",
+    "arrivals": "到着",
     "filter": {
       "label": "表示する便",
       "departures": "出発",

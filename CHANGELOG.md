@@ -9,6 +9,23 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Storybook: `TransitDisplayEntry2` / `TransitDisplay2` の stories を追加した (#281)。
+- Storybook: `AbsoluteStopTime` の stories を追加した。
+- TransitDisplay2: ヘッダに radius 圏内の集計 (のりば数 / 路線数 / 事業者数) と radius バッジを表示するようにした (#281)。
+- TransitDisplay2: 対象のりばが無い (`no-stops`) / 当日運行が無い (`no-service`) 場合に、その旨のメッセージを表示するようにした (#281)。
+
+### Changed
+
+- TransitDisplay2: route と stop で事業者言語の解決を分離し、headsign は route の運行事業者言語 (なければ `DEFAULT_AGENCY_LANG`) で、stop 名 / route badge は停留所の全事業者言語で解決するようにした (#281)。
+- Badge: `RouteBadge` / `AgencyBadge` の `showBorder` 既定値を `true` に変更した (全呼び出し元が明示指定済みのため既存表示は不変)。
+- StopTimeTimeInfo / TripInfo: 絶対 / 相対時刻および属性ラベルへ渡す表示サイズを、コンポーネントの `size` から per-size の変換テーブル経由で解決する形にした (#281)。
+- StopTimes: bottom sheet 行の絶対時刻サイズと余白を微調整した (#281)。
+- TransitDisplay2: ヘッダのバッジサイズ / レイアウトを表示サイズ連動に整理した (#281)。
+- TransitDisplay2: 地図ドラッグ中に発生していた board / 行の不要な再計算 (名前 / 色 / 行先解決、表示 stats) を `useMemo` 化して削減した (#281)。
+- transit display のデータ構築を整理した: 距離フィルタを `stop-meta-filter` の `filterStopsWithinDistance` に分離し、`groupCandidatesIntoBoards` の方向分岐を統合、`buildTransitDisplayDataSet` の TSDoc / tests を整備した (#281)。
+
 ## [2026.06.08]
 
 ### Added
