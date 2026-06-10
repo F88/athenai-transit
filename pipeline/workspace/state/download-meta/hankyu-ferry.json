@@ -2,12 +2,12 @@
   "sourceName": "hankyu-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-09T05:37:02.837Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522",
-  "size": 10697,
+  "downloadedAt": "2026-06-10T06:36:25.708Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260610",
+  "size": 10574,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1851,
-  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20260609-053704.zip",
+  "durationMs": 1462,
+  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20260610-063627.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,11 +15,11 @@
     },
     {
       "name": "calendar.txt",
-      "size": 436
+      "size": 424
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1357
+      "size": 391
     },
     {
       "name": "fare_attributes.txt",
@@ -63,7 +63,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 1634
+      "size": 1610
     },
     {
       "name": "translations.txt",
@@ -71,15 +71,15 @@
     },
     {
       "name": "trips.txt",
-      "size": 1351
+      "size": 1327
     }
   ],
   "feedInfo": {
     "publisherName": "阪九フェリー株式会社",
     "publisherUrl": "https://www.han9f.co.jp/",
     "lang": "ja",
-    "startDate": "20260508",
-    "endDate": "20260609",
+    "startDate": "20260610",
+    "endDate": "20260930",
     "version": "2.0"
   }
 }

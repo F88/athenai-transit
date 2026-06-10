@@ -2,12 +2,12 @@
   "sourceName": "kyoto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-09T05:36:31.281Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260516",
-  "size": 919052,
+  "downloadedAt": "2026-06-10T06:35:54.194Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260613",
+  "size": 1006504,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2953,
-  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20260609-053634.zip",
+  "durationMs": 3010,
+  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20260610-063557.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -27,7 +27,7 @@
     },
     {
       "name": "pattern_jp.txt",
-      "size": 17095
+      "size": 17154
     },
     {
       "name": "stop_times.txt",
@@ -70,8 +70,8 @@
     "publisherName": "京都バス",
     "publisherUrl": "https://www.kyotobus.jp/",
     "lang": "ja",
-    "startDate": "20260516",
+    "startDate": "20260607",
     "endDate": "20260930",
-    "version": "20260516_20260930"
+    "version": "20260607_20260930"
   }
 }
