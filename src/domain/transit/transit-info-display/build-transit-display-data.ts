@@ -7,6 +7,7 @@ import type {
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
 import { minutesToDate } from '../calendar-utils';
 import { computeStopWithMetaStats, type StopWithMetaStats } from '../compute-stop-with-meta-stats';
+import { filterStopsWithinDistance } from '../stop-meta-filter';
 import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
@@ -206,18 +207,6 @@ export function categoryQualifies(
 }
 
 /**
- * Distance filter: stops whose precomputed `distance` is within
- * `radiusMeters` of the query centre. `distance` is precomputed (metres), so no
- * coordinate maths is needed here.
- */
-export function filterStopsWithinRadius(
-  stops: readonly StopWithContext[],
-  radiusMeters: number,
-): StopWithContext[] {
-  return stops.filter((stop) => stop.distance !== undefined && stop.distance <= radiusMeters);
-}
-
-/**
  * Flattens every stop's `stopTimes` into candidates, each paired with its source
  * stop context: the single candidate type the selectors below operate on.
  */
@@ -366,6 +355,11 @@ export function groupCandidatesIntoBoards(
         const boardCandidates = cluster.candidates.filter((c) =>
           categoryQualifies(c.timetableEntry, category),
         );
+
+        console.debug(
+          `Board candidates for route types ${cluster.routeTypes.join(',')}, category ${category}, no direction split: ${boardCandidates.length}`,
+        );
+
         if (boardCandidates.length === 0) {
           continue;
         }
@@ -391,6 +385,13 @@ export function groupCandidatesIntoBoards(
             c.timetableEntry.routeDirection.direction === direction &&
             categoryQualifies(c.timetableEntry, category),
         );
+
+        console.debug(
+          `Board candidates for route types ${cluster.routeTypes.join(',')}, category ${category}, direction ${
+            direction ?? 'none'
+          }: ${boardCandidates.length}`,
+        );
+
         if (boardCandidates.length === 0) {
           continue;
         }
@@ -445,7 +446,7 @@ export function buildTransitDisplayDataSet(
   condition: TransitDisplayCondition,
 ): TransitDisplayDataWithMetaData[] {
   // distance filter: stops within radiusMeters of the center
-  const nearbyStops: StopWithContext[] = filterStopsWithinRadius(stops, radiusMeters);
+  const nearbyStops: StopWithContext[] = filterStopsWithinDistance(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
   const candidates: TransitDisplayCandidate[] = toTransitDisplayCandidates(nearbyStops);
   // cluster by route type, optionally by direction, then split by category
