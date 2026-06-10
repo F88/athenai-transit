@@ -7,6 +7,7 @@ import {
   getTimetableEntriesState,
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { cn } from '../lib/utils';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
@@ -221,10 +222,17 @@ export function NearbyStop({
     return null;
   };
 
+  const stopCardBgClass = isSelected ? 'bg-info/10' : 'bg-[#f5f7fa] dark:bg-gray-800';
+  const stopCardBorderClass = isSelected ? 'border border-info/40' : '';
+
   return (
     <div
       data-stop-id={stop.stop_id}
-      className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border-info/40 bg-info/10 border' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
+      className={cn(
+        'mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0',
+        stopCardBorderClass,
+        stopCardBgClass,
+      )}
       onClick={() => onStopSelected(stop.stop_id)}
     >
       {stopHeader}
