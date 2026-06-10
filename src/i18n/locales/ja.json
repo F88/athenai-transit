@@ -165,6 +165,8 @@
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
     "entryCount": "{{count}} 件 ({{radius}}m)",
     "stopCount": "{{count}} のりば",
+    "empty": "{{radius}}m 以内にのりばがありません",
+    "noService": "本日の運行便はありません",
     "departures": "出発",
     "arrivals": "到着",
     "filter": {

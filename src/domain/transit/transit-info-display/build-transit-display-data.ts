@@ -289,14 +289,6 @@ interface DirectionGroup {
   directionsOf: (selected: readonly TransitDisplayCandidate[]) => readonly (0 | 1 | 'none')[];
 }
 
-/** Present route types among candidates, in `ROUTE_TYPE_DISPLAY_ORDER`. */
-function presentRouteTypesInDisplayOrder(
-  candidates: readonly TransitDisplayCandidate[],
-): AppRouteTypeValue[] {
-  const present = new Set(candidates.map((c) => c.timetableEntry.routeDirection.route.route_type));
-  return ROUTE_TYPE_DISPLAY_ORDER.filter((routeType) => present.has(routeType));
-}
-
 /**
  * Clusters candidates by route type, per the grouping strategy:
  * - `route`: one cluster per route type (in `ROUTE_TYPE_DISPLAY_ORDER`)
@@ -312,29 +304,48 @@ function presentRouteTypesInDisplayOrder(
 export function clusterCandidatesByRouteType(
   candidates: readonly TransitDisplayCandidate[],
   grouping: TransitDisplayRouteGrouping,
+  effectiveRouteTypes: readonly AppRouteTypeValue[],
 ): RouteTypeCluster[] {
+  // This value represents the route types to output even when candidates is empty.
+  const requiredRouteTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((rt) =>
+    effectiveRouteTypes.includes(rt),
+  );
+
+  // per route type
   if (grouping.kind === 'route') {
-    return ROUTE_TYPE_DISPLAY_ORDER.map((routeType) => ({
-      routeTypes: [routeType],
-      candidates: selectByRouteType(candidates, routeType),
-    }));
+    return requiredRouteTypes.map((routeType) => {
+      return {
+        routeTypes: [routeType],
+        candidates: selectByRouteType(candidates, routeType),
+      };
+    });
   }
-  const presentTypes = presentRouteTypesInDisplayOrder(candidates);
+
+  // no grouping
   if (grouping.kind === 'none') {
-    return [{ routeTypes: presentTypes, candidates: [...candidates] }];
+    return [
+      {
+        routeTypes: requiredRouteTypes.flat(),
+        candidates: [...candidates],
+      },
+    ];
   }
+
   // 'custom': one cluster per group (groups may overlap). Keep each group's own
   // order for routeTypes (present types only), so the caller's order is honored.
-  const presentSet = new Set<number>(presentTypes);
-  return grouping.groups.map((group) => {
-    const groupSet = new Set<number>(group);
-    return {
-      routeTypes: group.filter((routeType) => presentSet.has(routeType)),
-      candidates: candidates.filter((c) =>
-        groupSet.has(c.timetableEntry.routeDirection.route.route_type),
-      ),
-    };
-  });
+  // const presentSet = new Set<number>(presentRouteTypes);
+  const presentSet = new Set<number>(requiredRouteTypes);
+  return grouping.groups
+    .map((group) => {
+      const groupSet = new Set<number>(group);
+      return {
+        routeTypes: group.filter((routeType) => presentSet.has(routeType)),
+        candidates: candidates.filter((c) =>
+          groupSet.has(c.timetableEntry.routeDirection.route.route_type),
+        ),
+      };
+    })
+    .filter((cluster) => cluster.routeTypes.length > 0);
 }
 
 /**
@@ -356,8 +367,22 @@ export function clusterCandidatesByRouteType(
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   condition: TransitDisplayCondition,
+  // effectiveRouteTypes: readonly AppRouteTypeValue[],
+  stops: readonly StopWithContext[],
 ): TransitDisplayData[] {
-  const clusters = clusterCandidatesByRouteType(candidates, condition.routeGrouping);
+  // All route types served by the stops (from each stop's `routeTypes`,
+  // independent of whether any trips remain), in display order -- so a route type
+  // present at a stop can be surfaced as an empty board even with no candidates.
+  const effectiveRouteTypes: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
+    (routeType) => stops.some((stop) => stop.routeTypes.includes(routeType)),
+  );
+
+  const clusters = clusterCandidatesByRouteType(
+    candidates,
+    condition.routeGrouping,
+    effectiveRouteTypes,
+  );
+
   const boards: TransitDisplayData[] = [];
 
   // Direction buckets: not split = a single bucket spanning all present
@@ -379,9 +404,18 @@ export function groupCandidatesIntoBoards(
           (c) => group.matches(c) && categoryQualifies(c.timetableEntry, category),
         );
 
+        if (stops.length === 0) {
+          continue;
+        }
+
+        if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
+          continue;
+        }
+
         if (boardCandidates.length === 0) {
           continue;
         }
+
         boards.push({
           routeTypes: cluster.routeTypes,
           directions: group.directionsOf(boardCandidates),
@@ -433,11 +467,17 @@ export function buildTransitDisplayDataSet(
 ): TransitDisplayDataWithMetaData[] {
   // distance filter: stops within radiusMeters of the center
   const nearbyStops: StopWithContext[] = filterStopsWithinDistance(stops, radiusMeters);
+
   // flatten each stop's stopTimes into candidates
   const candidates: TransitDisplayCandidate[] = toTransitDisplayCandidates(nearbyStops);
+
   // cluster by route type, optionally by direction, then split by category
-  const boards: TransitDisplayData[] = groupCandidatesIntoBoards(candidates, condition);
-  // sort by time, cap each board
+  const boards: TransitDisplayData[] = groupCandidatesIntoBoards(
+    candidates,
+    condition,
+    nearbyStops,
+  );
+
   const sortedAndCapped: TransitDisplayData[] = sortAndCapTransitDisplayData(
     boards,
     condition.maxEntries,
@@ -495,3 +535,22 @@ export function sortTransitDisplayDataWithMetaData(
     return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
   });
 }
+
+  export type TransitDisplayStopsState = 'ready' | 'no-stops' | 'no-service';
+  export type TransitDisplayStatus = {
+    radius: number;
+    state: TransitDisplayStopsState;
+  };
+
+  export function resolveTransitDisplayState(
+    stops: readonly StopWithContext[],
+  ): TransitDisplayStopsState {
+    if (stops.length === 0) {
+      return 'no-stops';
+    }
+    if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
+      return 'no-service';
+    }
+    return 'ready';
+  }
+

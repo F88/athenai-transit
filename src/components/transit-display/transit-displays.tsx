@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
+  type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
   buildTransitDisplayDatumForUi,
@@ -109,6 +110,8 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 export interface TransitDisplaysProps {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
+  /** Build state + radius, for the empty-state message (no stops / no service). */
+  status: TransitDisplayStatus;
   /** Display language chain passed to {@link buildTransitDisplayDatumForUi} for row resolution. */
   dataLangs: readonly string[];
   emptyMessage: string;
@@ -143,6 +146,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
  */
 export function TransitDisplays({
   dataWithMeta,
+  status,
   dataLangs,
   emptyMessage,
   now,
@@ -152,6 +156,8 @@ export function TransitDisplays({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplaysProps) {
+  const { t } = useTranslation();
+
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
 
@@ -166,6 +172,19 @@ export function TransitDisplays({
       })),
     [dataWithMeta, dataLangs],
   );
+
+  // No boards to show because the dataset itself is empty: either no stops within
+  // the radius (`no-stops`) or stops exist but none have service today
+  // (`no-service`). Show the reason instead of a blank view.
+  if (status.state === 'no-stops' || status.state === 'no-service') {
+    return (
+      <div className="text-muted-foreground px-4 py-6 text-center text-sm">
+        {t(status.state === 'no-service' ? 'transitDisplay2.noService' : 'transitDisplay2.empty', {
+          radius: status.radius,
+        })}
+      </div>
+    );
+  }
 
   // Only offer toggles for categories that actually have a board, so the bar
   // mirrors what is on screen rather than always showing both.

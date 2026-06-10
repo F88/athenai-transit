@@ -16,6 +16,7 @@ import {
   type TransitDisplayDataWithMetaData,
   type TransitDisplayDatum,
   type TransitDisplayMeta,
+  type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { computeTransitDisplayDatumStats } from '@/domain/transit/compute-transit-display-datum-stats';
 import { getBearingDeg } from '@/domain/transit/distance';
@@ -141,6 +142,8 @@ const HEADER_STATS_ICONS_BY_SIZE: Record<
 export interface TransitDisplays2Props {
   /** Raw displays (meta + unresolved board); rows are passed down and resolved at the leaf ({@link TransitDisplayEntry2}). */
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
+  /** Build state + radius, for the empty-state message (no stops / no service). */
+  status: TransitDisplayStatus;
   /** Display language chain forwarded down to the leaf ({@link TransitDisplayEntry2}) for name / color resolution. */
   dataLangs: readonly string[];
   now: Date;
@@ -175,6 +178,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
  */
 export function TransitDisplays2({
   dataWithMeta,
+  status,
   dataLangs,
   now,
   mapCenter,
@@ -183,18 +187,32 @@ export function TransitDisplays2({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplays2Props) {
+  const { t } = useTranslation();
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
+
+  // No boards to show because the dataset itself is empty: either no stops within
+  // the radius (`no-stops`) or stops exist but none have service today
+  // (`no-service`). Show the reason instead of a blank view.
+  if (status.state === 'no-stops' || status.state === 'no-service') {
+    return (
+      <div className="text-muted-foreground px-4 py-6 text-center text-sm">
+        {t(status.state === 'no-service' ? 'transitDisplay2.noService' : 'transitDisplay2.empty', {
+          radius: status.radius,
+        })}
+      </div>
+    );
+  }
 
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
     dataWithMeta.some((display) => display.meta.category === category),
   );
 
+  const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
+
   const toggleCategory = (category: TransitDisplayCategory) => {
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   };
-
-  const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
 
   return (
     // <div className="font-dotgothic16 px-4 pb-0">

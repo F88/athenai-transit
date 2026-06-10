@@ -14,6 +14,7 @@ import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
+  resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
@@ -21,6 +22,10 @@ import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-or
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 import type { AppRouteTypeValue } from '@/types/app/transit';
 import { TransitDisplays2 } from './transit-displays-2';
+import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('TransitDisplaysContainer');
 
 /**
  * Route types whose boards are NOT split by direction: bus, trolleybus, and
@@ -74,7 +79,23 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
+  // distance filter: stops within radiusMeters of the center
+  const nearbyStops: StopWithContext[] = filterStopsWithinDistance(stopTimes, NEARBY_RADIUS_M);
+
+  const transitDisplayStatus = {
+    radius: NEARBY_RADIUS_M,
+    state: resolveTransitDisplayState(nearbyStops),
+  };
+  logger.debug(`TransitDisplayStatus: ${JSON.stringify(transitDisplayStatus)}`);
+
   const transitDisplayData = useMemo(() => {
+    // Build boards only when there is something to show; `no-stops` / `no-service`
+    // produce no boards, so skip the work and let TransitDisplays2 render the
+    // reason from `transitDisplayStatus`.
+    if (transitDisplayStatus.state !== 'ready') {
+      return [];
+    }
+
     const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
 
     // Per-mode direction policy is composed here rather than inside the builder:
@@ -86,18 +107,24 @@ export function TransitDisplaysContainer({
     // sortTransitDisplayDataWithMetaData (so the order is correct
     // regardless of which modes share a stop -- the raw concat is not in display
     // order). Rows stay raw here; TransitDisplays resolves them into UI data.
-    const directionUnsplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+
+    const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
       routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByDirection: false,
     });
-    const directionSplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+    const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
       routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByDirection: true,
     });
-    return sortTransitDisplayDataWithMetaData([...directionUnsplitRaw, ...directionSplitRaw]);
-  }, [stopTimes, infoLevel]);
+
+    return sortTransitDisplayDataWithMetaData([
+      //
+      ...directionUnsplitRaw,
+      ...directionSplitRaw,
+    ]);
+  }, [infoLevel, nearbyStops, transitDisplayStatus.state]);
 
   return (
     <div
@@ -111,6 +138,7 @@ export function TransitDisplaysContainer({
       {viewId === 'transit-display' ? (
         <TransitDisplays
           dataWithMeta={transitDisplayData}
+          status={transitDisplayStatus}
           dataLangs={dataLangs}
           emptyMessage={t('stop.timetable.allFilteredOut')}
           now={now}
@@ -123,6 +151,7 @@ export function TransitDisplaysContainer({
       ) : (
         <TransitDisplays2
           dataWithMeta={transitDisplayData}
+          status={transitDisplayStatus}
           dataLangs={dataLangs}
           now={now}
           mapCenter={mapCenter}
