@@ -14,7 +14,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - Storybook: `TransitDisplayEntry2` / `TransitDisplay2` の stories を追加した (#281)。
 - Storybook: `AbsoluteStopTime` の stories を追加した。
 - TransitDisplay2: ヘッダに radius 圏内の集計 (のりば数 / 路線数 / 事業者数) と radius バッジを表示するようにした (#281)。
-- TransitDisplay2: 対象のりばが無い (`no-stops`) / 当日運行が無い (`no-service`) 場合に、その旨のメッセージを表示するようにした (#281)。
+- TransitDisplaysContainer: 対象範囲 (現在 100m) 以内の stop 有無と当日運行有無を `TransitDisplayStatus` (`resolveTransitDisplayState`) で判定するようにした (#281)。
+- TransitDisplaysContainer: `no-stops` / `no-service` のときは board 構築 (`buildTransitDisplayDataSet`) をスキップするようにした (#281)。
+- TransitDisplay / TransitDisplay2: 上記状態に応じて、対象範囲内にのりばが無い / 当日運行が無い旨のメッセージを UI に表示するようにした (#281)。
 
 ### Changed
 
