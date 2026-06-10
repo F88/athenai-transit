@@ -18,22 +18,24 @@ Transit explorer without destination — discover where you can go from here
 
 - 📍 Display nearby bus stops and stations on the map
 - 👈 Edge markers indicating the direction of off-screen stops
-- 🕐 Check upcoming departures for each stop
-- 🕐 View timetables for specific dates and times
-- 🗺️ View route maps and highlight individual lines
-- 🚏 Bookmark your favorite stops and stations
+- 🕐 Departure and arrival information for nearby stops
+- 🖥️ Consolidated transit display grouping multiple stops
+- 📅 Check future timetables by specifying any date and time
+- 🗺️ View route maps and highlight specific routes
+- 🚏 Save your favorite stops and stations
 - 🌐 Multilingual support and language switching
-- 📦 Select and load custom transit data
-- ⌨️ Keyboard shortcuts (Help: ?)
+- 📦 Select and use custom datasets
+- ⌨️ Keyboard shortcuts (help:?)
 
 ## 主な機能
 
 - 📍 現在地周辺のバス停や駅を地図上に表示
 - 👈 画面外のバス停の方向を示すエッジマーカー
-- 🕐 各停留所の直近の出発時刻を確認
-- 🕐 任意の日時を指定して、未来の時刻表を確認
-- 🗺️ 路線図の表示と路線ごとのハイライト
-- 🚏 お気に入りのバス停や駅を保存
+- 🕐 近くののりばの発着情報
+- 🖥️ 複数ののりばをまとめた総合発車案内
+- 📅 任意の日時を指定、未来の時刻表確認
+- 🗺️ 路線図の表示と路線のハイライト
+- 🚏 お気に入りのバス停や駅の保存
 - 🌐 多言語表示と言語切替
 - 📦 任意のデータを選択して利用
 - ⌨️ キーボードショートカット (help:?)
