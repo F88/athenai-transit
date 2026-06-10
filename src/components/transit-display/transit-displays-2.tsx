@@ -487,8 +487,8 @@ export function TransitDisplay2({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
-        'mb-4 overflow-hidden rounded-sm',
-        'border-0',
+        'mb-4 overflow-hidden',
+        'rounded-sm border-0',
         BOARD_PANEL_BG,
         // BOARD_FRAME_COLOR,
       )}
@@ -521,8 +521,11 @@ export function TransitDisplay2({
           theme-aware panel face. */}
       <div
         className={cn(
-          'flex flex-col gap-1 border-b-0 py-1 pr-2 pl-4',
-          // 'border',
+          'flex flex-col gap-1',
+          // 'mb-2',
+          'py-1 pr-2 pl-4',
+          // 'rounded border',
+          // BOARD_PANEL_BG,
           // BOARD_PANEL_BG,
           // BOARD_FRAME_COLOR,
         )}
@@ -577,7 +580,13 @@ export function TransitDisplay2({
         </div>
       </div>
       {/* Body: the rows (or the empty fallback). */}
-      <div className={cn(BOARD_PANEL_BG, 'p-0')}>
+      <div
+        className={cn(
+          'p-0',
+          // 'border',
+          BOARD_PANEL_BG,
+        )}
+      >
         <ul className="m-0 list-none p-0">
           {transitDisplayData.data.map((row) => {
             const { timetableEntry, stop: stopWithContext } = row;
@@ -712,11 +721,11 @@ export function TransitDisplayEntry2({
     // scroll-to-selected effect for this view anyway.
     <li
       className={cn(
+        'flex items-stretch overflow-hidden',
         'cursor-pointer',
         'hover:bg-info/10',
         'my-0.5 px-0 pt-0 pb-0',
         ROW_TEXT_CLASS_BY_SIZE[size],
-        'flex items-stretch overflow-hidden',
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
