@@ -204,6 +204,8 @@ export function TransitDisplays2({
     );
   }
 
+  // console.debug(`TransitDisplayStatus: radius=${status.radius}, state=${status.state}`);
+
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
     dataWithMeta.some((display) => display.meta.category === category),
   );
