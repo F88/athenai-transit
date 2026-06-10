@@ -1,15 +1,10 @@
 {
   "sourceName": "hankyu-ferry",
-  "checkedAt": "2026-06-10T06:29:31.246Z",
+  "checkedAt": "2026-06-10T07:01:35.521Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260610"
   ],
-  "result": "critical",
-  "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD"
-  ],
-  "errors": [
-    "ADOPTED_EXPIRED",
-    "ADOPTED_MISSING"
-  ]
+  "result": "ok",
+  "warnings": [],
+  "errors": []
 }
