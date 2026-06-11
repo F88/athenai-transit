@@ -53,8 +53,8 @@ function makeEntry(options: {
     patternPosition: {
       stopIndex: 0,
       totalStops: 1,
-      isOrigin: false,
-      isTerminal: false,
+      isFirstStop: false,
+      isLastStop: false,
     },
   };
 }

@@ -119,8 +119,8 @@ function makeSnapshot(): SelectedTripSnapshot {
         patternPosition: {
           stopIndex: 2,
           totalStops: 10,
-          isTerminal: false,
-          isOrigin: false,
+          isLastStop: false,
+          isFirstStop: false,
         },
       },
       stopMeta: {

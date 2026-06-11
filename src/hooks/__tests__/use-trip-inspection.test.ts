@@ -62,7 +62,7 @@ function makeEntry(overrides: {
   stopIndex?: number;
   departureMinutes: number;
   arrivalMinutes?: number;
-  isTerminal?: boolean;
+  isLastStop?: boolean;
 }): TimetableEntry {
   return {
     schedule: {
@@ -77,8 +77,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: false,
     },
     tripLocator: {
       patternId: overrides.patternId ?? 'pattern-a',
@@ -102,8 +102,8 @@ function makeStopTime(stopIndex: number, departureMinutes: number): TripStopTime
       patternPosition: {
         stopIndex,
         totalStops: 10,
-        isTerminal: false,
-        isOrigin: false,
+        isLastStop: false,
+        isFirstStop: false,
       },
     },
     stopMeta: {
@@ -223,7 +223,7 @@ describe('useTripInspection', () => {
       stopIndex: 3,
       arrivalMinutes: 9 * 60 + 5,
       departureMinutes: 9 * 60 + 8,
-      isTerminal: true,
+      isLastStop: true,
     });
     const requestedEntry = makeEntry({
       tripIndex: 2,

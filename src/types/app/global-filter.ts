@@ -20,7 +20,7 @@
  * provider.
  */
 export interface GlobalFilter {
-  /** When true, narrow to entries whose patternPosition.isOrigin is true. */
+  /** When true, narrow to entries whose patternPosition.isFirstStop is true. */
   showOriginOnly: boolean;
   /** When true, narrow to entries with `pickup_type === 0` at non-pure-terminal positions. */
   showBoardableOnly: boolean;

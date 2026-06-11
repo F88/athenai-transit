@@ -68,8 +68,8 @@ function makeStopTime(
       patternPosition: {
         stopIndex,
         totalStops: 10,
-        isTerminal: false,
-        isOrigin: false,
+        isLastStop: false,
+        isFirstStop: false,
       },
     },
   };

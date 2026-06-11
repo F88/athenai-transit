@@ -28,8 +28,8 @@ function makeEntry(
     headsign?: string;
     stopHeadsign?: TranslatableText;
     direction?: 0 | 1;
-    isOrigin?: boolean;
-    isTerminal?: boolean;
+    isFirstStop?: boolean;
+    isLastStop?: boolean;
     stopIndex?: number;
     totalStops?: number;
     pickupType?: 0 | 1 | 2 | 3;
@@ -56,8 +56,8 @@ function makeEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 1,
       totalStops: overrides.totalStops ?? 5,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: {
       patternId: overrides.patternId ?? `${routeId}__${headsign}`,
@@ -92,8 +92,8 @@ describe('computeTimetableEntryStats', () => {
   describe('A axis (pattern position)', () => {
     it('counts origin / terminal / passing entries independently', () => {
       const entries = [
-        makeEntry({ isOrigin: true, stopIndex: 0 }),
-        makeEntry({ isTerminal: true, stopIndex: 4 }),
+        makeEntry({ isFirstStop: true, stopIndex: 0 }),
+        makeEntry({ isLastStop: true, stopIndex: 4 }),
         makeEntry({ stopIndex: 2 }),
         makeEntry({ stopIndex: 3 }),
       ];
@@ -106,7 +106,7 @@ describe('computeTimetableEntryStats', () => {
 
     it('counts both origin and terminal on a single-stop pattern', () => {
       const entries = [
-        makeEntry({ isOrigin: true, isTerminal: true, stopIndex: 0, totalStops: 1 }),
+        makeEntry({ isFirstStop: true, isLastStop: true, stopIndex: 0, totalStops: 1 }),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(1);
@@ -118,7 +118,7 @@ describe('computeTimetableEntryStats', () => {
 
   describe('B axis (boarding)', () => {
     it('partitions boardable vs non-boardable', () => {
-      const entries = [makeEntry(), makeEntry({ isTerminal: true }), makeEntry({ pickupType: 1 })];
+      const entries = [makeEntry(), makeEntry({ isLastStop: true }), makeEntry({ pickupType: 1 })];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(3);
       expect(stats.boardableCount).toBe(1);
@@ -130,7 +130,7 @@ describe('computeTimetableEntryStats', () => {
       const entries = [
         makeEntry({ pickupType: 1 }),
         makeEntry({ pickupType: 1 }),
-        makeEntry({ isTerminal: true }),
+        makeEntry({ isLastStop: true }),
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
@@ -140,7 +140,7 @@ describe('computeTimetableEntryStats', () => {
 
     it('counts noDropOff entries (= explicit drop_off_type === 1)', () => {
       const entries = [
-        makeEntry({ dropOffType: 1, isOrigin: true, stopIndex: 0 }),
+        makeEntry({ dropOffType: 1, isFirstStop: true, stopIndex: 0 }),
         makeEntry({ dropOffType: 1 }),
         makeEntry(),
       ];
@@ -230,7 +230,7 @@ describe('computeTimetableEntryStats', () => {
         routeId: 'rA',
         headsign: 'X',
         direction: 0,
-        isOrigin: true,
+        isFirstStop: true,
         stopIndex: 0,
         patternId: 'p1',
         tripIndex: 0,
@@ -250,7 +250,7 @@ describe('computeTimetableEntryStats', () => {
         routeId: 'rA',
         headsign: 'X',
         direction: 0,
-        isTerminal: true,
+        isLastStop: true,
         stopIndex: 4,
         patternId: 'p1',
         tripIndex: 0,
@@ -260,7 +260,7 @@ describe('computeTimetableEntryStats', () => {
         routeId: 'rB',
         headsign: 'Y',
         direction: 1,
-        isOrigin: true,
+        isFirstStop: true,
         stopIndex: 0,
         pickupType: 1,
         patternId: 'p2',

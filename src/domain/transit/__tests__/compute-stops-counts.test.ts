@@ -4,8 +4,8 @@ import { computeStopsCounts } from '../compute-stops-counts';
 
 function makeEntry(
   overrides: {
-    isOrigin?: boolean;
-    isTerminal?: boolean;
+    isFirstStop?: boolean;
+    isLastStop?: boolean;
     pickupType?: 0 | 1 | 2 | 3;
   } = {},
 ): TimetableEntry {
@@ -29,8 +29,8 @@ function makeEntry(
     patternPosition: {
       stopIndex: 0,
       totalStops: 3,
-      isOrigin: overrides.isOrigin ?? false,
-      isTerminal: overrides.isTerminal ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
+      isLastStop: overrides.isLastStop ?? false,
     },
     tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
   };
@@ -47,12 +47,12 @@ describe('computeStopsCounts', () => {
   });
 
   it('counts total/non-empty/origin/boardable stops across mixed stop states', () => {
-    const pureTerminal = { stopTimes: [makeEntry({ isTerminal: true, pickupType: 0 })] };
+    const pureTerminal = { stopTimes: [makeEntry({ isLastStop: true, pickupType: 0 })] };
     const oneStopTrip = {
-      stopTimes: [makeEntry({ isOrigin: true, isTerminal: true, pickupType: 0 })],
+      stopTimes: [makeEntry({ isFirstStop: true, isLastStop: true, pickupType: 0 })],
     };
     const middleBoardable = { stopTimes: [makeEntry({ pickupType: 0 })] };
-    const nonBoardableOrigin = { stopTimes: [makeEntry({ isOrigin: true, pickupType: 1 })] };
+    const nonBoardableOrigin = { stopTimes: [makeEntry({ isFirstStop: true, pickupType: 1 })] };
     const emptyStop = { stopTimes: [] };
 
     expect(
@@ -71,18 +71,18 @@ describe('computeStopsCounts', () => {
     });
   });
 
-  it('treats boardability according to pickup_type === 0 && (isOrigin || !isTerminal)', () => {
+  it('treats boardability according to pickup_type === 0 && (isFirstStop || !isLastStop)', () => {
     const pureTerminal = {
-      stopTimes: [makeEntry({ isOrigin: false, isTerminal: true, pickupType: 0 })],
+      stopTimes: [makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 })],
     };
     const oneStopTrip = {
-      stopTimes: [makeEntry({ isOrigin: true, isTerminal: true, pickupType: 0 })],
+      stopTimes: [makeEntry({ isFirstStop: true, isLastStop: true, pickupType: 0 })],
     };
     const middle = {
-      stopTimes: [makeEntry({ isOrigin: false, isTerminal: false, pickupType: 0 })],
+      stopTimes: [makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 0 })],
     };
     const phoneArrangement = {
-      stopTimes: [makeEntry({ isOrigin: true, isTerminal: false, pickupType: 2 })],
+      stopTimes: [makeEntry({ isFirstStop: true, isLastStop: false, pickupType: 2 })],
     };
 
     expect(computeStopsCounts([pureTerminal, oneStopTrip, middle, phoneArrangement])).toEqual({

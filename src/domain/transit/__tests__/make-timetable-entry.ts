@@ -27,8 +27,8 @@ export function makeEntry(
     arrivalMinutes?: number;
     pickupType?: 0 | 1 | 2 | 3;
     dropOffType?: 0 | 1 | 2 | 3;
-    isTerminal?: boolean;
-    isOrigin?: boolean;
+    isLastStop?: boolean;
+    isFirstStop?: boolean;
     stopIndex?: number;
     totalStops?: number;
     remainingMinutes?: number;
@@ -54,8 +54,8 @@ export function makeEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 5,
       totalStops: overrides.totalStops ?? 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     insights:
       overrides.remainingMinutes !== undefined

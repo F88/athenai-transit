@@ -38,7 +38,7 @@ export function getPatternTotalStops(stopTimes: readonly TripStopTime[]): number
  * Use this when the caller needs repeated lookups (e.g. when
  * iterating `0..totalStops-1` to render a dense list of stops with
  * placeholders for missing ones). For one-off origin / terminal
- * lookups prefer {@link getOriginStop} / {@link getTerminalStop}.
+ * lookups prefer {@link getFirstStop} / {@link getLastStop}.
  *
  * Per Issue #47 (6-shape / circular routes), the same physical
  * `stop_id` can appear at multiple positions in one pattern, but
@@ -63,27 +63,27 @@ export function getStopAtPatternIndex(
 }
 
 /**
- * Pattern origin (`stopIndex === 0` / `isOrigin === true`).
+ * Pattern first stop (`stopIndex === 0` / `isFirstStop === true`).
  *
- * Returns `undefined` when the origin row was not reconstructed,
+ * Returns `undefined` when the first-stop row was not reconstructed,
  * which is semantically correct: callers should not paper over a
- * missing origin by silently substituting the first available
+ * missing first stop by silently substituting the first available
  * downstream stop.
  */
-export function getOriginStop(stopTimes: readonly TripStopTime[]): TripStopTime | undefined {
-  return stopTimes.find((s) => s.timetableEntry.patternPosition.isOrigin);
+export function getFirstStop(stopTimes: readonly TripStopTime[]): TripStopTime | undefined {
+  return stopTimes.find((s) => s.timetableEntry.patternPosition.isFirstStop);
 }
 
 /**
- * Pattern terminal (`stopIndex === totalStops - 1` /
- * `isTerminal === true`).
+ * Pattern last stop (`stopIndex === totalStops - 1` /
+ * `isLastStop === true`).
  *
- * Returns `undefined` when the terminal row was not reconstructed,
+ * Returns `undefined` when the last-stop row was not reconstructed,
  * which is semantically correct: callers should not paper over a
- * missing terminal by silently substituting the last available
+ * missing last stop by silently substituting the last available
  * upstream stop (e.g. yurikamome short-turn trips that stop one
- * station before the pattern's terminal).
+ * station before the pattern's last stop).
  */
-export function getTerminalStop(stopTimes: readonly TripStopTime[]): TripStopTime | undefined {
-  return stopTimes.find((s) => s.timetableEntry.patternPosition.isTerminal);
+export function getLastStop(stopTimes: readonly TripStopTime[]): TripStopTime | undefined {
+  return stopTimes.find((s) => s.timetableEntry.patternPosition.isLastStop);
 }

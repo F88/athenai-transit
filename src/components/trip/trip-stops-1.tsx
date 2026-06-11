@@ -48,11 +48,11 @@ function TripStopRow({
     : null;
   const stopIndex = tripStopTime.timetableEntry.patternPosition.stopIndex;
   const isCurrent = stopIndex === currentPatternStopIndex;
-  const isTerminalStop = tripStopTime.timetableEntry.patternPosition.isTerminal;
-  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
+  const isLastStop = tripStopTime.timetableEntry.patternPosition.isLastStop;
+  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isFirstStop;
   const display = deriveStopTimeRoleDisplayProps({
-    isOrigin: isFirstStop,
-    isTerminal: isTerminalStop,
+    isFirstStop,
+    isLastStop,
     infoLevel,
   });
   const inspectTarget: TripInspectionTarget = {

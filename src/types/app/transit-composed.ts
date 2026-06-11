@@ -483,7 +483,7 @@ export interface TimetableEntry {
    *
    * `stopIndex` corresponds 1:1 to the `si` field on `TimetableGroupV2Json`.
    *
-   * `isOrigin` / `isTerminal` are also inputs to boarding inference. Do not
+   * `isFirstStop` / `isLastStop` are also inputs to boarding inference. Do not
    * judge operational boarding/alighting availability directly from these
    * flags; use the domain util functions in
    * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`),
@@ -496,10 +496,24 @@ export interface TimetableEntry {
     stopIndex: number;
     /** Total number of stops in the pattern. */
     totalStops: number;
-    /** Whether this stop is the last stop (terminal). */
-    isTerminal: boolean;
-    /** Whether this stop is the first stop (origin). */
-    isOrigin: boolean;
+    /**
+     * Whether this stop is the last stop of this pattern.
+     *
+     * "Last" means the end of this feed's description, NOT necessarily
+     * where the journey ends: through-services continue beyond the feed
+     * boundary (e.g. TWR Rinkai trips ending at Osaki in the data but
+     * continuing onto JR). Distinguishing a true service terminus from
+     * a feed boundary is tracked in Issue #145.
+     */
+    isLastStop: boolean;
+    /**
+     * Whether this stop is the first stop of this pattern.
+     *
+     * "First" means the start of this feed's description, NOT
+     * necessarily the journey origin: through-services enter from
+     * beyond the feed boundary. See Issue #145.
+     */
+    isFirstStop: boolean;
   };
 
   /**

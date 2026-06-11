@@ -241,7 +241,7 @@ vi.mock('../hooks/use-keyboard-shortcuts', () => ({
 
 describe('App anchor error toast', () => {
   const makeEntry = (
-    overrides: { isOrigin?: boolean; isTerminal?: boolean; pickupType?: 0 | 1 | 2 | 3 } = {},
+    overrides: { isFirstStop?: boolean; isLastStop?: boolean; pickupType?: 0 | 1 | 2 | 3 } = {},
   ): ContextualTimetableEntry => ({
     schedule: { departureMinutes: 480, arrivalMinutes: 480 },
     routeDirection: {
@@ -262,8 +262,8 @@ describe('App anchor error toast', () => {
     patternPosition: {
       stopIndex: 0,
       totalStops: 3,
-      isOrigin: overrides.isOrigin ?? false,
-      isTerminal: overrides.isTerminal ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
+      isLastStop: overrides.isLastStop ?? false,
     },
     tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
     serviceDate: new Date('2026-03-28T00:00:00Z'),
@@ -535,8 +535,8 @@ describe('App anchor error toast', () => {
   it('forces omitEmptyStops on for origin filter and keeps toggleOmitEmptyStops as a no-op while forced', async () => {
     mockUseNearbyStopTimes.mockReturnValue({
       stopTimes: [
-        makeNearbyStop('origin-stop', [makeEntry({ isOrigin: true })]),
-        makeNearbyStop('middle-stop', [makeEntry({ isOrigin: false })]),
+        makeNearbyStop('origin-stop', [makeEntry({ isFirstStop: true })]),
+        makeNearbyStop('middle-stop', [makeEntry({ isFirstStop: false })]),
       ],
       isNearbyLoading: false,
     });

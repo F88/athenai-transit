@@ -28,7 +28,7 @@ import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { formatAbsoluteTime } from '@/domain/transit/time';
-import { getOriginStop, getTerminalStop } from '@/domain/transit/trip-stop-times';
+import { getFirstStop, getLastStop } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
@@ -743,7 +743,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   // origin / terminal whenever those positions are missing — e.g. yurikamome
   // short-turn trips that stop one station before the pattern's terminal.
   const unknownStopFallback = t('tripInspection.unknownStop');
-  const firstStop = getOriginStop(tripStopTimes);
+  const firstStop = getFirstStop(tripStopTimes);
   const { stopName: firstStopName, stopNames: firstStopNames } = resolveTripStopDisplay(
     firstStop,
     dataLangs,
@@ -755,7 +755,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
       )
     : undefined;
 
-  const lastStop = getTerminalStop(tripStopTimes);
+  const lastStop = getLastStop(tripStopTimes);
   const { stopName: lastStopName, stopNames: lastStopNames } = resolveTripStopDisplay(
     lastStop,
     dataLangs,

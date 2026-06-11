@@ -236,7 +236,7 @@ export const OriginOnlyActive: Story = {
       ...stop,
       stopTimes: stop.stopTimes.map((entry) => ({
         ...entry,
-        patternPosition: { ...entry.patternPosition, isOrigin: index === 0 },
+        patternPosition: { ...entry.patternPosition, isFirstStop: index === 0 },
       })),
     })),
   },

@@ -43,8 +43,8 @@ function makeEntry(
   overrides: {
     route?: Route;
     headsign?: string;
-    isTerminal?: boolean;
-    isOrigin?: boolean;
+    isLastStop?: boolean;
+    isFirstStop?: boolean;
     pickupType?: 0 | 1 | 2 | 3;
     dropOffType?: 0 | 1 | 2 | 3;
     departureMinutes?: number;
@@ -67,8 +67,8 @@ function makeEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 0,
       totalStops: overrides.totalStops ?? 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: { patternId: `${route.route_id}__${headsign}`, serviceId: 'test', tripIndex: 0 },
   };
@@ -83,8 +83,8 @@ describe('prepareStopTimetable', () => {
     it('returns all entries including terminals', () => {
       const entries = [
         makeEntry(),
-        makeEntry({ isTerminal: true }),
-        makeEntry({ isTerminal: true }),
+        makeEntry({ isLastStop: true }),
+        makeEntry({ isLastStop: true }),
       ];
       const result = prepareStopTimetable(entries, true);
       expect(result.entries).toHaveLength(3);
@@ -99,7 +99,7 @@ describe('prepareStopTimetable', () => {
     });
 
     it('returns all entries when all are terminal (drop-off only stop)', () => {
-      const entries = [makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })];
+      const entries = [makeEntry({ isLastStop: true }), makeEntry({ isLastStop: true })];
       const result = prepareStopTimetable(entries, true);
       expect(result.entries).toHaveLength(2);
       expect(result.omitted.nonBoardable).toBe(0);
@@ -110,8 +110,8 @@ describe('prepareStopTimetable', () => {
     it('filters out terminal entries', () => {
       const entries = [
         makeEntry(),
-        makeEntry({ isTerminal: true }),
-        makeEntry({ isTerminal: true }),
+        makeEntry({ isLastStop: true }),
+        makeEntry({ isLastStop: true }),
       ];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(1);
@@ -126,7 +126,7 @@ describe('prepareStopTimetable', () => {
     });
 
     it('returns empty when all are terminal (drop-off only stop)', () => {
-      const entries = [makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })];
+      const entries = [makeEntry({ isLastStop: true }), makeEntry({ isLastStop: true })];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(0);
       expect(result.omitted.nonBoardable).toBe(2);
@@ -135,9 +135,9 @@ describe('prepareStopTimetable', () => {
     it('preserves non-terminal entries from multiple routes', () => {
       const entries = [
         makeEntry({ route: routeA }),
-        makeEntry({ route: routeA, isTerminal: true }),
+        makeEntry({ route: routeA, isLastStop: true }),
         makeEntry({ route: routeB }),
-        makeEntry({ route: routeB, isTerminal: true }),
+        makeEntry({ route: routeB, isLastStop: true }),
       ];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(2);
@@ -150,17 +150,17 @@ describe('prepareStopTimetable', () => {
       const entries = [
         makeEntry(),
         makeEntry(),
-        makeEntry({ isTerminal: true }),
+        makeEntry({ isLastStop: true }),
         makeEntry(),
-        makeEntry({ isTerminal: true }),
-        makeEntry({ isTerminal: true }),
+        makeEntry({ isLastStop: true }),
+        makeEntry({ isLastStop: true }),
       ];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries.length + result.omitted.nonBoardable).toBe(entries.length);
     });
 
     it('holds when includeNonBoardable is true', () => {
-      const entries = [makeEntry(), makeEntry({ isTerminal: true })];
+      const entries = [makeEntry(), makeEntry({ isLastStop: true })];
       const result = prepareStopTimetable(entries, true);
       expect(result.entries.length + result.omitted.nonBoardable).toBe(entries.length);
     });
@@ -180,7 +180,7 @@ describe('prepareStopTimetable', () => {
     });
 
     it('handles single terminal entry', () => {
-      const result = prepareStopTimetable([makeEntry({ isTerminal: true })], false);
+      const result = prepareStopTimetable([makeEntry({ isLastStop: true })], false);
       expect(result.entries).toHaveLength(0);
       expect(result.omitted.nonBoardable).toBe(1);
     });
@@ -188,7 +188,7 @@ describe('prepareStopTimetable', () => {
     it('preserves entry order', () => {
       const entries = [
         makeEntry({ departureMinutes: 600 }),
-        makeEntry({ departureMinutes: 480, isTerminal: true }),
+        makeEntry({ departureMinutes: 480, isLastStop: true }),
         makeEntry({ departureMinutes: 540 }),
       ];
       const result = prepareStopTimetable(entries, false);
@@ -213,45 +213,45 @@ describe('prepareStopTimetable', () => {
       expect(result.omitted.nonBoardable).toBe(3);
     });
 
-    it('isOrigin alone does not trigger removal (origin remains boardable)', () => {
-      // Only pure terminal (= !isOrigin && isTerminal) or pickupType !== 0
-      // triggers removal. 1-stop trips (isOrigin && isTerminal) match the
+    it('isFirstStop alone does not trigger removal (origin remains boardable)', () => {
+      // Only pure terminal (= !isFirstStop && isLastStop) or pickupType !== 0
+      // triggers removal. 1-stop trips (isFirstStop && isLastStop) match the
       // 'origin' position and are kept.
       const entries = [
-        makeEntry({ isOrigin: true }),
-        makeEntry({ isOrigin: true, isTerminal: true }),
-        makeEntry({ isOrigin: false }),
+        makeEntry({ isFirstStop: true }),
+        makeEntry({ isFirstStop: true, isLastStop: true }),
+        makeEntry({ isFirstStop: false }),
       ];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(3);
       expect(result.omitted.nonBoardable).toBe(0);
     });
 
-    it('removes pure terminal (isTerminal=true, !isOrigin) and pickupType=1', () => {
+    it('removes pure terminal (isLastStop=true, !isFirstStop) and pickupType=1', () => {
       // The new caller drops entries on two independent grounds:
-      //   pure terminal (= isTerminal=true, !isOrigin) → position axis excludes
+      //   pure terminal (= isLastStop=true, !isFirstStop) → position axis excludes
       //   pickupType=1 (anywhere in the pattern) → pickUpState axis excludes
       const entries = [
-        makeEntry({ isTerminal: true, pickupType: 0 }),
-        makeEntry({ isTerminal: false, pickupType: 1 }),
+        makeEntry({ isLastStop: true, pickupType: 0 }),
+        makeEntry({ isLastStop: false, pickupType: 1 }),
       ];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(0);
       expect(result.omitted.nonBoardable).toBe(2);
     });
 
-    it('1-stop trip (isOrigin && isTerminal, pickupType=0) is kept as origin', () => {
+    it('1-stop trip (isFirstStop && isLastStop, pickupType=0) is kept as origin', () => {
       // 1-stop trips have the same stop as both origin and terminal.
       // The position axis matches via 'origin', and pickUpState='boardable'
       // matches pickup_type=0, so the entry is kept (= depot/yard origin).
-      const entries = [makeEntry({ isTerminal: true, isOrigin: true }), makeEntry()];
+      const entries = [makeEntry({ isLastStop: true, isFirstStop: true }), makeEntry()];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(2);
       expect(result.omitted.nonBoardable).toBe(0);
     });
 
     it('does not modify the input array', () => {
-      const entries = [makeEntry(), makeEntry({ isTerminal: true }), makeEntry()];
+      const entries = [makeEntry(), makeEntry({ isLastStop: true }), makeEntry()];
       const original = [...entries];
       prepareStopTimetable(entries, false);
       expect(entries).toHaveLength(original.length);
@@ -318,7 +318,7 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('filters terminals only from matching route+headsign', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(1);
@@ -328,7 +328,7 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('includes terminals when includeNonBoardable is true', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
       expect(result.entries).toHaveLength(2);
@@ -337,8 +337,8 @@ describe('prepareRouteHeadsignTimetable', () => {
 
     it('returns empty when all matching entries are terminal', () => {
       const entries = [
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(0);
@@ -352,11 +352,11 @@ describe('prepareRouteHeadsignTimetable', () => {
         // routeA North: 2 normal + 1 terminal
         makeEntry({ route: routeA, headsign: 'North' }),
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
         // routeB North: 3 terminal (must NOT appear in routeA omitted)
-        makeEntry({ route: routeB, headsign: 'North', isTerminal: true }),
-        makeEntry({ route: routeB, headsign: 'North', isTerminal: true }),
-        makeEntry({ route: routeB, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeB, headsign: 'North', isLastStop: true }),
+        makeEntry({ route: routeB, headsign: 'North', isLastStop: true }),
+        makeEntry({ route: routeB, headsign: 'North', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(2);
@@ -368,9 +368,9 @@ describe('prepareRouteHeadsignTimetable', () => {
         // routeA North: 1 normal
         makeEntry({ route: routeA, headsign: 'North' }),
         // routeA South: 3 terminal (must NOT appear in North omitted)
-        makeEntry({ route: routeA, headsign: 'South', isTerminal: true }),
-        makeEntry({ route: routeA, headsign: 'South', isTerminal: true }),
-        makeEntry({ route: routeA, headsign: 'South', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'South', isLastStop: true }),
+        makeEntry({ route: routeA, headsign: 'South', isLastStop: true }),
+        makeEntry({ route: routeA, headsign: 'South', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(1);
@@ -383,11 +383,11 @@ describe('prepareRouteHeadsignTimetable', () => {
       const entries = [
         // 京王バス route1: all terminal (arrival-only)
         ...Array.from({ length: 5 }, () =>
-          makeEntry({ route: routeA, headsign: 'Shinjuku', isTerminal: true }),
+          makeEntry({ route: routeA, headsign: 'Shinjuku', isLastStop: true }),
         ),
         // 京王バス route2: all terminal
         ...Array.from({ length: 3 }, () =>
-          makeEntry({ route: routeB, headsign: 'Shinjuku', isTerminal: true }),
+          makeEntry({ route: routeB, headsign: 'Shinjuku', isLastStop: true }),
         ),
         // 京王バス route1: boardable (stop times)
         ...Array.from({ length: 2 }, () => makeEntry({ route: routeA, headsign: 'Nakano' })),
@@ -408,7 +408,7 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('holds for filtered results', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
         makeEntry({ route: routeA, headsign: 'North' }),
         makeEntry({ route: routeB, headsign: 'South' }), // not matching
       ];
@@ -424,7 +424,7 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('holds when includeNonBoardable is true', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
       expect(result.entries.length + result.omitted.nonBoardable).toBe(2);
@@ -465,11 +465,11 @@ describe('prepareRouteHeadsignTimetable', () => {
       expect(result.omitted.nonBoardable).toBe(3);
     });
 
-    it('1-stop trip (isOrigin && isTerminal) is kept as origin within route+headsign', () => {
+    it('1-stop trip (isFirstStop && isLastStop) is kept as origin within route+headsign', () => {
       // 1-stop trips match the 'origin' position and are kept.
       const entries = [
-        makeEntry({ route: routeA, headsign: 'North', isOrigin: true }),
-        makeEntry({ route: routeA, headsign: 'North', isOrigin: true, isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isFirstStop: true }),
+        makeEntry({ route: routeA, headsign: 'North', isFirstStop: true, isLastStop: true }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(2);
@@ -490,16 +490,16 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('zero matches with large data from other scopes', () => {
       // Target route+headsign has 0 entries, but other scopes have many terminals.
       const entries = Array.from({ length: 100 }, () =>
-        makeEntry({ route: routeB, headsign: 'South', isTerminal: true }),
+        makeEntry({ route: routeB, headsign: 'South', isLastStop: true }),
       );
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(0);
       expect(result.omitted.nonBoardable).toBe(0); // not 100
     });
 
-    it('circular route: isTerminal && isOrigin both true → kept (origin match)', () => {
+    it('circular route: isLastStop && isFirstStop both true → kept (origin match)', () => {
       const entries = [
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true, isOrigin: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true, isFirstStop: true }),
         makeEntry({ route: routeA, headsign: 'North' }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
@@ -510,7 +510,7 @@ describe('prepareRouteHeadsignTimetable', () => {
     it('does not modify the input array', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
-        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeA, headsign: 'North', isLastStop: true }),
         makeEntry({ route: routeB, headsign: 'South' }),
       ];
       const original = [...entries];
@@ -652,7 +652,7 @@ describe('filterByRouteType', () => {
 
 describe('applyStopEventAttributeTogglesToStops', () => {
   it('returns the input reference unchanged when both toggles are false', () => {
-    const stops = [{ stopTimes: [makeEntry({ isOrigin: true })] }, { stopTimes: [makeEntry()] }];
+    const stops = [{ stopTimes: [makeEntry({ isFirstStop: true })] }, { stopTimes: [makeEntry()] }];
 
     const result = applyStopEventAttributeTogglesToStops(stops, {
       showOriginOnly: false,
@@ -663,8 +663,8 @@ describe('applyStopEventAttributeTogglesToStops', () => {
   });
 
   it('keeps unchanged entry content and empties only the stops that do not match', () => {
-    const untouched = { stopTimes: [makeEntry({ isOrigin: true })] };
-    const changed = { stopTimes: [makeEntry({ isOrigin: false })] };
+    const untouched = { stopTimes: [makeEntry({ isFirstStop: true })] };
+    const changed = { stopTimes: [makeEntry({ isFirstStop: false })] };
 
     const result = applyStopEventAttributeTogglesToStops([untouched, changed], {
       showOriginOnly: true,
@@ -693,7 +693,7 @@ describe('omitStopsWithoutStopTimes', () => {
   it('removes only empty stops and preserves surviving stop references', () => {
     const nonEmptyA = { stopTimes: [makeEntry()] };
     const empty = { stopTimes: [] };
-    const nonEmptyB = { stopTimes: [makeEntry({ isOrigin: true })] };
+    const nonEmptyB = { stopTimes: [makeEntry({ isFirstStop: true })] };
 
     const result = omitStopsWithoutStopTimes([nonEmptyA, empty, nonEmptyB]);
 
@@ -724,7 +724,7 @@ function makeEntryWithArrival(
 describe('filterByStopEventAttributes', () => {
   describe('identity / fast-path', () => {
     it('returns the input reference unchanged when all axes are undefined', () => {
-      const entries = [makeEntry(), makeEntry({ isTerminal: true })];
+      const entries = [makeEntry(), makeEntry({ isLastStop: true })];
       const result = filterByStopEventAttributes(entries, {});
       expect(result).toBe(entries);
     });
@@ -739,8 +739,8 @@ describe('filterByStopEventAttributes', () => {
   });
 
   describe('position axis', () => {
-    const origin = makeEntry({ isOrigin: true, departureMinutes: 480 });
-    const terminal = makeEntry({ isTerminal: true, departureMinutes: 540 });
+    const origin = makeEntry({ isFirstStop: true, departureMinutes: 480 });
+    const terminal = makeEntry({ isLastStop: true, departureMinutes: 540 });
     const middle = makeEntry({ departureMinutes: 600 });
     const entries = [origin, terminal, middle];
 
@@ -779,8 +779,8 @@ describe('filterByStopEventAttributes', () => {
       expect(result).toEqual([]);
     });
 
-    describe('single-stop trip (isOrigin AND isTerminal)', () => {
-      const oneStop = makeEntry({ isOrigin: true, isTerminal: true });
+    describe('single-stop trip (isFirstStop AND isLastStop)', () => {
+      const oneStop = makeEntry({ isFirstStop: true, isLastStop: true });
 
       it('matches "origin"', () => {
         const result = filterByStopEventAttributes([oneStop], {
@@ -806,15 +806,15 @@ describe('filterByStopEventAttributes', () => {
   });
 
   describe('pickUpState axis', () => {
-    // Maps 1:1 to GTFS pickup_type values; isTerminal is NOT mixed in.
+    // Maps 1:1 to GTFS pickup_type values; isLastStop is NOT mixed in.
     const pt0Plain = makeEntry({ pickupType: 0, departureMinutes: 480 }); // boardable
     const pt1Plain = makeEntry({ pickupType: 1, departureMinutes: 540 }); // nonBoardable
-    const pt0Terminal = makeEntry({ pickupType: 0, isTerminal: true, departureMinutes: 600 }); // still boardable (pt=0)
+    const pt0Terminal = makeEntry({ pickupType: 0, isLastStop: true, departureMinutes: 600 }); // still boardable (pt=0)
     const pt2Plain = makeEntry({ pickupType: 2, departureMinutes: 660 }); // phoneArrangement
     const pt3Plain = makeEntry({ pickupType: 3, departureMinutes: 720 }); // driverArrangement
     const entries = [pt0Plain, pt1Plain, pt0Terminal, pt2Plain, pt3Plain];
 
-    it('keeps boardable entries (= pickup_type === 0) regardless of isTerminal', () => {
+    it('keeps boardable entries (= pickup_type === 0) regardless of isLastStop', () => {
       const result = filterByStopEventAttributes(entries, {
         pickUpState: new Set(['boardable']),
       });
@@ -868,10 +868,10 @@ describe('filterByStopEventAttributes', () => {
       expect(result).toEqual([]);
     });
 
-    it('classifies a single-stop trip (isOrigin && isTerminal, pt=0) as boardable', () => {
-      // pickUpState only looks at pickup_type; isOrigin / isTerminal
+    it('classifies a single-stop trip (isFirstStop && isLastStop, pt=0) as boardable', () => {
+      // pickUpState only looks at pickup_type; isFirstStop / isLastStop
       // do not influence the classification.
-      const oneStop = makeEntry({ isOrigin: true, isTerminal: true, pickupType: 0 });
+      const oneStop = makeEntry({ isFirstStop: true, isLastStop: true, pickupType: 0 });
       const result = filterByStopEventAttributes([oneStop], {
         pickUpState: new Set(['boardable']),
       });
@@ -954,10 +954,10 @@ describe('filterByStopEventAttributes', () => {
   });
 
   describe('multi-axis composition (AND across axes)', () => {
-    const originBoardable = makeEntry({ isOrigin: true, departureMinutes: 540 });
-    const originDropOff = makeEntry({ isOrigin: true, pickupType: 1, departureMinutes: 600 });
+    const originBoardable = makeEntry({ isFirstStop: true, departureMinutes: 540 });
+    const originDropOff = makeEntry({ isFirstStop: true, pickupType: 1, departureMinutes: 600 });
     const middleBoardable = makeEntry({ departureMinutes: 660 });
-    const terminalDropOff = makeEntry({ isTerminal: true, departureMinutes: 720 });
+    const terminalDropOff = makeEntry({ isLastStop: true, departureMinutes: 720 });
     const entries = [originBoardable, originDropOff, middleBoardable, terminalDropOff];
 
     it('combines position and pickUpState (origin AND boardable)', () => {
@@ -978,11 +978,11 @@ describe('filterByStopEventAttributes', () => {
     });
 
     it('combines arrival-based schedule filtering with position and pickUpState', () => {
-      const originEarlyArrival = makeEntryWithArrival(900, 500, { isOrigin: true });
-      const originLateArrival = makeEntryWithArrival(900, 560, { isOrigin: true });
+      const originEarlyArrival = makeEntryWithArrival(900, 500, { isFirstStop: true });
+      const originLateArrival = makeEntryWithArrival(900, 560, { isFirstStop: true });
       const middleLateArrival = makeEntryWithArrival(900, 580);
       const originLateDropOff = makeEntryWithArrival(900, 600, {
-        isOrigin: true,
+        isFirstStop: true,
         pickupType: 1,
       });
 
@@ -999,12 +999,12 @@ describe('filterByStopEventAttributes', () => {
     });
 
     it('keeps a single-stop trip when origin/terminal and boardable both match', () => {
-      // 1-stop trip (isOrigin && isTerminal) matches both 'origin' and
+      // 1-stop trip (isFirstStop && isLastStop) matches both 'origin' and
       // 'terminal'. With pickup_type=0 the entry is also classified as
       // boardable, so all axes match and the entry is kept.
       const oneStop = makeEntry({
-        isOrigin: true,
-        isTerminal: true,
+        isFirstStop: true,
+        isLastStop: true,
         pickupType: 0,
         departureMinutes: 540,
       });
@@ -1022,7 +1022,7 @@ describe('filterByStopEventAttributes', () => {
       // narrows the result back to `TimetableEntry[]`. Runtime is just a
       // sanity smoke test that the call works. Both entries have
       // pickup_type=0 (default), so pickUpState='boardable' keeps both
-      // regardless of isTerminal.
+      // regardless of isLastStop.
       const branded: (TimetableEntry & { _brand: 'sample' })[] = [
         Object.assign(makeEntry(), { _brand: 'sample' as const }),
         Object.assign(makeEntry({ pickupType: 1 }), { _brand: 'sample' as const }),
@@ -1063,11 +1063,11 @@ describe('filterByStopEventAttributes', () => {
 // ---------------------------------------------------------------------------
 
 describe('applyStopEventAttributeToggles', () => {
-  const originPt0 = makeEntry({ isOrigin: true, pickupType: 0, departureMinutes: 480 });
-  const originPt1 = makeEntry({ isOrigin: true, pickupType: 1, departureMinutes: 540 });
+  const originPt0 = makeEntry({ isFirstStop: true, pickupType: 0, departureMinutes: 480 });
+  const originPt1 = makeEntry({ isFirstStop: true, pickupType: 1, departureMinutes: 540 });
   const middlePt0 = makeEntry({ pickupType: 0, departureMinutes: 600 });
   const middlePt2 = makeEntry({ pickupType: 2, departureMinutes: 660 });
-  const terminalPt0 = makeEntry({ isTerminal: true, pickupType: 0, departureMinutes: 720 });
+  const terminalPt0 = makeEntry({ isLastStop: true, pickupType: 0, departureMinutes: 720 });
   const entries = [originPt0, originPt1, middlePt0, middlePt2, terminalPt0];
 
   describe('identity / fast-path', () => {
@@ -1111,7 +1111,7 @@ describe('applyStopEventAttributeToggles', () => {
         showOriginOnly: true,
         showBoardableOnly: true,
       });
-      // originPt0 alone matches: isOrigin=true AND pickup_type=0
+      // originPt0 alone matches: isFirstStop=true AND pickup_type=0
       expect(result).toEqual([originPt0]);
     });
   });
@@ -1119,7 +1119,7 @@ describe('applyStopEventAttributeToggles', () => {
   describe('generic preservation', () => {
     it('preserves the input element type at the type level', () => {
       const contextual: ContextualTimetableEntry[] = [
-        { ...makeEntry({ isOrigin: true, pickupType: 0 }), serviceDate: new Date(2026, 3, 30) },
+        { ...makeEntry({ isFirstStop: true, pickupType: 0 }), serviceDate: new Date(2026, 3, 30) },
         { ...makeEntry({ pickupType: 1 }), serviceDate: new Date(2026, 3, 30) },
       ];
       const filtered: ContextualTimetableEntry[] = applyStopEventAttributeToggles(contextual, {

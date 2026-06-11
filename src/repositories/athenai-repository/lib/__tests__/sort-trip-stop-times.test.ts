@@ -37,8 +37,8 @@ function createRow({ stopIndex, marker }: CreateRowArgs): TripStopTime {
       patternPosition: {
         stopIndex,
         totalStops: 100,
-        isOrigin: false,
-        isTerminal: false,
+        isFirstStop: false,
+        isLastStop: false,
       },
     },
   };

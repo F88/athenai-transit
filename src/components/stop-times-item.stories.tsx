@@ -36,8 +36,8 @@ function createEntry(
     stopHeadsign: string;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     stopIndex: number;
     totalStops: number;
     direction: 0 | 1;
@@ -69,8 +69,8 @@ function createEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: overrides.totalStops ?? 15,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: {
       patternId: `${(overrides.route ?? baseRoute).route_id}__${overrides.headsign ?? '中野駅'}`,
@@ -99,8 +99,8 @@ function createLogicalLongEntry(
     freq: number;
     totalMinutes: number;
     remainingMinutes: number;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
   }> = {},
@@ -112,8 +112,8 @@ function createLogicalLongEntry(
       totalMinutes: overrides.totalMinutes,
       remainingMinutes: overrides.remainingMinutes,
       freq: overrides.freq,
-      isTerminal: overrides.isTerminal,
-      isOrigin: overrides.isOrigin,
+      isLastStop: overrides.isLastStop,
+      isFirstStop: overrides.isFirstStop,
       pickupType: overrides.pickupType,
       dropOffType: overrides.dropOffType,
     }),
@@ -237,8 +237,8 @@ export const NoRouteColor: Story = {
 export const TerminalEntries: Story = {
   args: {
     entries: [
-      createEntry({ isTerminal: true, arrivalMinutes: 870 }),
-      createEntry({ isTerminal: true, arrivalMinutes: 890 }),
+      createEntry({ isLastStop: true, arrivalMinutes: 870 }),
+      createEntry({ isLastStop: true, arrivalMinutes: 890 }),
     ],
   },
 };
@@ -538,7 +538,7 @@ const kitchenSinkGroups: { entries: ContextualTimetableEntry[]; agency?: Agency 
         ...createEntry({
           route: longRoute,
           departureMinutes: 884,
-          isTerminal: true,
+          isLastStop: true,
           arrivalMinutes: 884,
         }),
         routeDirection: createRouteDirection({
@@ -606,24 +606,24 @@ export const LogicalLongInfoLevelComparison: Story = {
     entries: [
       createLogicalLongEntry({
         departureMinutes: 870,
-        isOrigin: false,
-        isTerminal: false,
+        isFirstStop: false,
+        isLastStop: false,
         pickupType: 0,
         dropOffType: 0,
       }),
       createLogicalLongEntry({
         arrivalMinutes: 855,
         departureMinutes: 855,
-        isOrigin: true,
-        isTerminal: false,
+        isFirstStop: true,
+        isLastStop: false,
         pickupType: 0,
         dropOffType: 0,
       }),
       createLogicalLongEntry({
         arrivalMinutes: 900,
         departureMinutes: 900,
-        isOrigin: true,
-        isTerminal: true,
+        isFirstStop: true,
+        isLastStop: true,
         pickupType: 1,
         dropOffType: 1,
       }),
@@ -685,7 +685,7 @@ export const LogicalKitchenSink: Story = {
       },
       // Long form — single terminal entry
       {
-        entries: [createLogicalLongEntry({ departureMinutes: 880, isTerminal: true })],
+        entries: [createLogicalLongEntry({ departureMinutes: 880, isLastStop: true })],
         agency: longAgency,
       },
       // Long form — drop-off only

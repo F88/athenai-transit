@@ -137,8 +137,8 @@ vi.mock('@/domain/transit/trip-stop-times', () => ({
     new Map(stopTimes.map((stop) => [stop.timetableEntry.patternPosition.stopIndex, stop])),
   getPatternTotalStops: (stopTimes: TripStopTime[]) =>
     stopTimes[0]?.timetableEntry.patternPosition.totalStops ?? 0,
-  getOriginStop: (stopTimes: TripStopTime[]) => stopTimes[0],
-  getTerminalStop: (stopTimes: TripStopTime[]) => stopTimes[stopTimes.length - 1],
+  getFirstStop: (stopTimes: TripStopTime[]) => stopTimes[0],
+  getLastStop: (stopTimes: TripStopTime[]) => stopTimes[stopTimes.length - 1],
 }));
 
 vi.mock('@/utils/color/contrast-alpha-suffixes', () => ({
@@ -230,7 +230,7 @@ function makeTimetableEntry(overrides: Partial<TimetableEntry> = {}): TimetableE
       direction: 0,
     },
     boarding: { pickupType: 0, dropOffType: 0 },
-    patternPosition: { stopIndex: 0, totalStops: 3, isOrigin: true, isTerminal: false },
+    patternPosition: { stopIndex: 0, totalStops: 3, isFirstStop: true, isLastStop: false },
     ...overrides,
   };
 }
@@ -271,7 +271,7 @@ function makeTripSnapshot(): SelectedTripSnapshot {
   const route = makeRoute('route-1');
   const stop = makeStop('stop-1');
   const timetableEntry = makeTimetableEntry({
-    patternPosition: { stopIndex: 0, totalStops: 1, isOrigin: true, isTerminal: true },
+    patternPosition: { stopIndex: 0, totalStops: 1, isFirstStop: true, isLastStop: true },
   });
   const tripStopTime: TripStopTime = {
     stopMeta: { stop, distance: 0, agencies: [], routes: [] },

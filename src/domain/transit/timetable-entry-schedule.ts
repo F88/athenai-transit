@@ -15,7 +15,7 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
  * whether the stop is the last stop in the pattern.
  */
 export function getDisplayMinutes(entry: TimetableEntry): number {
-  return entry.patternPosition.isTerminal
+  return entry.patternPosition.isLastStop
     ? entry.schedule.arrivalMinutes
     : entry.schedule.departureMinutes;
 }

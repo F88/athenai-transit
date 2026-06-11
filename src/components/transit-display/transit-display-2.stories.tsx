@@ -38,8 +38,8 @@ interface MakeDatumOverrides {
   departureMinutes?: number;
   arrivalMinutes?: number;
   stopIndex?: number;
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   pickupType?: StopServiceType;
   dropOffType?: StopServiceType;
 }
@@ -61,8 +61,8 @@ function makeDatum(overrides: MakeDatumOverrides = {}): TransitDisplayDatum {
     departureMinutes: overrides.departureMinutes,
     arrivalMinutes: overrides.arrivalMinutes,
     stopIndex: overrides.stopIndex,
-    isTerminal: overrides.isTerminal,
-    isOrigin: overrides.isOrigin,
+    isLastStop: overrides.isLastStop,
+    isFirstStop: overrides.isFirstStop,
     pickupType: overrides.pickupType,
     dropOffType: overrides.dropOffType,
   });
@@ -128,14 +128,14 @@ const arrivalRows: TransitDisplayDatum[] = [
     departureMinutes: 871,
     stopIndex: 12,
     tripHeadsign: headsignNakano,
-    isTerminal: true,
+    isLastStop: true,
   }),
   makeDatum({
     route: busRoute2,
     departureMinutes: 875,
     stopIndex: 14,
     tripHeadsign: headsignShinjuku,
-    isTerminal: true,
+    isLastStop: true,
   }),
 ];
 
@@ -254,7 +254,12 @@ export const Empty: Story = {
 // --- Kitchen sink ---
 
 const kitchenSinkRows: TransitDisplayDatum[] = [
-  makeDatum({ departureMinutes: 870, stopIndex: 1, tripHeadsign: headsignNakano, isOrigin: true }),
+  makeDatum({
+    departureMinutes: 870,
+    stopIndex: 1,
+    tripHeadsign: headsignNakano,
+    isFirstStop: true,
+  }),
   makeDatum({
     departureMinutes: 873,
     stopIndex: 3,
@@ -278,7 +283,7 @@ const kitchenSinkRows: TransitDisplayDatum[] = [
     departureMinutes: 882,
     stopIndex: 15,
     tripHeadsign: headsignShinjuku,
-    isTerminal: true,
+    isLastStop: true,
   }),
 ];
 

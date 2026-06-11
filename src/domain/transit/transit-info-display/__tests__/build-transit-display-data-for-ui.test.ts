@@ -36,8 +36,8 @@ vi.mock('../../trip-inspection-target', () => ({ buildTripInspectionTarget: vi.f
 vi.mock('../../../../utils/route-type-emoji', () => ({ routeTypesEmoji: vi.fn() }));
 
 const MOCK_ATTRIBUTES = {
-  isTerminal: false,
-  isOrigin: false,
+  isLastStop: false,
+  isFirstStop: false,
   isPickupUnavailable: false,
   isDropOffUnavailable: false,
 };

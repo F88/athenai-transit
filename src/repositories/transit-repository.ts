@@ -167,7 +167,7 @@ export interface TransitRepository {
    * {@link ContextualTimetableEntry} items, sorted chronologically.
    *
    * Each entry includes route/headsign, boarding availability
-   * (pickupType/dropOffType), pattern position (isTerminal/isOrigin),
+   * (pickupType/dropOffType), pattern position (isLastStop/isFirstStop),
    * and `serviceDate` for accurate minutes-to-Date conversion.
    * Consumers are responsible for filtering (e.g. excluding drop-off-only
    * entries) and grouping (e.g. by route+headsign for display).

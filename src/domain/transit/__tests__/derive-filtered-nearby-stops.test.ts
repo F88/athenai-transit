@@ -9,8 +9,8 @@ import { deriveFilteredNearbyStops } from '../derive-filtered-nearby-stops';
 
 function makeEntry(
   overrides: {
-    isOrigin?: boolean;
-    isTerminal?: boolean;
+    isFirstStop?: boolean;
+    isLastStop?: boolean;
     pickupType?: 0 | 1 | 2 | 3;
   } = {},
 ): ContextualTimetableEntry {
@@ -34,8 +34,8 @@ function makeEntry(
     patternPosition: {
       stopIndex: 0,
       totalStops: 3,
-      isOrigin: overrides.isOrigin ?? false,
-      isTerminal: overrides.isTerminal ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
+      isLastStop: overrides.isLastStop ?? false,
     },
     tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
     serviceDate: new Date('2026-01-01'),
@@ -132,7 +132,7 @@ describe('deriveFilteredNearbyStops', () => {
     // Origin-only filter would hide everything for this stop, but the
     // state map must still reflect the pre-globalFilter state so the
     // UI can distinguish "filter-hidden" from "no-service".
-    const stop = makeStopWithContext('s', [3], [makeEntry({ isOrigin: false, pickupType: 0 })]);
+    const stop = makeStopWithContext('s', [3], [makeEntry({ isFirstStop: false, pickupType: 0 })]);
 
     const result = deriveFilteredNearbyStops({
       nearbyStopTimes: [stop],
@@ -151,7 +151,10 @@ describe('deriveFilteredNearbyStops', () => {
     const stop = makeStopWithContext(
       's',
       [3],
-      [makeEntry({ isOrigin: true, pickupType: 0 }), makeEntry({ isOrigin: false, pickupType: 0 })],
+      [
+        makeEntry({ isFirstStop: true, pickupType: 0 }),
+        makeEntry({ isFirstStop: false, pickupType: 0 }),
+      ],
     );
 
     const result = deriveFilteredNearbyStops({
@@ -164,7 +167,7 @@ describe('deriveFilteredNearbyStops', () => {
 
     expect(result.filtered).toHaveLength(1);
     expect(result.filtered[0].stopTimes).toHaveLength(1);
-    expect(result.filtered[0].stopTimes[0].patternPosition.isOrigin).toBe(true);
+    expect(result.filtered[0].stopTimes[0].patternPosition.isFirstStop).toBe(true);
   });
 
   it('narrows entries with showBoardableOnly by pickup type and pattern position', () => {
@@ -172,9 +175,9 @@ describe('deriveFilteredNearbyStops', () => {
       's',
       [3],
       [
-        makeEntry({ isOrigin: false, isTerminal: false, pickupType: 0 }), // boardable middle
-        makeEntry({ isOrigin: false, isTerminal: true, pickupType: 0 }), // pure terminal -- drops
-        makeEntry({ isOrigin: true, pickupType: 1 }), // non-boardable origin -- drops
+        makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 0 }), // boardable middle
+        makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 }), // pure terminal -- drops
+        makeEntry({ isFirstStop: true, pickupType: 1 }), // non-boardable origin -- drops
       ],
     );
 
@@ -200,13 +203,13 @@ describe('deriveFilteredNearbyStops', () => {
       [3],
       [
         // (a) origin + boardable middle-style -> KEEP
-        makeEntry({ isOrigin: true, isTerminal: false, pickupType: 0 }),
+        makeEntry({ isFirstStop: true, isLastStop: false, pickupType: 0 }),
         // (b) origin + non-boardable -> drops (boardable filter)
-        makeEntry({ isOrigin: true, isTerminal: false, pickupType: 1 }),
+        makeEntry({ isFirstStop: true, isLastStop: false, pickupType: 1 }),
         // (c) middle + boardable -> drops (origin filter)
-        makeEntry({ isOrigin: false, isTerminal: false, pickupType: 0 }),
-        // (d) terminal + boardable -> drops (origin filter; isOrigin=false)
-        makeEntry({ isOrigin: false, isTerminal: true, pickupType: 0 }),
+        makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 0 }),
+        // (d) terminal + boardable -> drops (origin filter; isFirstStop=false)
+        makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 }),
       ],
     );
 
@@ -221,7 +224,7 @@ describe('deriveFilteredNearbyStops', () => {
     expect(result.filtered).toHaveLength(1);
     expect(result.filtered[0].stopTimes).toHaveLength(1);
     const survivor = result.filtered[0].stopTimes[0];
-    expect(survivor.patternPosition.isOrigin).toBe(true);
+    expect(survivor.patternPosition.isFirstStop).toBe(true);
     expect(survivor.boarding.pickupType).toBe(0);
 
     // rawCounts is pre-globalFilter -- still sees the whole entry list
@@ -242,14 +245,14 @@ describe('deriveFilteredNearbyStops', () => {
   it('returns drop-off-only state when every pre-globalFilter entry is drop-off-only', () => {
     // Two drop-off-only entries via two different signals:
     //   - explicit pickupType=1
-    //   - pattern inference (isTerminal=true), which the state helper
+    //   - pattern inference (isLastStop=true), which the state helper
     //     also classifies as drop-off-only.
     const stop = makeStopWithContext(
       'dropoff',
       [3],
       [
-        makeEntry({ isOrigin: false, isTerminal: false, pickupType: 1 }),
-        makeEntry({ isOrigin: false, isTerminal: true, pickupType: 0 }),
+        makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 1 }),
+        makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 }),
       ],
     );
 
@@ -272,8 +275,8 @@ describe('deriveFilteredNearbyStops', () => {
     // object should pass through by reference (we only swapped
     // stopTimes).
     const inputStopTimes = [
-      makeEntry({ isOrigin: true, pickupType: 0 }),
-      makeEntry({ isOrigin: false, pickupType: 0 }),
+      makeEntry({ isFirstStop: true, pickupType: 0 }),
+      makeEntry({ isFirstStop: false, pickupType: 0 }),
     ];
     const inputWrapper = makeStopWithContext('s', [3], inputStopTimes);
 
@@ -297,27 +300,27 @@ describe('deriveFilteredNearbyStops', () => {
     //   - dropped pre-filter (route type out of `enabledRouteTypes`)
     //   - origin + boardable
     //   - middle + boardable
-    //   - drop-off-only (isTerminal=true) -> not boardable
+    //   - drop-off-only (isLastStop=true) -> not boardable
     //   - empty stopTimes -> no service
     const subwayOnly = makeStopWithContext(
       'subway-only',
       [1],
-      [makeEntry({ isOrigin: true, pickupType: 0 })],
+      [makeEntry({ isFirstStop: true, pickupType: 0 })],
     );
     const originBoardable = makeStopWithContext(
       'origin-boardable',
       [3],
-      [makeEntry({ isOrigin: true, isTerminal: false, pickupType: 0 })],
+      [makeEntry({ isFirstStop: true, isLastStop: false, pickupType: 0 })],
     );
     const middleBoardable = makeStopWithContext(
       'middle-boardable',
       [3],
-      [makeEntry({ isOrigin: false, isTerminal: false, pickupType: 0 })],
+      [makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 0 })],
     );
     const dropOffOnly = makeStopWithContext(
       'drop-off-only',
       [3],
-      [makeEntry({ isOrigin: false, isTerminal: true, pickupType: 0 })],
+      [makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 })],
     );
     const noService = makeStopWithContext('no-service', [3], []);
 
@@ -406,12 +409,12 @@ describe('deriveFilteredNearbyStops', () => {
     const originBoardable = makeStopWithContext(
       'origin',
       [3],
-      [makeEntry({ isOrigin: true, pickupType: 0 })],
+      [makeEntry({ isFirstStop: true, pickupType: 0 })],
     );
     const middleBoardable = makeStopWithContext(
       'middle',
       [3],
-      [makeEntry({ isOrigin: false, pickupType: 0 })],
+      [makeEntry({ isFirstStop: false, pickupType: 0 })],
     );
 
     const result = deriveFilteredNearbyStops({

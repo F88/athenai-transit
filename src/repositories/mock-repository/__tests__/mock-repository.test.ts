@@ -250,13 +250,13 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       // pattern has 4 stops, terminal is rs-3 at index 3
       for (const e of stuckEntries) {
         expect(e.patternPosition.totalStops).toBe(4);
-        expect(e.patternPosition.isTerminal).toBe(false);
+        expect(e.patternPosition.isLastStop).toBe(false);
       }
       // si=0 is origin, si=1 is mid-trip (still rs-1 due to dwell)
       const siZero = stuckEntries.find((e) => e.patternPosition.stopIndex === 0);
       const siOne = stuckEntries.find((e) => e.patternPosition.stopIndex === 1);
-      expect(siZero?.patternPosition.isOrigin).toBe(true);
-      expect(siOne?.patternPosition.isOrigin).toBe(false);
+      expect(siZero?.patternPosition.isFirstStop).toBe(true);
+      expect(siOne?.patternPosition.isFirstStop).toBe(false);
     });
 
     it('emits same departure count for both rs-1 occurrences (no merging)', async () => {
@@ -289,12 +289,12 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       expect(stuckEntries.length).toBeGreaterThan(0);
       for (const e of stuckEntries) {
         expect(e.patternPosition.stopIndex).toBe(2);
-        expect(e.patternPosition.isTerminal).toBe(false);
-        expect(e.patternPosition.isOrigin).toBe(false);
+        expect(e.patternPosition.isLastStop).toBe(false);
+        expect(e.patternPosition.isFirstStop).toBe(false);
       }
     });
 
-    it('rs-3 (terminal) is at si=3 with isTerminal=true', async () => {
+    it('rs-3 (terminal) is at si=3 with isLastStop=true', async () => {
       const repository = new MockRepository();
       const result = await repository.getFullDayTimetableEntries('rs-3', NOW);
       assertSuccess(result);
@@ -305,7 +305,7 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       expect(stuckEntries.length).toBeGreaterThan(0);
       for (const e of stuckEntries) {
         expect(e.patternPosition.stopIndex).toBe(3);
-        expect(e.patternPosition.isTerminal).toBe(true);
+        expect(e.patternPosition.isLastStop).toBe(true);
       }
     });
   });
@@ -334,10 +334,10 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       const siSix = sixEntries.find((e) => e.patternPosition.stopIndex === 6);
 
       // si=2 is the first loop entry (mid-trip), si=6 is the second visit (terminal)
-      expect(siTwo?.patternPosition.isOrigin).toBe(false);
-      expect(siTwo?.patternPosition.isTerminal).toBe(false);
-      expect(siSix?.patternPosition.isOrigin).toBe(false);
-      expect(siSix?.patternPosition.isTerminal).toBe(true);
+      expect(siTwo?.patternPosition.isFirstStop).toBe(false);
+      expect(siTwo?.patternPosition.isLastStop).toBe(false);
+      expect(siSix?.patternPosition.isFirstStop).toBe(false);
+      expect(siSix?.patternPosition.isLastStop).toBe(true);
     });
 
     it('emits 2x entries per scheduled minute at r6-3 (one per occurrence)', async () => {
@@ -368,8 +368,8 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       expect(sixEntries.length).toBeGreaterThan(0);
       for (const e of sixEntries) {
         expect(e.patternPosition.stopIndex).toBe(0);
-        expect(e.patternPosition.isOrigin).toBe(true);
-        expect(e.patternPosition.isTerminal).toBe(false);
+        expect(e.patternPosition.isFirstStop).toBe(true);
+        expect(e.patternPosition.isLastStop).toBe(false);
       }
     });
 
@@ -440,12 +440,12 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
       const siSix = eightEntries.find((e) => e.patternPosition.stopIndex === 6);
 
       // si=0 origin, si=3 mid (figure-8 cross), si=6 terminal
-      expect(siZero?.patternPosition.isOrigin).toBe(true);
-      expect(siZero?.patternPosition.isTerminal).toBe(false);
-      expect(siThree?.patternPosition.isOrigin).toBe(false);
-      expect(siThree?.patternPosition.isTerminal).toBe(false);
-      expect(siSix?.patternPosition.isOrigin).toBe(false);
-      expect(siSix?.patternPosition.isTerminal).toBe(true);
+      expect(siZero?.patternPosition.isFirstStop).toBe(true);
+      expect(siZero?.patternPosition.isLastStop).toBe(false);
+      expect(siThree?.patternPosition.isFirstStop).toBe(false);
+      expect(siThree?.patternPosition.isLastStop).toBe(false);
+      expect(siSix?.patternPosition.isFirstStop).toBe(false);
+      expect(siSix?.patternPosition.isLastStop).toBe(true);
     });
 
     it('emits 3x entries per scheduled minute (one per occurrence) at r8-3', async () => {

@@ -39,8 +39,8 @@ interface MakeDatumOverrides {
   departureMinutes?: number;
   arrivalMinutes?: number;
   stopIndex?: number;
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   pickupType?: StopServiceType;
   dropOffType?: StopServiceType;
 }
@@ -64,8 +64,8 @@ function makeDatum(overrides: MakeDatumOverrides = {}): TransitDisplayDatum {
     departureMinutes: overrides.departureMinutes,
     arrivalMinutes: overrides.arrivalMinutes,
     stopIndex: overrides.stopIndex,
-    isTerminal: overrides.isTerminal,
-    isOrigin: overrides.isOrigin,
+    isLastStop: overrides.isLastStop,
+    isFirstStop: overrides.isFirstStop,
     pickupType: overrides.pickupType,
     dropOffType: overrides.dropOffType,
   });
@@ -141,7 +141,7 @@ export const Default: Story = {};
 /** Arrival row: the single time shown is the arrival time (the board's basis). */
 export const ArrivalRow: Story = {
   args: {
-    data: makeDatum({ isTerminal: true }),
+    data: makeDatum({ isLastStop: true }),
     meta: makeMeta({ category: 'arrivals' }),
   },
 };
@@ -290,8 +290,8 @@ const kitchenSinkArgs = {
     tripHeadsign: tripHeadsignLong,
     stopHeadsign: stopHeadsignLong,
     distance: 12,
-    isTerminal: true,
-    isOrigin: true,
+    isLastStop: true,
+    isFirstStop: true,
     pickupType: 1 as StopServiceType,
     dropOffType: 1 as StopServiceType,
   }),

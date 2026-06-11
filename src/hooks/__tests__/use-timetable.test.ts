@@ -39,7 +39,7 @@ function makeTimetableEntry(routeId = 'route-1', headsign = 'Headsign'): Timetab
       direction: 0,
     },
     boarding: { pickupType: 0, dropOffType: 0 },
-    patternPosition: { stopIndex: 0, totalStops: 1, isOrigin: true, isTerminal: true },
+    patternPosition: { stopIndex: 0, totalStops: 1, isFirstStop: true, isLastStop: true },
   };
 }
 

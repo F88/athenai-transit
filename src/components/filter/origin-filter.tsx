@@ -14,7 +14,7 @@ interface OriginFilterProps {
  * Render the origin (始発) filter toggle.
  *
  * Filters to entries where this stop is the trip's origin
- * (= `entry.patternPosition.isOrigin === true`). Includes non-boardable
+ * (= `entry.patternPosition.isFirstStop === true`). Includes non-boardable
  * origins (e.g. depot / yard departures with `pickup_type === 1`); the
  * grid distinguishes those visually with `乗×` / `降×` markers, so
  * hiding them at this layer would suppress legitimate GTFS data the

@@ -86,7 +86,7 @@ export function makeStopWithContext(
       schedule: { departureMinutes: 480, arrivalMinutes: 480 },
       routeDirection: { route, tripHeadsign: { name: 'Test', names: {} } },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },
-      patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+      patternPosition: { stopIndex: 0, totalStops: 1, isLastStop: false, isFirstStop: false },
       serviceDate: new Date('2026-01-01'),
     })),
     stopServiceState: 'boardable',
@@ -117,8 +117,8 @@ export function makeContextualEntry(
     dropOffType: StopServiceType;
     stopIndex: number;
     totalStops: number;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     serviceDate: Date;
   }> = {},
 ): ContextualTimetableEntry {
@@ -143,8 +143,8 @@ export function makeContextualEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 0,
       totalStops: overrides.totalStops ?? 1,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     serviceDate: overrides.serviceDate ?? new Date('2026-01-01'),
   };

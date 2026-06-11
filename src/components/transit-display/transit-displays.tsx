@@ -590,8 +590,8 @@ export function TransitDisplayEntry({
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
             attributes={dataWithMeta.attributes}
-            showDisplayTerminal={true}
-            showDisplayOrigin={true}
+            showDisplayLastStop={true}
+            showDisplayFirstStop={true}
             showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
             showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
           />
