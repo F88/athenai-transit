@@ -18,7 +18,7 @@ interface ScrollToTopButtonProps {
  * scroll container.
  *
  * Render it inside the scroll container after the content, gated on the
- * container's scrolled-down state (e.g. `useScrollFades().showTop`), the
+ * container's scrolled-down state (e.g. `useScrollOverflow().hasContentAbove`), the
  * same way {@link ScrollFadeEdge} is gated. The sticky zero-height wrapper
  * keeps the button from adding scroll height.
  *

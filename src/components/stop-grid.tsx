@@ -5,7 +5,7 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { TimetableEntriesState } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
 
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 
@@ -67,15 +67,15 @@ export function StopGrid({
   onInspectTrip,
 }: StopGridProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
-  const scrollFade = useScrollFades(contentRef, stopIdsKey);
+  const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
   return (
     <div
       className="@container relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
-      onScroll={scrollFade.handleScroll}
+      onScroll={scrollOverflow.update}
     >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
       {/*
        * Column count keys off the scroll container's own width (container
        * query), not the viewport — so the grid stays comfortable whether
@@ -114,8 +114,8 @@ export function StopGrid({
           );
         })}
       </div>
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
-      {scrollFade.showTop && <ScrollToTopButton targetRef={contentRef} />}
+      {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
+      {scrollOverflow.hasContentAbove && <ScrollToTopButton targetRef={contentRef} />}
     </div>
   );
 }

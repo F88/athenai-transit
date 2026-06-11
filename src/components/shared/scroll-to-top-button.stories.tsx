@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { useScrollFades } from '../../hooks/use-scroll-fades';
+import { useScrollOverflow } from '../../hooks/use-scroll-overflow';
 import { baseStop, longNameStop } from '../../stories/fixtures';
 import { ScrollFadeEdge } from './scroll-fade-edge';
 import { ScrollToTopButton } from './scroll-to-top-button';
@@ -35,8 +35,9 @@ function StaticButtonPreview({ className }: { className?: string }) {
 
 /**
  * Demo scroll container mirroring the real integration (StopGrid /
- * TransitDisplaysContainer): the button is gated on `useScrollFades().showTop`
- * and shares the container with both ScrollFadeEdge affordances.
+ * TransitDisplaysContainer): the button is gated on
+ * `useScrollOverflow().hasContentAbove` and shares the container with both
+ * ScrollFadeEdge affordances.
  *
  * The container height is an inline style (not a Tailwind utility) so the
  * demo scrolls deterministically and `initialScrollTop` is applied against
@@ -52,7 +53,7 @@ function ScrollContainerDemo({
   initialScrollTop: number;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
-  const scrollFade = useScrollFades(contentRef, String(itemCount));
+  const scrollOverflow = useScrollOverflow(contentRef, String(itemCount));
 
   useEffect(() => {
     if (contentRef.current) {
@@ -63,11 +64,11 @@ function ScrollContainerDemo({
   return (
     <div
       ref={contentRef}
-      onScroll={scrollFade.handleScroll}
+      onScroll={scrollOverflow.update}
       className="relative max-w-md overflow-y-auto rounded-lg border bg-white dark:bg-gray-900"
       style={{ height: '20rem' }}
     >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
       <ul className="m-0 flex list-none flex-col gap-2 p-4">
         {Array.from({ length: itemCount }, (_, i) => (
           <li key={i} className="rounded-lg bg-[#f5f7fa] p-4 text-sm dark:bg-gray-800">
@@ -75,8 +76,10 @@ function ScrollContainerDemo({
           </li>
         ))}
       </ul>
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
-      {scrollFade.showTop && <ScrollToTopButton targetRef={contentRef} className={className} />}
+      {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
+      {scrollOverflow.hasContentAbove && (
+        <ScrollToTopButton targetRef={contentRef} className={className} />
+      )}
     </div>
   );
 }
@@ -112,7 +115,7 @@ export const Demo: Story = {
   ),
 };
 
-/** At the top the gate (`showTop`) is false, so the button is not rendered. */
+/** At the top the gate (`hasContentAbove`) is false, so the button is not rendered. */
 export const DemoHiddenAtTop: Story = {
   render: (args) => (
     <ScrollContainerDemo className={args.className} itemCount={12} initialScrollTop={0} />

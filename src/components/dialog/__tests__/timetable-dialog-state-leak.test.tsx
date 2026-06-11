@@ -27,11 +27,11 @@ vi.mock('@/hooks/use-info-level', () => ({
   }),
 }));
 
-vi.mock('@/hooks/use-scroll-fades', () => ({
-  useScrollFades: () => ({
-    handleScroll: vi.fn(),
-    showTop: false,
-    showBottom: false,
+vi.mock('@/hooks/use-scroll-overflow', () => ({
+  useScrollOverflow: () => ({
+    update: vi.fn(),
+    hasContentAbove: false,
+    hasContentBelow: false,
   }),
 }));
 

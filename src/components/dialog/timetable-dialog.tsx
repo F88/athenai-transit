@@ -32,7 +32,7 @@ import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filte
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import type { GlobalFilter } from '@/types/app/global-filter';
 import type { InfoLevel } from '@/types/app/settings';
 import type { TimetableData } from '@/types/app/timetable';
@@ -410,11 +410,11 @@ export const TimetableDialog = memo(function TimetableDialog({
     );
   }, [data, dataLangs]);
 
-  const headerScroll = useScrollFades(
+  const headerScrollOverflow = useScrollOverflow(
     headerContainerRef,
     `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${stopEventAttributesFilteredEntries.length}:${infoLevel}`,
   );
-  const gridScroll = useScrollFades(
+  const gridScrollOverflow = useScrollOverflow(
     gridContainerRef,
     `${data?.type ?? 'closed'}:${stopEventAttributesFilteredEntries.length}:${infoLevel}:${hourToHighlight}`,
   );
@@ -488,10 +488,10 @@ export const TimetableDialog = memo(function TimetableDialog({
 
         <div
           ref={headerContainerRef}
-          onScroll={headerScroll.handleScroll}
+          onScroll={headerScrollOverflow.update}
           className="border-border relative max-h-[40dvh] shrink-0 overflow-y-auto border-b"
         >
-          {headerScroll.showTop && (
+          {headerScrollOverflow.hasContentAbove && (
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
           <DialogHeader className="p-4 text-left">
@@ -599,16 +599,16 @@ export const TimetableDialog = memo(function TimetableDialog({
               </p>
             )}
           </DialogHeader>
-          {headerScroll.showBottom && (
+          {headerScrollOverflow.hasContentBelow && (
             <ScrollFadeEdge position="bottom" className="via-background/90 -mt-5 h-5" />
           )}
         </div>
         <div
           ref={gridContainerRef}
-          onScroll={gridScroll.handleScroll}
+          onScroll={gridScrollOverflow.update}
           className="relative min-h-0 flex-1 overflow-y-auto"
         >
-          {gridScroll.showTop && (
+          {gridScrollOverflow.hasContentAbove && (
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
           <div className="px-4 pt-3 pb-4">
@@ -631,7 +631,7 @@ export const TimetableDialog = memo(function TimetableDialog({
               onInspectTrip={onInspectTrip}
             />
           </div>
-          {gridScroll.showBottom && (
+          {gridScrollOverflow.hasContentBelow && (
             <ScrollFadeEdge position="bottom" className="via-background/90 -mt-5 h-5" />
           )}
         </div>

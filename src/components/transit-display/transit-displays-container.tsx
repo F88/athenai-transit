@@ -9,7 +9,7 @@ import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-
 
 import { createLogger } from '@/lib/logger';
 
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
@@ -81,7 +81,7 @@ export function TransitDisplaysContainer({
 }: TransitDisplaysContainerProps) {
   const { t } = useTranslation();
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
-  const scrollFade = useScrollFades(contentRef, stopIdsKey);
+  const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
   // distance filter: stops within radiusMeters of the center. Memoized so its
   // reference is stable while stopTimes are unchanged -- otherwise the
@@ -145,9 +145,9 @@ export function TransitDisplaysContainer({
     <div
       className="relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
-      onScroll={scrollFade.handleScroll}
+      onScroll={scrollOverflow.update}
     >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
       {/* transit-display: the classic split-flap board. */}
       {/* transit-display-2: the modern design board. */}
       {viewId === 'transit-display' ? (
@@ -176,8 +176,8 @@ export function TransitDisplaysContainer({
           onInspectTrip={onInspectTrip}
         />
       )}
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
-      {scrollFade.showTop && <ScrollToTopButton targetRef={contentRef} />}
+      {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
+      {scrollOverflow.hasContentAbove && <ScrollToTopButton targetRef={contentRef} />}
     </div>
   );
 }
