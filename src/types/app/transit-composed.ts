@@ -454,7 +454,7 @@ export interface TimetableEntry {
    * vs unset default), and sources often leave terminal stops unmarked.
    * Deriving the operational state requires combining these signals with
    * `patternPosition`; use the domain util functions in
-   * `src/domain/transit/timetable-utils.ts` (e.g. `isDropOffOnly`).
+   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`).
    */
   boarding: {
     /** Pickup (boarding) availability. */
@@ -483,8 +483,8 @@ export interface TimetableEntry {
    * `isOrigin` / `isTerminal` are also inputs to boarding inference. Do not
    * judge operational boarding/alighting availability directly from these
    * flags; use the domain util functions in
-   * `src/domain/transit/timetable-utils.ts` (e.g. `isDropOffOnly`), which
-   * combine them with the `boarding` source signals.
+   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`),
+   * which combine them with the `boarding` source signals.
    */
   patternPosition: {
     /** 0-based index of this stop in the pattern (matches `TimetableGroupV2Json.si`). */

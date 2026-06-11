@@ -6,7 +6,7 @@ import {
   prepareRouteHeadsignTimetable,
   prepareStopTimetable,
 } from '@/domain/transit/timetable-filter';
-import { getStopServiceState } from '@/domain/transit/timetable-utils';
+import { getStopServiceState } from '@/domain/transit/timetable-service-state';
 import { createLogger } from '@/lib/logger';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { Result, TimetableResult } from '@/types/app/repository';

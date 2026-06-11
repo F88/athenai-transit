@@ -22,7 +22,7 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
-import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
+import { getTimetableEntriesState } from '../../domain/transit/timetable-service-state';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type {
   CollectionResult,

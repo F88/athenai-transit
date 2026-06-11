@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { getServiceDay } from '../domain/transit/service-day';
-import { getStopServiceState } from '../domain/transit/timetable-utils';
+import { getStopServiceState } from '../domain/transit/timetable-service-state';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 

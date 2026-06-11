@@ -7,7 +7,7 @@ import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
 } from './timetable-filter';
-import { getTimetableEntriesState } from './timetable-utils';
+import { getTimetableEntriesState } from './timetable-service-state';
 
 /**
  * Inputs to {@link deriveFilteredNearbyStops}.

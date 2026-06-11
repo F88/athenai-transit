@@ -6,7 +6,7 @@ import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/name-resolver/get-stop-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
+import { getDisplayMinutes } from '../../domain/transit/timetable-entry-schedule';
 import { AgencyBadge } from '../badge/agency-badge';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { IdBadge } from '../badge/id-badge';

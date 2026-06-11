@@ -1,6 +1,6 @@
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-names';
-import { isDropOffOnly } from './timetable-utils';
+import { isDropOffOnly } from './timetable-entry-boarding';
 import type { Agency } from '@/types/app/transit';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 // import { createLogger } from '../../lib/logger';

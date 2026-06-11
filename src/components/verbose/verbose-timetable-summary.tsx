@@ -2,7 +2,7 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { StopServiceState } from '../../types/app/transit';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { formatDateKey } from '../../domain/transit/calendar-utils';
-import { isDropOffOnly } from '../../domain/transit/timetable-utils';
+import { isDropOffOnly } from '../../domain/transit/timetable-entry-boarding';
 
 /**
  * Debug dump of timetable-level metadata and entry statistics.

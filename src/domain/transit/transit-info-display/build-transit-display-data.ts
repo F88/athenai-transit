@@ -12,7 +12,7 @@ import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
 } from '../compute-transit-display-datum-stats';
-import { isBoardingOnly, isDropOffOnly } from '../timetable-utils';
+import { isBoardingOnly, isDropOffOnly } from '../timetable-entry-boarding';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the

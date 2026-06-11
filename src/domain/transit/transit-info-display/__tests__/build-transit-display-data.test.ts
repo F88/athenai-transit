@@ -14,7 +14,7 @@ import type {
   StopWithContext,
 } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
-import { isBoardingOnly, isDropOffOnly } from '../../timetable-utils';
+import { isBoardingOnly, isDropOffOnly } from '../../timetable-entry-boarding';
 import {
   buildTransitDisplayDataSet,
   categoryQualifies,

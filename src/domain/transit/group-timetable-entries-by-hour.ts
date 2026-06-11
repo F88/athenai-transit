@@ -1,5 +1,5 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
-import { getDisplayMinutes } from './timetable-utils';
+import { getDisplayMinutes } from './timetable-entry-schedule';
 
 /**
  * Group entries into hour buckets keyed by displayed time.
