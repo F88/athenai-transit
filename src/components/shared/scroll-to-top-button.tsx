@@ -85,12 +85,14 @@ export function ScrollToTopButton({
         // MAP_OVERLAY_BUTTON_BASE_STYLE).
         // visibility joins the transition so the hidden state (which kills
         // taps and focus) lands only after the fade-out completes.
+        // scale composes with the positioning -translate-y-full because
+        // Tailwind v4 emits scale/translate as individual CSS properties.
         className={cn(
           'bg-background/60 dark:bg-background/60 dark:hover:bg-accent -translate-y-full cursor-pointer rounded-full border',
-          'transition-[opacity,visibility] duration-500 motion-reduce:transition-none',
+          'transition-[opacity,scale,visibility] duration-500 ease-out motion-reduce:transition-none',
           visible
-            ? 'pointer-events-auto visible opacity-100'
-            : 'pointer-events-none invisible opacity-0',
+            ? 'pointer-events-auto visible scale-100 opacity-100'
+            : 'pointer-events-none invisible scale-50 opacity-0',
           BUTTON_SIZE_CLASS_BY_DISPLAY_SIZE[size],
         )}
         aria-label={t('common.scrollToTop')}
