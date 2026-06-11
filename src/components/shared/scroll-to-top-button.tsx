@@ -75,11 +75,19 @@ export function ScrollToTopButton({
       )}
     >
       <Button
+        // type="button": the shadcn Button sets no type, so the native
+        // default (submit inside a form) would apply; every tappable
+        // primitive in this app pins type="button".
+        type="button"
         variant="outline"
         size="icon"
-        // The outline variant's translucent dark surface (dark:bg-input/30)
-        // would let the scrolled content bleed through this floating button,
-        // so force the same opaque background/hover pairing as light mode.
+        // Background: the same 60% translucent surface in both themes, on
+        // purpose. The outline variant is opaque in light but nearly
+        // transparent in dark (dark:bg-input/30 = ~5% effective alpha),
+        // which made the themes diverge over scrolled content. The dark:
+        // duplicate of bg-background/60 is required even though its value is
+        // identical: it is what removes the variant's dark:bg-input/30 in
+        // tailwind-merge.
         // cursor-pointer: the shadcn Button ships no cursor class; floating
         // tappable buttons in this app show a pointer (see
         // MAP_OVERLAY_BUTTON_BASE_STYLE).
