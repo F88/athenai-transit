@@ -445,7 +445,17 @@ export interface TimetableEntry {
   /** Route and direction context for this entry. */
   routeDirection: RouteDirection;
 
-  /** Boarding availability at this stop. */
+  /**
+   * Boarding availability at this stop.
+   *
+   * These fields are raw GTFS source signals (pickup_type / drop_off_type),
+   * NOT the operational boarding state. Do not judge boardability directly
+   * from these fields: `pickupType === 0` is ambiguous (explicit "available"
+   * vs unset default), and sources often leave terminal stops unmarked.
+   * Deriving the operational state requires combining these signals with
+   * `patternPosition`; use the domain util functions in
+   * `src/domain/transit/timetable-utils.ts` (e.g. `isDropOffOnly`).
+   */
   boarding: {
     /** Pickup (boarding) availability. */
     pickupType: StopServiceType;
@@ -469,6 +479,12 @@ export interface TimetableEntry {
    * but are distinct boarding events.
    *
    * `stopIndex` corresponds 1:1 to the `si` field on `TimetableGroupV2Json`.
+   *
+   * `isOrigin` / `isTerminal` are also inputs to boarding inference. Do not
+   * judge operational boarding/alighting availability directly from these
+   * flags; use the domain util functions in
+   * `src/domain/transit/timetable-utils.ts` (e.g. `isDropOffOnly`), which
+   * combine them with the `boarding` source signals.
    */
   patternPosition: {
     /** 0-based index of this stop in the pattern (matches `TimetableGroupV2Json.si`). */
