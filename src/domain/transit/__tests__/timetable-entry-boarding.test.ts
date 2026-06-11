@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isDropOffOnly,
   isBoardingOnly,
-  isPassThrough,
+  isNoPassengerService,
   requiresArrangement,
 } from '../timetable-entry-boarding';
 import { makeEntry } from './make-timetable-entry';
@@ -70,20 +70,20 @@ describe('isBoardingOnly', () => {
 });
 
 // ---------------------------------------------------------------------------
-// isPassThrough
+// isNoPassengerService
 // ---------------------------------------------------------------------------
 
-describe('isPassThrough', () => {
+describe('isNoPassengerService', () => {
   it('returns true when both pickup and dropoff are unavailable', () => {
-    expect(isPassThrough(makeEntry({ pickupType: 1, dropOffType: 1 }))).toBe(true);
+    expect(isNoPassengerService(makeEntry({ pickupType: 1, dropOffType: 1 }))).toBe(true);
   });
 
   it('returns false when only pickup is unavailable', () => {
-    expect(isPassThrough(makeEntry({ pickupType: 1 }))).toBe(false);
+    expect(isNoPassengerService(makeEntry({ pickupType: 1 }))).toBe(false);
   });
 
   it('returns false for regular stop', () => {
-    expect(isPassThrough(makeEntry())).toBe(false);
+    expect(isNoPassengerService(makeEntry())).toBe(false);
   });
 });
 
