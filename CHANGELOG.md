@@ -17,6 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - Hooks: `useScrollFades` を `useScrollOverflow` にリネームした (`showTop` / `showBottom` -> `hasContentAbove` / `hasContentBelow`、`handleScroll` -> `update`。フェードではなく「スクロール上下に隠れたコンテンツの有無の観測」という責務を名前に反映。挙動変更なし)。
+- Data-source: keio-bus の GTFS resource を 20260404 版へ更新。
 
 ### Fixed
 
