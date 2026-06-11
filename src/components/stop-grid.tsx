@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import type { StopTimeViewId } from '../domain/transit/stop-time-views';
-import { useScrollFades } from '../hooks/use-scroll-fades';
-import type { LatLng } from '../types/app/map';
-import type { InfoLevel } from '../types/app/settings';
-import type { TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
-import { ScrollFadeEdge } from './shared/scroll-fade-edge';
-import { NearbyStop, type NearbyStopProps } from './nearby-stop';
+
+import type { LatLng } from '@/types/app/map';
+import type { InfoLevel } from '@/types/app/settings';
+import type { TimetableEntriesState } from '@/types/app/transit';
+import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
+
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
+
+import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
+
+import { NearbyStop, type NearbyStopProps } from '@/components/nearby-stop';
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
 
 /** Number of stops to render immediately without lazy loading. */
 const EAGER_RENDER_COUNT = 6;
@@ -25,6 +31,8 @@ interface StopGridProps {
   selectedStopId: string | null;
   now: Date;
   mapCenter: LatLng | null;
+  /** Display size (drives row text size); resolved from container width like the header. */
+  size: ExtendedDisplaySize;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
@@ -49,6 +57,7 @@ export function StopGrid({
   selectedStopId,
   now,
   mapCenter,
+  size,
   infoLevel,
   dataLangs,
   viewId,
@@ -62,15 +71,15 @@ export function StopGrid({
   onInspectTrip,
 }: StopGridProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
-  const scrollFade = useScrollFades(contentRef, stopIdsKey);
+  const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
   return (
     <div
       className="@container relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
-      onScroll={scrollFade.handleScroll}
+      onScroll={scrollOverflow.update}
     >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
       {/*
        * Column count keys off the scroll container's own width (container
        * query), not the viewport — so the grid stays comfortable whether
@@ -109,7 +118,12 @@ export function StopGrid({
           );
         })}
       </div>
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
+      {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
+      <ScrollToTopButton
+        visible={scrollOverflow.hasContentAbove}
+        size={size}
+        targetRef={contentRef}
+      />
     </div>
   );
 }

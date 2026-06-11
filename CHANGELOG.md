@@ -9,6 +9,20 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- StopGrid / TransitDisplaysContainer: スクロールで上端から離れている間、「一番上に戻る」フローティングボタン (`ScrollToTopButton`) を右下に表示するようにした。
+- Storybook: `ScrollToTopButton` の stories (外観 + 統合デモ) を追加した。
+
+### Changed
+
+- Hooks: `useScrollFades` を `useScrollOverflow` にリネームした (`showTop` / `showBottom` -> `hasContentAbove` / `hasContentBelow`、`handleScroll` -> `update`。フェードではなく「スクロール上下に隠れたコンテンツの有無の観測」という責務を名前に反映。挙動変更なし)。
+
+### Fixed
+
+- BottomSheet: スクロール中のリスト上で始まった下方向スワイプではシートを折りたたまないようにした (リストを読み返す操作が折りたたみジェスチャとして誤解釈されていた)。リスト先頭からの引き下げによる折りたたみと、上方向スワイプによる展開は従来どおり。
+- MapOverlay: 画面の高さが低い (最小設計高さ ~400px 未満) ときのコーナーパネルの重なり順を、DOM 記載順の偶然から意図した優先順位に変更した。重なった場合も「のりば検索」(StopControlPanel) と「現在位置へ移動」等 (MapNavigationPanel) が前面に残り操作可能になる (従来は RenderingPanel が MapNavigationPanel を覆い操作不能だった)。
+
 ## [2026.06.10]
 
 ### Added

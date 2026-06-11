@@ -31,7 +31,7 @@ import { formatAbsoluteTime } from '@/domain/transit/time';
 import { getOriginStop, getTerminalStop } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route } from '@/types/app/transit';
 import type {
@@ -543,7 +543,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
     [dialogRouteColorInput, dialogRouteColorAssessment.isLowContrast],
   );
 
-  const contentScroll = useScrollFades(
+  const contentScrollOverflow = useScrollOverflow(
     contentContainerRef,
     snapshot
       ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${selectedPatternStopIndex}:${snapshot.stopTimes.length}`
@@ -694,7 +694,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   ]);
 
   const handleBodyScroll = useCallback(() => {
-    contentScroll.handleScroll();
+    contentScrollOverflow.update();
 
     if (Date.now() < programmaticScrollSettleRef.current) {
       return;
@@ -711,7 +711,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
       return;
     }
     setFocusedStopIndex((prev) => (prev === newIndex ? prev : newIndex));
-  }, [contentScroll, snapshot, renderedSnapshot]);
+  }, [contentScrollOverflow, snapshot, renderedSnapshot]);
 
   if (!snapshot) {
     return <Dialog open={false} onOpenChange={onOpenChange} />;
@@ -911,7 +911,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
           onScroll={handleBodyScroll}
           className="relative min-h-0 flex-1 overflow-y-auto text-sm"
         >
-          {contentScroll.showTop && (
+          {contentScrollOverflow.hasContentAbove && (
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
           <div className="flex flex-col gap-4 pt-2 pb-2">
@@ -927,7 +927,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
               onSelectStopById={onSelectStopById}
             />
           </div>
-          {contentScroll.showBottom && <ScrollFadeEdge position="bottom" />}
+          {contentScrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
         </div>
       </DialogContent>
     </Dialog>

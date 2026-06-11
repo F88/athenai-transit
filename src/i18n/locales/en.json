@@ -1,6 +1,7 @@
 {
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "scrollToTop": "Back to top"
   },
   "bootstrap": {
     "action": {

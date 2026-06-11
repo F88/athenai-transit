@@ -307,6 +307,7 @@ export function StopBrowser({
           selectedStopId={selectedStopId}
           now={now}
           mapCenter={mapCenter}
+          size={headerSize}
           infoLevel={infoLevel}
           dataLangs={dataLangs}
           viewId={viewId}

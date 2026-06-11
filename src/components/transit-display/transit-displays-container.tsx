@@ -4,25 +4,28 @@ import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
+import type { AppRouteTypeValue } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
 
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { createLogger } from '@/lib/logger';
 
-import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
-import type { ExtendedDisplaySize } from '@/components/shared/display-size';
-import { TransitDisplays } from '@/components/transit-display/transit-displays';
+import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
+
+import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
+import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
+import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 import {
   buildTransitDisplayDataSet,
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
-import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
-import type { AppRouteTypeValue } from '@/types/app/transit';
-import { TransitDisplays2 } from './transit-displays-2';
-import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
-import { createLogger } from '@/lib/logger';
+
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
+import { TransitDisplays } from '@/components/transit-display/transit-displays';
+import { TransitDisplays2 } from '@/components/transit-display/transit-displays-2';
 
 const logger = createLogger('TransitDisplaysContainer');
 
@@ -78,7 +81,7 @@ export function TransitDisplaysContainer({
 }: TransitDisplaysContainerProps) {
   const { t } = useTranslation();
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
-  const scrollFade = useScrollFades(contentRef, stopIdsKey);
+  const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
   // distance filter: stops within radiusMeters of the center. Memoized so its
   // reference is stable while stopTimes are unchanged -- otherwise the
@@ -142,9 +145,9 @@ export function TransitDisplaysContainer({
     <div
       className="relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
-      onScroll={scrollFade.handleScroll}
+      onScroll={scrollOverflow.update}
     >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
       {/* transit-display: the classic split-flap board. */}
       {/* transit-display-2: the modern design board. */}
       {viewId === 'transit-display' ? (
@@ -173,7 +176,12 @@ export function TransitDisplaysContainer({
           onInspectTrip={onInspectTrip}
         />
       )}
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
+      {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
+      <ScrollToTopButton
+        visible={scrollOverflow.hasContentAbove}
+        size={size}
+        targetRef={contentRef}
+      />
     </div>
   );
 }

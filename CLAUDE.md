@@ -61,8 +61,7 @@ A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-sour
 ```bash
 npm run dev             # start Vite dev server
 npm run build           # production build (tsc + vite build)
-npm run typecheck       # tsc --noEmit
-npm run typecheck:build # tsc -b --noEmit
+npm run typecheck       # tsc -b --noEmit
 npm run lint            # ESLint (type-checked)
 npm run lint:fix        # ESLint with auto-fix
 npm run format          # Prettier format all files
