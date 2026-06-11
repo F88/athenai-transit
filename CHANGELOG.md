@@ -18,6 +18,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Hooks: `useScrollFades` を `useScrollOverflow` にリネームした (`showTop` / `showBottom` -> `hasContentAbove` / `hasContentBelow`、`handleScroll` -> `update`。フェードではなく「スクロール上下に隠れたコンテンツの有無の観測」という責務を名前に反映。挙動変更なし)。
 
+### Fixed
+
+- BottomSheet: スクロール中のリスト上で始まった下方向スワイプではシートを折りたたまないようにした (リストを読み返す操作が折りたたみジェスチャとして誤解釈されていた)。リスト先頭からの引き下げによる折りたたみと、上方向スワイプによる展開は従来どおり。
+
 ## [2026.06.10]
 
 ### Added

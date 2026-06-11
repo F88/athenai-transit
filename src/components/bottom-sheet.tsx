@@ -7,6 +7,7 @@ import type { StopsCounts } from '../types/app/stop';
 import type { StopBrowserSharedState } from '../types/app/stop-browser';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { cn } from '../lib/utils';
+import { hasVerticallyScrolledAncestor } from '../utils/scrolled-ancestor';
 import { StopBrowser } from './stop-browser';
 
 type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
@@ -132,9 +133,12 @@ export function BottomSheet({
     [onExpandedChange],
   );
   const touchStartY = useRef(0);
+  const touchStartedInScrolledContainer = useRef(false);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
+    touchStartedInScrolledContainer.current =
+      e.target instanceof Element && hasVerticallyScrolledAncestor(e.target, e.currentTarget);
   }, []);
 
   const handleTouchEnd = useCallback(
@@ -146,8 +150,18 @@ export function BottomSheet({
       }
 
       if (deltaY < 0) {
+        // Upward swipe always expands: starting to scroll the (narrow)
+        // collapsed list is exactly when more room helps, so the scroll
+        // gesture doubles as expand on purpose.
         setExpanded(true);
-      } else {
+        return;
+      }
+
+      // Downward swipe collapses, except when the gesture started inside a
+      // scrolled container -- there the user is scrolling back through the
+      // list, not pulling the sheet down. A gesture starting with the list
+      // at its top (scrollTop 0) still collapses, iOS-sheet style.
+      if (!touchStartedInScrolledContainer.current) {
         setExpanded(false);
       }
     },
@@ -173,12 +187,14 @@ export function BottomSheet({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Handle */}
       <div
         className="flex shrink-0 cursor-grab justify-center py-2 pb-1"
         onClick={() => setExpanded((prevExpanded) => !prevExpanded)}
       >
         <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
       </div>
+
       <StopBrowser
         stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
