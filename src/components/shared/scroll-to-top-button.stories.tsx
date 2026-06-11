@@ -35,16 +35,16 @@ function StaticButtonPreview({
       style={{ height: '8rem', width: '12rem' }}
     >
       <div style={{ height: '100%' }} />
-      <ScrollToTopButton targetRef={boxRef} size={size} className={className} />
+      <ScrollToTopButton visible targetRef={boxRef} size={size} className={className} />
     </div>
   );
 }
 
 /**
  * Demo scroll container mirroring the real integration (StopGrid /
- * TransitDisplaysContainer): the button is gated on
- * `useScrollOverflow().hasContentAbove` and shares the container with both
- * ScrollFadeEdge affordances.
+ * TransitDisplaysContainer): the button's `visible` is driven by
+ * `useScrollOverflow().hasContentAbove` (fade in/out) and it shares the
+ * container with both ScrollFadeEdge affordances.
  *
  * The container height is an inline style (not a Tailwind utility) so the
  * demo scrolls deterministically and `initialScrollTop` is applied against
@@ -86,9 +86,12 @@ function ScrollContainerDemo({
         ))}
       </ul>
       {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
-      {scrollOverflow.hasContentAbove && (
-        <ScrollToTopButton targetRef={contentRef} size={size} className={className} />
-      )}
+      <ScrollToTopButton
+        visible={scrollOverflow.hasContentAbove}
+        targetRef={contentRef}
+        size={size}
+        className={className}
+      />
     </div>
   );
 }
@@ -98,6 +101,7 @@ const meta = {
   component: ScrollToTopButton,
   args: {
     targetRef: { current: null },
+    visible: true,
   },
   argTypes: {
     targetRef: { control: false },
@@ -143,7 +147,7 @@ export const Demo: Story = {
   ),
 };
 
-/** At the top the gate (`hasContentAbove`) is false, so the button is not rendered. */
+/** At the top `visible` (= `hasContentAbove`) is false: the button is faded out and inert. */
 export const DemoHiddenAtTop: Story = {
   render: (args) => (
     <ScrollContainerDemo className={args.className} itemCount={12} initialScrollTop={0} />

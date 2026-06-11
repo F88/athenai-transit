@@ -31,6 +31,8 @@ const ICON_SIZE_CLASS_BY_DISPLAY_SIZE: Record<ExtendedDisplaySize, string> = {
 interface ScrollToTopButtonProps {
   /** Scroll container to scroll back to the top on click. */
   targetRef: RefObject<HTMLDivElement | null>;
+  /** Whether the button is shown. Changes fade in/out; while hidden the button is inert. */
+  visible: boolean;
   /** Button display size; resolved to the button dimensions and icon scale. */
   size?: ExtendedDisplaySize;
   /** Optional extra classes for per-surface position tuning. */
@@ -41,17 +43,24 @@ interface ScrollToTopButtonProps {
  * Floating "back to top" button pinned near the bottom-right corner of a
  * scroll container.
  *
- * Render it inside the scroll container after the content, gated on the
- * container's scrolled-down state (e.g. `useScrollOverflow().hasContentAbove`), the
- * same way {@link ScrollFadeEdge} is gated. The sticky zero-height wrapper
- * keeps the button from adding scroll height.
+ * Render it unconditionally inside the scroll container after the content,
+ * and drive `visible` with the container's scrolled-down state (e.g.
+ * `useScrollOverflow().hasContentAbove`) — visibility changes fade instead
+ * of mount/unmount so the transition can run in both directions. The sticky
+ * zero-height wrapper keeps the button from adding scroll height.
  *
  * @param targetRef Scroll container to scroll back to the top on click.
+ * @param visible Whether the button is shown; changes fade in/out.
  * @param size Button display size; resolved to the button dimensions and icon scale.
  * @param className Optional extra classes for per-surface position tuning.
  * @returns A sticky floating button element.
  */
-export function ScrollToTopButton({ targetRef, size = 'sm', className }: ScrollToTopButtonProps) {
+export function ScrollToTopButton({
+  targetRef,
+  visible,
+  size = 'sm',
+  className,
+}: ScrollToTopButtonProps) {
   const { t } = useTranslation();
 
   const handleClick = useCallback(() => {
@@ -74,11 +83,19 @@ export function ScrollToTopButton({ targetRef, size = 'sm', className }: ScrollT
         // cursor-pointer: the shadcn Button ships no cursor class; floating
         // tappable buttons in this app show a pointer (see
         // MAP_OVERLAY_BUTTON_BASE_STYLE).
+        // visibility joins the transition so the hidden state (which kills
+        // taps and focus) lands only after the fade-out completes.
         className={cn(
-          'bg-background/60 dark:bg-background/60 dark:hover:bg-accent pointer-events-auto -translate-y-full cursor-pointer rounded-full border',
+          'bg-background/60 dark:bg-background/60 dark:hover:bg-accent -translate-y-full cursor-pointer rounded-full border',
+          'transition-[opacity,visibility] duration-500 motion-reduce:transition-none',
+          visible
+            ? 'pointer-events-auto visible opacity-100'
+            : 'pointer-events-none invisible opacity-0',
           BUTTON_SIZE_CLASS_BY_DISPLAY_SIZE[size],
         )}
         aria-label={t('common.scrollToTop')}
+        aria-hidden={!visible}
+        tabIndex={visible ? 0 : -1}
         onClick={handleClick}
       >
         <ArrowUp className={ICON_SIZE_CLASS_BY_DISPLAY_SIZE[size]} />

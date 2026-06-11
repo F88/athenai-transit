@@ -177,7 +177,11 @@ export function TransitDisplaysContainer({
         />
       )}
       {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
-      {scrollOverflow.hasContentAbove && <ScrollToTopButton size={size} targetRef={contentRef} />}
+      <ScrollToTopButton
+        visible={scrollOverflow.hasContentAbove}
+        size={size}
+        targetRef={contentRef}
+      />
     </div>
   );
 }
