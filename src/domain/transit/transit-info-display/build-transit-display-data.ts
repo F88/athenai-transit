@@ -12,7 +12,7 @@ import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
 } from '../compute-transit-display-datum-stats';
-import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
+import { isBoardingOnly, isDropOffOnly } from '../timetable-utils';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the
@@ -191,19 +191,21 @@ export function categoryQualifies(
   timetableEntry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): boolean {
-  // [IMPORTANT] Use domain logic to determine the starting/ending point.
-  const attributes = getTimetableEntryAttributes(timetableEntry);
+  // [IMPORTANT] Use domain logic to determine boardability / alightability.
 
   if (category === 'departures') {
-    // A departures board lists trips you can actually leave on: not the terminal
-    // (the trip ends here) and boardable here (excludes boarding-prohibited stops
-    // such as the drop-off-only stop just before a terminus).
-    return !attributes.isTerminal && !attributes.isPickupUnavailable;
+    // [IMPORTANT] Use domain logic.
+    // A departures board lists trips you can actually leave on: not drop-off
+    // only, i.e. not the terminal (the trip ends here) and not a
+    // boarding-prohibited stop such as the drop-off-only stop just before a
+    // terminus.
+    return !isDropOffOnly(timetableEntry);
   }
-  // An arrivals board lists trips you can alight from here: not the origin (the
-  // trip starts here) and drop-off allowed here (excludes pickup-only legs such
-  // as the boarding leg of a turn-around / boarding-swap stop).
-  return !attributes.isOrigin && !attributes.isDropOffUnavailable;
+  // [IMPORTANT] Use domain logic.
+  // An arrivals board lists trips you can alight from here: not boarding-only,
+  // i.e. not the origin (the trip starts here) and not a pickup-only leg such
+  // as the boarding leg of a turn-around / boarding-swap stop.
+  return !isBoardingOnly(timetableEntry);
 }
 
 /**

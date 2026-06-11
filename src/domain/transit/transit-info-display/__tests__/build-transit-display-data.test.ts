@@ -4,21 +4,17 @@
  * @vitest-environment node
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { makeContextualEntry, makeRoute, makeStop } from '../../../../__tests__/helpers';
 import type { InfoLevel } from '../../../../types/app/settings';
-import type {
-  AppRouteTypeValue,
-  Route,
-  TimetableEntryAttributes,
-} from '../../../../types/app/transit';
+import type { AppRouteTypeValue, Route } from '../../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
 } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
-import { getTimetableEntryAttributes } from '../../timetable-entry-attributes';
+import { isBoardingOnly, isDropOffOnly } from '../../timetable-utils';
 import {
   buildTransitDisplayDataSet,
   categoryQualifies,
@@ -35,13 +31,6 @@ import {
   type TransitDisplayCondition,
   type TransitDisplayDataWithMetaData,
 } from '../build-transit-display-data';
-
-// categoryQualifies delegates origin/terminal determination to this domain
-// function (which may change over time), so the categoryQualifies unit tests
-// mock it to pin only categoryQualifies' own branching.
-vi.mock('../../timetable-entry-attributes', () => ({
-  getTimetableEntryAttributes: vi.fn(),
-}));
 
 describe('transitDisplayMaxEntriesFor', () => {
   it('returns the configured row cap for each info level', () => {
@@ -159,78 +148,93 @@ describe('sortByCategory', () => {
 });
 
 describe('categoryQualifies', () => {
-  // The entry content is irrelevant: getTimetableEntryAttributes is mocked, so
-  // only the flags it returns drive the result.
-  const ENTRY = makeContextualEntry({ route: busRoute });
-
-  /** Make the mocked getTimetableEntryAttributes return the given flags (rest false). */
-  function withAttributes(flags: Partial<TimetableEntryAttributes>): void {
-    vi.mocked(getTimetableEntryAttributes).mockReturnValue({
-      isTerminal: false,
-      isOrigin: false,
-      isPickupUnavailable: false,
-      isDropOffUnavailable: false,
-      ...flags,
-    });
-  }
+  // Real entries: makeContextualEntry defaults to a plain mid-route stop
+  // (pickupType 0, dropOffType 0, neither origin nor terminal), and each test
+  // overrides only the flag under test.
 
   describe('departures', () => {
-    it('excludes terminal entries', () => {
-      withAttributes({ isTerminal: true });
-      expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
+    it('excludes terminal entries (inferred drop-off only)', () => {
+      const entry = makeContextualEntry({ route: busRoute, isTerminal: true });
+      expect(categoryQualifies(entry, 'departures')).toBe(false);
+    });
+
+    it('excludes explicit no-boarding entries (pickup_type 1)', () => {
+      const entry = makeContextualEntry({ route: busRoute, pickupType: 1 });
+      expect(categoryQualifies(entry, 'departures')).toBe(false);
     });
 
     it('includes non-terminal entries and ignores isOrigin', () => {
-      withAttributes({ isTerminal: false, isOrigin: true });
-      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+      const entry = makeContextualEntry({ route: busRoute, isOrigin: true });
+      expect(categoryQualifies(entry, 'departures')).toBe(true);
     });
 
-    it('excludes un-boardable entries (isPickupUnavailable)', () => {
-      withAttributes({ isPickupUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
+    it('ignores drop_off_type (still qualifies, boarding is unaffected)', () => {
+      const entry = makeContextualEntry({ route: busRoute, dropOffType: 1 });
+      expect(categoryQualifies(entry, 'departures')).toBe(true);
     });
 
-    it('ignores isDropOffUnavailable (still qualifies, boarding is unaffected)', () => {
-      withAttributes({ isDropOffUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    it('includes arrangement-required boarding (pickup_type 2 / 3)', () => {
+      expect(
+        categoryQualifies(makeContextualEntry({ route: busRoute, pickupType: 2 }), 'departures'),
+      ).toBe(true);
+      expect(
+        categoryQualifies(makeContextualEntry({ route: busRoute, pickupType: 3 }), 'departures'),
+      ).toBe(true);
     });
   });
 
   describe('arrivals', () => {
-    it('excludes origin entries', () => {
-      withAttributes({ isOrigin: true });
-      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
+    it('excludes origin entries (inferred boarding only)', () => {
+      const entry = makeContextualEntry({ route: busRoute, isOrigin: true });
+      expect(categoryQualifies(entry, 'arrivals')).toBe(false);
+    });
+
+    it('excludes explicit no-alighting entries (drop_off_type 1)', () => {
+      const entry = makeContextualEntry({ route: busRoute, dropOffType: 1 });
+      expect(categoryQualifies(entry, 'arrivals')).toBe(false);
     });
 
     it('includes non-origin entries and ignores isTerminal', () => {
-      withAttributes({ isOrigin: false, isTerminal: true });
-      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+      const entry = makeContextualEntry({ route: busRoute, isTerminal: true });
+      expect(categoryQualifies(entry, 'arrivals')).toBe(true);
     });
 
-    it('ignores isPickupUnavailable (still qualifies, alighting is unaffected)', () => {
-      withAttributes({ isPickupUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    it('ignores pickup_type (still qualifies, alighting is unaffected)', () => {
+      const entry = makeContextualEntry({ route: busRoute, pickupType: 1 });
+      expect(categoryQualifies(entry, 'arrivals')).toBe(true);
     });
 
-    it('excludes un-alightable entries (isDropOffUnavailable)', () => {
-      withAttributes({ isDropOffUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
+    it('includes arrangement-required alighting (drop_off_type 2 / 3)', () => {
+      expect(
+        categoryQualifies(makeContextualEntry({ route: busRoute, dropOffType: 2 }), 'arrivals'),
+      ).toBe(true);
+      expect(
+        categoryQualifies(makeContextualEntry({ route: busRoute, dropOffType: 3 }), 'arrivals'),
+      ).toBe(true);
     });
   });
 
   it('a plain entry (no terminal/origin) qualifies for both categories', () => {
-    withAttributes({});
+    const entry = makeContextualEntry({ route: busRoute });
 
-    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
-    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    expect(categoryQualifies(entry, 'departures')).toBe(true);
+    expect(categoryQualifies(entry, 'arrivals')).toBe(true);
   });
 
-  it('delegates terminal/origin determination to getTimetableEntryAttributes', () => {
-    withAttributes({});
+  it('delegates to the domain helpers: departures = !isDropOffOnly, arrivals = !isBoardingOnly', () => {
+    const entries = [
+      makeContextualEntry({ route: busRoute }),
+      makeContextualEntry({ route: busRoute, isTerminal: true }),
+      makeContextualEntry({ route: busRoute, isOrigin: true }),
+      makeContextualEntry({ route: busRoute, pickupType: 1 }),
+      makeContextualEntry({ route: busRoute, dropOffType: 1 }),
+      makeContextualEntry({ route: busRoute, isOrigin: true, isTerminal: true }),
+    ];
 
-    categoryQualifies(ENTRY, 'departures');
-
-    expect(getTimetableEntryAttributes).toHaveBeenCalledWith(ENTRY);
+    for (const entry of entries) {
+      expect(categoryQualifies(entry, 'departures')).toBe(!isDropOffOnly(entry));
+      expect(categoryQualifies(entry, 'arrivals')).toBe(!isBoardingOnly(entry));
+    }
   });
 });
 
@@ -363,18 +367,9 @@ describe('clusterCandidatesByRouteType', () => {
 });
 
 describe('groupCandidatesIntoBoards', () => {
-  // groupCandidatesIntoBoards routes through categoryQualifies ->
-  // getTimetableEntryAttributes (mocked at the top). Make the mock faithful for
-  // the only flags categoryQualifies reads, derived from the entry itself, so
-  // each candidate gets its own terminal/origin result.
-  beforeEach(() => {
-    vi.mocked(getTimetableEntryAttributes).mockImplementation((entry) => ({
-      isTerminal: entry.patternPosition.isTerminal,
-      isOrigin: entry.patternPosition.isOrigin,
-      isPickupUnavailable: false,
-      isDropOffUnavailable: false,
-    }));
-  });
+  // groupCandidatesIntoBoards routes through categoryQualifies, which reads
+  // each entry's real boarding / patternPosition flags -- cand() builds real
+  // entries, so each candidate gets its own terminal/origin result.
 
   /** A candidate with an explicit direction and terminal/origin position. */
   function cand(
