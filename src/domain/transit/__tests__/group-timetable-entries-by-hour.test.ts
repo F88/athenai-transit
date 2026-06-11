@@ -20,7 +20,7 @@ function makeRoute(routeId: string): Route {
 function makeEntry(overrides: {
   departureMinutes: number;
   arrivalMinutes?: number;
-  isTerminal?: boolean;
+  isLastStop?: boolean;
 }): TimetableEntry {
   const route = makeRoute('test:R1');
   return {
@@ -36,8 +36,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: 0,
       totalStops: 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: false,
     },
     tripLocator: { patternId: `${route.route_id}__test`, serviceId: 'test', tripIndex: 0 },
   };
@@ -61,7 +61,7 @@ describe('groupTimetableEntriesByHour', () => {
     const terminalCrossingHour = makeEntry({
       departureMinutes: 11 * 60,
       arrivalMinutes: 10 * 60 + 57,
-      isTerminal: true,
+      isLastStop: true,
     });
     const groups = groupTimetableEntriesByHour([terminalCrossingHour]);
     expect([...groups.keys()]).toEqual([10]);

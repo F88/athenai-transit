@@ -129,7 +129,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('origin shows departure only at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isOrigin: true, isTerminal: false, infoLevel }),
+        deriveStopTimeRoleDisplayProps({ isFirstStop: true, isLastStop: false, infoLevel }),
       ).toEqual({
         showArrivalTime: false,
         showDepartureTime: true,
@@ -139,7 +139,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('terminal shows arrival only at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isOrigin: false, isTerminal: true, infoLevel }),
+        deriveStopTimeRoleDisplayProps({ isFirstStop: false, isLastStop: true, infoLevel }),
       ).toEqual({
         showArrivalTime: true,
         showDepartureTime: false,
@@ -149,7 +149,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('middle stop shows both rows at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isOrigin: false, isTerminal: false, infoLevel }),
+        deriveStopTimeRoleDisplayProps({ isFirstStop: false, isLastStop: false, infoLevel }),
       ).toEqual({
         showArrivalTime: true,
         showDepartureTime: true,
@@ -165,8 +165,8 @@ describe('deriveStopTimeRoleDisplayProps', () => {
       // exposes both for fidelity.
       expect(
         deriveStopTimeRoleDisplayProps({
-          isOrigin: true,
-          isTerminal: false,
+          isFirstStop: true,
+          isLastStop: false,
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -179,8 +179,8 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('terminal exposes operator-recorded departure_time (turnaround dwell)', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isOrigin: false,
-          isTerminal: true,
+          isFirstStop: false,
+          isLastStop: true,
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -193,8 +193,8 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('middle stop shows both rows with collapse disabled', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isOrigin: false,
-          isTerminal: false,
+          isFirstStop: false,
+          isLastStop: false,
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -207,15 +207,15 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
   describe('single-stop trip (origin === terminal)', () => {
     it('shows both rows at non-verbose (origin gives departure, terminal gives arrival)', () => {
-      // showArr  = isTerminal || !isOrigin || isVerbose = true.
-      // showDep  = !isTerminal || isVerbose || isOrigin = true.
+      // showArr  = isLastStop || !isFirstStop || isVerbose = true.
+      // showDep  = !isLastStop || isVerbose || isFirstStop = true.
       // The two rows render at the same minute in practice; the
       // collapse-tolerance rule (=2 for non-verbose) then folds
       // them into a single visual row downstream.
       expect(
         deriveStopTimeRoleDisplayProps({
-          isOrigin: true,
-          isTerminal: true,
+          isFirstStop: true,
+          isLastStop: true,
           infoLevel: 'normal',
         }),
       ).toEqual({
@@ -228,8 +228,8 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('shows both rows when verbose with collapse disabled', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isOrigin: true,
-          isTerminal: true,
+          isFirstStop: true,
+          isLastStop: true,
           infoLevel: 'verbose',
         }),
       ).toEqual({

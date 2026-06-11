@@ -17,7 +17,7 @@ function makeEntries(routeIds: string[]): ContextualTimetableEntry[] {
       tripHeadsign: { name: '', names: {} },
     },
     boarding: { pickupType: 0 as const, dropOffType: 0 as const },
-    patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+    patternPosition: { stopIndex: 0, totalStops: 1, isLastStop: false, isFirstStop: false },
     serviceDate: new Date('2026-01-01'),
   }));
 }

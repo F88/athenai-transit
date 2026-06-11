@@ -9,8 +9,8 @@ import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
  * defaults so the type-check passes.
  */
 function makeEntry(overrides: {
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   pickupType?: StopServiceType;
   dropOffType?: StopServiceType;
 }): TimetableEntry {
@@ -37,8 +37,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: 5,
       totalStops: 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: { patternId: 'r1__Dest', serviceId: 'test', tripIndex: 0 },
   };
@@ -48,21 +48,21 @@ describe('getTimetableEntryAttributes', () => {
   it('derives all four flags as false by default', () => {
     const attributes = getTimetableEntryAttributes(makeEntry({}));
     expect(attributes).toEqual({
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     });
   });
 
-  it('reflects isTerminal from patternPosition.isTerminal', () => {
-    expect(getTimetableEntryAttributes(makeEntry({ isTerminal: true })).isTerminal).toBe(true);
-    expect(getTimetableEntryAttributes(makeEntry({ isTerminal: false })).isTerminal).toBe(false);
+  it('reflects isLastStop from patternPosition.isLastStop', () => {
+    expect(getTimetableEntryAttributes(makeEntry({ isLastStop: true })).isLastStop).toBe(true);
+    expect(getTimetableEntryAttributes(makeEntry({ isLastStop: false })).isLastStop).toBe(false);
   });
 
-  it('reflects isOrigin from patternPosition.isOrigin', () => {
-    expect(getTimetableEntryAttributes(makeEntry({ isOrigin: true })).isOrigin).toBe(true);
-    expect(getTimetableEntryAttributes(makeEntry({ isOrigin: false })).isOrigin).toBe(false);
+  it('reflects isFirstStop from patternPosition.isFirstStop', () => {
+    expect(getTimetableEntryAttributes(makeEntry({ isFirstStop: true })).isFirstStop).toBe(true);
+    expect(getTimetableEntryAttributes(makeEntry({ isFirstStop: false })).isFirstStop).toBe(false);
   });
 
   it('sets isPickupUnavailable when pickupType is 1', () => {
@@ -109,19 +109,21 @@ describe('getTimetableEntryAttributes', () => {
 
   it('handles an entry with multiple flags set simultaneously', () => {
     const attributes = getTimetableEntryAttributes(
-      makeEntry({ isTerminal: true, pickupType: 1, dropOffType: 1 }),
+      makeEntry({ isLastStop: true, pickupType: 1, dropOffType: 1 }),
     );
     expect(attributes).toEqual({
-      isTerminal: true,
-      isOrigin: false,
+      isLastStop: true,
+      isFirstStop: false,
       isPickupUnavailable: true,
       isDropOffUnavailable: true,
     });
   });
 
   it('never crashes on origin + terminal together (edge case)', () => {
-    const attributes = getTimetableEntryAttributes(makeEntry({ isOrigin: true, isTerminal: true }));
-    expect(attributes.isOrigin).toBe(true);
-    expect(attributes.isTerminal).toBe(true);
+    const attributes = getTimetableEntryAttributes(
+      makeEntry({ isFirstStop: true, isLastStop: true }),
+    );
+    expect(attributes.isFirstStop).toBe(true);
+    expect(attributes.isLastStop).toBe(true);
   });
 });

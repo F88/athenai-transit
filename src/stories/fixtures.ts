@@ -1427,8 +1427,8 @@ export function createEntry(
     stopHeadsign: TranslatableText;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     stopIndex: number;
     totalStops: number;
     direction: 0 | 1;
@@ -1462,8 +1462,8 @@ export function createEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: overrides.totalStops ?? 15,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     serviceDate: storyServiceDate,
   };

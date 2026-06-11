@@ -23,8 +23,8 @@ function makeRoute(routeId: string): Route {
 function makeEntry(overrides: {
   departureMinutes: number;
   arrivalMinutes?: number;
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   stopIndex?: number;
   routeId?: string;
 }): TimetableEntry {
@@ -42,8 +42,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 0,
       totalStops: 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: { patternId: `${route.route_id}__test`, serviceId: 'test', tripIndex: 0 },
   };
@@ -53,16 +53,16 @@ function makeContextualEntry(overrides: {
   serviceDate: Date;
   departureMinutes: number;
   arrivalMinutes?: number;
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   routeId?: string;
 }): ContextualTimetableEntry {
   return {
     ...makeEntry({
       departureMinutes: overrides.departureMinutes,
       arrivalMinutes: overrides.arrivalMinutes,
-      isTerminal: overrides.isTerminal,
-      isOrigin: overrides.isOrigin,
+      isLastStop: overrides.isLastStop,
+      isFirstStop: overrides.isFirstStop,
       routeId: overrides.routeId,
     }),
     serviceDate: overrides.serviceDate,
@@ -89,12 +89,12 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       const earlierDisplay = makeEntry({
         departureMinutes: 10 * 60 + 19,
         arrivalMinutes: 10 * 60 + 16,
-        isTerminal: true,
+        isLastStop: true,
       });
       const laterDisplay = makeEntry({
         departureMinutes: 10 * 60 + 17,
         arrivalMinutes: 10 * 60 + 17,
-        isTerminal: true,
+        isLastStop: true,
       });
       // Input order: laterDisplay first (departure-time order would keep it
       // first because 10:17 < 10:19), but display order should put
@@ -117,7 +117,7 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       const terminal = makeEntry({
         departureMinutes: 9 * 60 + 8,
         arrivalMinutes: 9 * 60 + 5,
-        isTerminal: true,
+        isLastStop: true,
       });
       const entries = [nonTerminal, terminal];
       sortTimetableEntriesByDisplayTime(entries);
@@ -154,12 +154,12 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       const noDwell = makeEntry({
         departureMinutes: 10 * 60 + 30,
         arrivalMinutes: 10 * 60 + 30,
-        isTerminal: true,
+        isLastStop: true,
       });
       const withDwell = makeEntry({
         departureMinutes: 10 * 60 + 33,
         arrivalMinutes: 10 * 60 + 30,
-        isTerminal: true,
+        isLastStop: true,
       });
       const entries = [withDwell, noDwell];
       sortTimetableEntriesByDisplayTime(entries);
@@ -168,10 +168,10 @@ describe('sortTimetableEntriesByDisplayTime', () => {
     });
   });
 
-  describe('4. tie-break: patternPosition.isOrigin (true first)', () => {
+  describe('4. tie-break: patternPosition.isFirstStop (true first)', () => {
     it('places origin entries before non-origin when all time keys tie', () => {
       const nonOrigin = makeEntry({ departureMinutes: 600 });
-      const origin = makeEntry({ departureMinutes: 600, isOrigin: true });
+      const origin = makeEntry({ departureMinutes: 600, isFirstStop: true });
       const entries = [nonOrigin, origin];
       sortTimetableEntriesByDisplayTime(entries);
       expect(entries[0]).toBe(origin);
@@ -179,7 +179,7 @@ describe('sortTimetableEntriesByDisplayTime', () => {
     });
   });
 
-  describe('5. tie-break: patternPosition.isTerminal (true first)', () => {
+  describe('5. tie-break: patternPosition.isLastStop (true first)', () => {
     it('places terminal entries before non-terminal when origin status also ties', () => {
       // Both non-origin. Same arr/dep. One is terminal (dwell=0 case).
       const middle = makeEntry({
@@ -189,7 +189,7 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       const terminal = makeEntry({
         departureMinutes: 600,
         arrivalMinutes: 600,
-        isTerminal: true,
+        isLastStop: true,
       });
       const entries = [middle, terminal];
       sortTimetableEntriesByDisplayTime(entries);
@@ -198,10 +198,10 @@ describe('sortTimetableEntriesByDisplayTime', () => {
     });
   });
 
-  describe('priority order (display → arrival → isOrigin)', () => {
+  describe('priority order (display → arrival → isFirstStop)', () => {
     it('applies higher-priority keys before lower-priority ones', () => {
-      // Note: isTerminal flips display from departure to arrival, so an
-      // entry with isTerminal=true and arr=490 has display=490 — that
+      // Note: isLastStop flips display from departure to arrival, so an
+      // entry with isLastStop=true and arr=490 has display=490 — that
       // is why e5 below sorts between e1 (display 400) and e2 (display 500).
       const e1 = makeEntry({ departureMinutes: 400 });
       // → display 400 (non-terminal)
@@ -214,17 +214,17 @@ describe('sortTimetableEntriesByDisplayTime', () => {
         departureMinutes: 500,
         arrivalMinutes: 490,
       });
-      // → display 500, arrival 490, isOrigin false
+      // → display 500, arrival 490, isFirstStop false
       const e4 = makeEntry({
         departureMinutes: 500,
         arrivalMinutes: 490,
-        isOrigin: true,
+        isFirstStop: true,
       });
-      // → display 500, arrival 490, isOrigin true (beats e3)
+      // → display 500, arrival 490, isFirstStop true (beats e3)
       const e5 = makeEntry({
         departureMinutes: 500,
         arrivalMinutes: 490,
-        isTerminal: true,
+        isLastStop: true,
       });
       // → display = arrival = 490 (terminal shifts display)
       const entries = [e5, e3, e1, e4, e2];
@@ -261,7 +261,7 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       const b = makeEntry({ departureMinutes: 600, routeId: 'test:RB' });
       const entries = [a, b];
       sortTimetableEntriesByDisplayTime(entries);
-      // Both keys (display/arrival/departure/isOrigin/isTerminal) tie.
+      // Both keys (display/arrival/departure/isFirstStop/isLastStop) tie.
       // Don't assert a specific order — just that both survive.
       expect(new Set(entries)).toEqual(new Set([a, b]));
       expect(entries.length).toBe(2);
@@ -282,7 +282,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
         serviceDate: SERVICE_DAY_1,
         departureMinutes: 1900,
         arrivalMinutes: 1900,
-        isTerminal: true,
+        isLastStop: true,
       });
       const nextMorningDeparture = makeContextualEntry({
         serviceDate: SERVICE_DAY_2,
@@ -329,7 +329,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
         serviceDate: SERVICE_DAY_1,
         arrivalMinutes: 24 * 60 + 6 * 60 + 50, // day2 06:50
         departureMinutes: 24 * 60 + 7 * 60, // day2 07:00
-        isTerminal: true,
+        isLastStop: true,
       });
       const todayEarly = makeContextualEntry({
         serviceDate: SERVICE_DAY_2,
@@ -366,7 +366,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
     });
   });
 
-  describe('3. tie-break: isOrigin / isTerminal flags', () => {
+  describe('3. tie-break: isFirstStop / isLastStop flags', () => {
     it('prefers origin entries when all time keys (abs display/arr/dep) tie', () => {
       const nonOrigin = makeContextualEntry({
         serviceDate: SERVICE_DAY_2,
@@ -375,7 +375,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
       const origin = makeContextualEntry({
         serviceDate: SERVICE_DAY_2,
         departureMinutes: 600,
-        isOrigin: true,
+        isFirstStop: true,
       });
       const entries = [nonOrigin, origin];
       sortTimetableEntriesByDisplayTimeChronologically(entries);
@@ -383,7 +383,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
       expect(entries[1]).toBe(nonOrigin);
     });
 
-    it('prefers terminal entries when isOrigin status also ties', () => {
+    it('prefers terminal entries when isFirstStop status also ties', () => {
       const middle = makeContextualEntry({
         serviceDate: SERVICE_DAY_2,
         departureMinutes: 600,
@@ -393,7 +393,7 @@ describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
         serviceDate: SERVICE_DAY_2,
         departureMinutes: 600,
         arrivalMinutes: 600,
-        isTerminal: true,
+        isLastStop: true,
       });
       const entries = [middle, terminal];
       sortTimetableEntriesByDisplayTimeChronologically(entries);

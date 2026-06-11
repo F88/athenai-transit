@@ -43,8 +43,8 @@ function createEntry(
     stopHeadsign: string;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     stopIndex: number;
     totalStops: number;
     direction: 0 | 1;
@@ -84,8 +84,8 @@ function createEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: overrides.totalStops ?? 15,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: {
       patternId: `${(overrides.route ?? baseRoute).route_id}__${overrides.headsign ?? tripHeadsignLong.name}`,
@@ -166,7 +166,7 @@ export const NoRouteColor: Story = {
 export const Terminal: Story = {
   args: {
     entry: createEntry({
-      isTerminal: true,
+      isLastStop: true,
       arrivalMinutes: 870,
       departureMinutes: 870,
     }),
@@ -295,7 +295,7 @@ export const MultipleItems: Story = {
       createEntry({
         departureMinutes: 900,
         headsign: '中野駅',
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 900,
       }),
       createEntry({ departureMinutes: 920, pickupType: 1, headsign: '車庫前' }),
@@ -304,7 +304,7 @@ export const MultipleItems: Story = {
         departureMinutes: 950,
         route: tramRoute,
         headsign: '早稲田',
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 950,
       }),
     ];
@@ -346,7 +346,7 @@ export const MultipleItemsLangComparison: Story = {
       createEntry({
         departureMinutes: 900,
         headsign: '中野駅',
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 900,
       }),
       createEntry({ departureMinutes: 920, pickupType: 1, headsign: '車庫前' }),
@@ -354,7 +354,7 @@ export const MultipleItemsLangComparison: Story = {
         departureMinutes: 935,
         route: tramRoute,
         headsign: '早稲田',
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 935,
       }),
     ];
@@ -570,7 +570,7 @@ const kitchenSinkItems: {
       ...createEntry({
         route: longRoute,
         departureMinutes: 870,
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 870,
       }),
       routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignKyotoLong }),
@@ -596,7 +596,7 @@ const kitchenSinkItems: {
     entry: {
       ...createEntry({
         departureMinutes: 875,
-        isTerminal: true,
+        isLastStop: true,
         arrivalMinutes: 875,
       }),
       routeDirection: createRouteDirection({ route: baseRoute, tripHeadsign: headsignShinjuku }),
@@ -610,7 +610,7 @@ const kitchenSinkItems: {
       route: longRoute,
       departureMinutes: 876,
       headsign: '三ノ輪橋',
-      isTerminal: true,
+      isLastStop: true,
       arrivalMinutes: 876,
     }),
     icon: true,

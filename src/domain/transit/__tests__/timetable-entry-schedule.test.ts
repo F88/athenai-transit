@@ -13,32 +13,32 @@ import { makeEntry } from './make-timetable-entry';
 
 describe('getDisplayMinutes', () => {
   it('returns departureMinutes for non-terminal stop', () => {
-    const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isTerminal: false });
+    const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isLastStop: false });
     expect(getDisplayMinutes(entry)).toBe(600);
   });
 
   it('returns arrivalMinutes for terminal stop', () => {
-    const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isTerminal: true });
+    const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isLastStop: true });
     expect(getDisplayMinutes(entry)).toBe(598);
   });
 
   it('returns departureMinutes when arrival equals departure (non-terminal)', () => {
-    const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isTerminal: false });
+    const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isLastStop: false });
     expect(getDisplayMinutes(entry)).toBe(480);
   });
 
   it('returns arrivalMinutes when arrival equals departure (terminal)', () => {
-    const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isTerminal: true });
+    const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isLastStop: true });
     expect(getDisplayMinutes(entry)).toBe(480);
   });
 
   it('handles overnight times (>= 1440)', () => {
-    const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isTerminal: false });
+    const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isLastStop: false });
     expect(getDisplayMinutes(entry)).toBe(1500);
   });
 
   it('handles overnight terminal times (>= 1440)', () => {
-    const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isTerminal: true });
+    const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isLastStop: true });
     expect(getDisplayMinutes(entry)).toBe(1498);
   });
 });

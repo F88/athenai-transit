@@ -126,15 +126,15 @@ export function StopTimesItem({
                   // size="md"
                   size="lg"
                   // size="xl"
-                  showArrivalMarker={entry.patternPosition.isTerminal}
+                  showArrivalMarker={entry.patternPosition.isLastStop}
                   showDepartureMarker={false}
                   className="text-muted-foreground"
                 />
                 <TimetableEntryAttributesLabels
                   attributes={getTimetableEntryAttributes(entry)}
                   size="xs"
-                  showDisplayTerminal
-                  showDisplayOrigin
+                  showDisplayLastStop
+                  showDisplayFirstStop
                   showDisplayPickupUnavailable
                   showDisplayDropOffUnavailable
                 />

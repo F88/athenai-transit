@@ -26,13 +26,13 @@ describe('hasBoardable', () => {
   });
 
   it('returns false when all entries are terminal (pattern inference)', () => {
-    expect(hasBoardable([makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })])).toBe(
+    expect(hasBoardable([makeEntry({ isLastStop: true }), makeEntry({ isLastStop: true })])).toBe(
       false,
     );
   });
 
   it('returns true when terminal is mixed with non-terminal', () => {
-    expect(hasBoardable([makeEntry({ isTerminal: true }), makeEntry()])).toBe(true);
+    expect(hasBoardable([makeEntry({ isLastStop: true }), makeEntry()])).toBe(true);
   });
 });
 
@@ -56,12 +56,12 @@ describe('getTimetableEntriesState', () => {
   });
 
   it('returns "drop-off-only" when all entries are terminal', () => {
-    const entries = [makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })];
+    const entries = [makeEntry({ isLastStop: true }), makeEntry({ isLastStop: true })];
     expect(getTimetableEntriesState(entries)).toBe('drop-off-only');
   });
 
   it('returns "boardable" when mixed boardable and terminal entries', () => {
-    const entries = [makeEntry(), makeEntry({ isTerminal: true })];
+    const entries = [makeEntry(), makeEntry({ isLastStop: true })];
     expect(getTimetableEntriesState(entries)).toBe('boardable');
   });
 
@@ -70,7 +70,7 @@ describe('getTimetableEntriesState', () => {
   });
 
   it('returns "drop-off-only" for a single terminal entry', () => {
-    expect(getTimetableEntriesState([makeEntry({ isTerminal: true })])).toBe('drop-off-only');
+    expect(getTimetableEntriesState([makeEntry({ isLastStop: true })])).toBe('drop-off-only');
   });
 });
 

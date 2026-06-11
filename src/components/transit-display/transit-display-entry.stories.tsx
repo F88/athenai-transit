@@ -74,8 +74,8 @@ function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayDatumForUi {
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '9:30',
     attributes: overrides.attributes ?? {
-      isTerminal: true,
-      isOrigin: true,
+      isLastStop: true,
+      isFirstStop: true,
       isPickupUnavailable: true,
       isDropOffUnavailable: true,
     },
@@ -169,8 +169,8 @@ const longTextRowOverrides = {
   routeName: '北大01 (長い路線名)',
   headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
   attributes: {
-    isTerminal: true,
-    isOrigin: true,
+    isLastStop: true,
+    isFirstStop: true,
     isPickupUnavailable: true,
     isDropOffUnavailable: true,
   },
@@ -224,8 +224,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: '大塚駅前',
     // origin
     attributes: {
-      isTerminal: false,
-      isOrigin: true,
+      isLastStop: false,
+      isFirstStop: true,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
@@ -239,8 +239,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
     // terminal
     attributes: {
-      isTerminal: true,
-      isOrigin: false,
+      isLastStop: true,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
@@ -253,8 +253,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: 'X',
     // pickup unavailable
     attributes: {
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
       isPickupUnavailable: true,
       isDropOffUnavailable: false,
     },
@@ -267,8 +267,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: '',
     // drop-off unavailable
     attributes: {
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: true,
     },
@@ -282,8 +282,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: '日暮里駅',
     // all attributes set (maximum content)
     attributes: {
-      isTerminal: true,
-      isOrigin: true,
+      isLastStop: true,
+      isFirstStop: true,
       isPickupUnavailable: true,
       isDropOffUnavailable: true,
     },
@@ -296,8 +296,8 @@ const kitchenSinkRows: TransitDisplayDatumForUi[] = [
     headsign: '五反田駅',
     // no attributes set (plain row, no labels)
     attributes: {
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },

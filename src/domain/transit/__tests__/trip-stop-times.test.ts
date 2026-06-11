@@ -4,10 +4,10 @@ import type { TimetableEntry, TripStopTime } from '../../../types/app/transit-co
 import type { Route } from '../../../types/app/transit';
 import {
   buildStopByPatternIndex,
-  getOriginStop,
+  getFirstStop,
   getPatternTotalStops,
   getStopAtPatternIndex,
-  getTerminalStop,
+  getLastStop,
 } from '../trip-stop-times';
 
 // --- Test fixtures ---
@@ -38,8 +38,8 @@ function makeEntry(args: { stopIndex: number; totalStops: number }): TimetableEn
     patternPosition: {
       stopIndex: args.stopIndex,
       totalStops: args.totalStops,
-      isOrigin: args.stopIndex === 0,
-      isTerminal: args.stopIndex === args.totalStops - 1,
+      isFirstStop: args.stopIndex === 0,
+      isLastStop: args.stopIndex === args.totalStops - 1,
     },
     tripLocator: { patternId: 'test:R1__Terminal', serviceId: 'test', tripIndex: 0 },
   };
@@ -145,31 +145,31 @@ describe('getStopAtPatternIndex', () => {
   });
 });
 
-describe('getOriginStop', () => {
+describe('getFirstStop', () => {
   it('returns undefined for an empty array', () => {
-    expect(getOriginStop([])).toBeUndefined();
+    expect(getFirstStop([])).toBeUndefined();
   });
 
-  it('returns the entry flagged isOrigin', () => {
+  it('returns the entry flagged isFirstStop', () => {
     const stopTimes = makeFullStopTimes(3);
-    expect(getOriginStop(stopTimes)).toBe(stopTimes[0]);
+    expect(getFirstStop(stopTimes)).toBe(stopTimes[0]);
   });
 
   it('returns undefined when the origin row was not reconstructed', () => {
     // Pattern of 3; origin (stopIndex=0) missing.
     const stopTimes = [1, 2].map((idx) => makeStop({ stopIndex: idx, totalStops: 3 }));
-    expect(getOriginStop(stopTimes)).toBeUndefined();
+    expect(getFirstStop(stopTimes)).toBeUndefined();
   });
 });
 
-describe('getTerminalStop', () => {
+describe('getLastStop', () => {
   it('returns undefined for an empty array', () => {
-    expect(getTerminalStop([])).toBeUndefined();
+    expect(getLastStop([])).toBeUndefined();
   });
 
-  it('returns the entry flagged isTerminal', () => {
+  it('returns the entry flagged isLastStop', () => {
     const stopTimes = makeFullStopTimes(3);
-    expect(getTerminalStop(stopTimes)).toBe(stopTimes[2]);
+    expect(getLastStop(stopTimes)).toBe(stopTimes[2]);
   });
 
   it('returns undefined for the yurimo short-turn pattern (terminal missing)', () => {
@@ -180,21 +180,21 @@ describe('getTerminalStop', () => {
     const stopTimes = Array.from({ length: 15 }, (_, i) =>
       makeStop({ stopIndex: i, totalStops: 16 }),
     );
-    expect(getTerminalStop(stopTimes)).toBeUndefined();
+    expect(getLastStop(stopTimes)).toBeUndefined();
   });
 
   it('finds the terminal even when interior stops are missing', () => {
     // Pattern of 5; stopIndex=2 missing but origin and terminal present.
     const stopTimes = [0, 1, 3, 4].map((idx) => makeStop({ stopIndex: idx, totalStops: 5 }));
-    expect(getTerminalStop(stopTimes)?.timetableEntry.patternPosition.stopIndex).toBe(4);
+    expect(getLastStop(stopTimes)?.timetableEntry.patternPosition.stopIndex).toBe(4);
   });
 });
 
 describe('single-stop pattern', () => {
   it('treats the only entry as both origin and terminal', () => {
     const stopTimes = makeFullStopTimes(1);
-    expect(getOriginStop(stopTimes)).toBe(stopTimes[0]);
-    expect(getTerminalStop(stopTimes)).toBe(stopTimes[0]);
+    expect(getFirstStop(stopTimes)).toBe(stopTimes[0]);
+    expect(getLastStop(stopTimes)).toBe(stopTimes[0]);
     expect(getPatternTotalStops(stopTimes)).toBe(1);
   });
 });

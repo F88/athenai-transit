@@ -221,8 +221,8 @@ export function TripInfo({
         <TimetableEntryAttributesLabels
           size={ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
           attributes={attributes}
-          showDisplayTerminal={true}
-          showDisplayOrigin={true}
+          showDisplayLastStop={true}
+          showDisplayFirstStop={true}
           showDisplayPickupUnavailable={true}
           showDisplayDropOffUnavailable={true}
         />

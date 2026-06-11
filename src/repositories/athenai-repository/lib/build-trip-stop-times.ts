@@ -164,8 +164,8 @@ export function buildTripStopTimeFromGroup(
   const patternPosition = {
     stopIndex: group.si,
     totalStops,
-    isOrigin: group.si === 0,
-    isTerminal: group.si === totalStops - 1,
+    isFirstStop: group.si === 0,
+    isLastStop: group.si === totalStops - 1,
   };
 
   return {

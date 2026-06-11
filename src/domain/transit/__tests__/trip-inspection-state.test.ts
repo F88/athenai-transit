@@ -65,8 +65,8 @@ function makeEntry(overrides: {
   stopIndex?: number;
   departureMinutes: number;
   arrivalMinutes?: number;
-  isTerminal?: boolean;
-  isOrigin?: boolean;
+  isLastStop?: boolean;
+  isFirstStop?: boolean;
   routeId?: string;
 }): TimetableEntry {
   const route = makeRoute(overrides.routeId ?? 'test:R1');
@@ -83,8 +83,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: 10,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: {
       patternId: overrides.patternId ?? 'pattern-a',
@@ -108,8 +108,8 @@ function makeStopTime(stopIndex: number, departureMinutes: number): TripStopTime
       patternPosition: {
         stopIndex,
         totalStops: 10,
-        isTerminal: false,
-        isOrigin: false,
+        isLastStop: false,
+        isFirstStop: false,
       },
     },
     stopMeta: {
@@ -326,7 +326,7 @@ describe('deriveTripInspectionCandidates', () => {
       stopIndex: 3,
       arrivalMinutes: 9 * 60 + 5,
       departureMinutes: 9 * 60 + 8,
-      isTerminal: true,
+      isLastStop: true,
     });
     const nonTerminalEntry = makeEntry({
       tripIndex: 2,
@@ -387,7 +387,7 @@ describe('deriveTripInspectionCandidates', () => {
         stopIndex: 3,
         arrivalMinutes: 9 * 60 + 5,
         departureMinutes: 9 * 60 + 8,
-        isTerminal: true,
+        isLastStop: true,
       }),
     ];
     const originalOrder = entries.map((entry) => entry.tripLocator.tripIndex);

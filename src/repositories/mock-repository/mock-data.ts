@@ -2027,7 +2027,7 @@ function computePatternTravelOffset(routeId: string, headsign: string, stopIndex
 
 /**
  * Stop sequences per route+headsign.
- * Used to compute patternPosition (stopIndex, totalStops, isOrigin, isTerminal).
+ * Used to compute patternPosition (stopIndex, totalStops, isFirstStop, isLastStop).
  * Key: `${routeId}__${headsign}`
  */
 const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
@@ -2161,11 +2161,11 @@ function getPatternPosition(
   headsign: string,
   stopId: string,
   occurrenceIndex: number,
-): { stopIndex: number; totalStops: number; isTerminal: boolean; isOrigin: boolean } {
+): { stopIndex: number; totalStops: number; isLastStop: boolean; isFirstStop: boolean } {
   const seq = ROUTE_STOP_SEQUENCES.get(`${routeId}__${headsign}`);
   if (!seq) {
     // No sequence defined — fall back to unknown position.
-    return { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false };
+    return { stopIndex: 0, totalStops: 1, isLastStop: false, isFirstStop: false };
   }
   // Find the occurrenceIndex-th match. Linear scan since seq is short.
   let seen = 0;
@@ -2180,13 +2180,13 @@ function getPatternPosition(
     }
   }
   if (idx === -1) {
-    return { stopIndex: 0, totalStops: seq.length, isTerminal: false, isOrigin: false };
+    return { stopIndex: 0, totalStops: seq.length, isLastStop: false, isFirstStop: false };
   }
   return {
     stopIndex: idx,
     totalStops: seq.length,
-    isTerminal: idx === seq.length - 1,
-    isOrigin: idx === 0,
+    isLastStop: idx === seq.length - 1,
+    isFirstStop: idx === 0,
   };
 }
 

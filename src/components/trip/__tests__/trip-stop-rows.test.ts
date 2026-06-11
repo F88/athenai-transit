@@ -24,8 +24,8 @@ function makeTripStopTime({
       patternPosition: {
         stopIndex,
         totalStops,
-        isOrigin: stopIndex === 0,
-        isTerminal: stopIndex === totalStops - 1,
+        isFirstStop: stopIndex === 0,
+        isLastStop: stopIndex === totalStops - 1,
       },
     },
   } as TripStopTime;

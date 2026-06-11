@@ -4,8 +4,8 @@ import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entr
 import { createEntry } from '../../stories/fixtures';
 
 const allEnabled = {
-  showDisplayTerminal: true,
-  showDisplayOrigin: true,
+  showDisplayLastStop: true,
+  showDisplayFirstStop: true,
   showDisplayPickupUnavailable: true,
   showDisplayDropOffUnavailable: true,
 };
@@ -14,8 +14,8 @@ const meta = {
   title: 'Label/TimetableEntryAttributesLabels',
   component: TimetableEntryAttributesLabels,
   argTypes: {
-    showDisplayTerminal: { control: 'boolean' },
-    showDisplayOrigin: { control: 'boolean' },
+    showDisplayLastStop: { control: 'boolean' },
+    showDisplayFirstStop: { control: 'boolean' },
     showDisplayPickupUnavailable: { control: 'boolean' },
     showDisplayDropOffUnavailable: { control: 'boolean' },
   },
@@ -35,7 +35,7 @@ export const Normal: Story = {
 /** Terminal stop — gray label. */
 export const Terminal: Story = {
   args: {
-    attributes: getTimetableEntryAttributes(createEntry({ isTerminal: true })),
+    attributes: getTimetableEntryAttributes(createEntry({ isLastStop: true })),
     ...allEnabled,
   },
 };
@@ -43,7 +43,7 @@ export const Terminal: Story = {
 /** Origin stop — blue label. */
 export const Origin: Story = {
   args: {
-    attributes: getTimetableEntryAttributes(createEntry({ isOrigin: true })),
+    attributes: getTimetableEntryAttributes(createEntry({ isFirstStop: true })),
     ...allEnabled,
   },
 };
@@ -68,7 +68,7 @@ export const DropOffUnavailable: Story = {
 export const AllLabels: Story = {
   args: {
     attributes: getTimetableEntryAttributes(
-      createEntry({ isTerminal: true, isOrigin: true, pickupType: 1, dropOffType: 1 }),
+      createEntry({ isLastStop: true, isFirstStop: true, pickupType: 1, dropOffType: 1 }),
     ),
     ...allEnabled,
   },
@@ -78,10 +78,10 @@ export const AllLabels: Story = {
 export const AllDisabled: Story = {
   args: {
     attributes: getTimetableEntryAttributes(
-      createEntry({ isTerminal: true, isOrigin: true, pickupType: 1, dropOffType: 1 }),
+      createEntry({ isLastStop: true, isFirstStop: true, pickupType: 1, dropOffType: 1 }),
     ),
-    showDisplayTerminal: false,
-    showDisplayOrigin: false,
+    showDisplayLastStop: false,
+    showDisplayFirstStop: false,
     showDisplayPickupUnavailable: false,
     showDisplayDropOffUnavailable: false,
   },
@@ -96,15 +96,15 @@ export const KitchenSink: Story = {
   render: () => {
     const cases = [
       { label: 'Normal (no labels)', overrides: {} },
-      { label: 'Terminal', overrides: { isTerminal: true } },
-      { label: 'Origin', overrides: { isOrigin: true } },
+      { label: 'Terminal', overrides: { isLastStop: true } },
+      { label: 'Origin', overrides: { isFirstStop: true } },
       { label: 'Pickup unavailable', overrides: { pickupType: 1 as const } },
       { label: 'Drop-off unavailable', overrides: { dropOffType: 1 as const } },
       {
         label: 'All labels',
         overrides: {
-          isTerminal: true,
-          isOrigin: true,
+          isLastStop: true,
+          isFirstStop: true,
           pickupType: 1 as const,
           dropOffType: 1 as const,
         },

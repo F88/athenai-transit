@@ -43,8 +43,8 @@ function makeEntry(overrides: {
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 0,
       totalStops: 10,
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
     },
     tripLocator: { patternId: `${route.route_id}__${headsign}`, serviceId: 'test', tripIndex: 0 },
   };

@@ -104,9 +104,9 @@ export type FilteredTimetableEntriesState =
  */
 export interface TimetableEntryAttributes {
   /** This stop is the last stop of the trip pattern. */
-  isTerminal: boolean;
+  isLastStop: boolean;
   /** This stop is the first stop of the trip pattern. */
-  isOrigin: boolean;
+  isFirstStop: boolean;
   /** Boarding (pickup) is not available at this stop for this entry. */
   isPickupUnavailable: boolean;
   /** Alighting (drop-off) is not available at this stop for this entry. */

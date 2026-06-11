@@ -98,8 +98,8 @@ function makeTripStopsProps(): ComponentProps<typeof TripStops1> {
             patternPosition: {
               stopIndex: 0,
               totalStops: 1,
-              isOrigin: true,
-              isTerminal: true,
+              isFirstStop: true,
+              isLastStop: true,
             },
           },
         },
@@ -142,8 +142,8 @@ function makeTripStopsProps(): ComponentProps<typeof TripStops1> {
           patternPosition: {
             stopIndex: 0,
             totalStops: 1,
-            isOrigin: true,
-            isTerminal: true,
+            isFirstStop: true,
+            isLastStop: true,
           },
         },
       },

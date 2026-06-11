@@ -19,7 +19,7 @@ import { getEffectiveHeadsign } from './get-effective-headsign';
  * entries are removed and their count is reported in
  * `omitted.nonBoardable`. An entry is considered non-boardable when
  * `pickup_type !== 0`, or when it is a pure terminal stop
- * (`isTerminal && !isOrigin`); 1-stop trips (`isOrigin && isTerminal`)
+ * (`isLastStop && !isFirstStop`); 1-stop trips (`isFirstStop && isLastStop`)
  * are kept as origin.
  *
  * @param allEntries - All entries from getFullDayTimetableEntries (unfiltered).
@@ -173,12 +173,12 @@ export interface ScheduleRangeFilter {
  *
 
  * Semantics:
- * - 'origin' / 'terminal' map to `patternPosition.isOrigin` /
- *   `.isTerminal`; 'middle' = neither. Single-stop trips
- *   (isOrigin AND isTerminal) match both 'origin' and 'terminal'.
+ * - 'origin' / 'terminal' map to `patternPosition.isFirstStop` /
+ *   `.isLastStop`; 'middle' = neither. Single-stop trips
+ *   (isFirstStop AND isLastStop) match both 'origin' and 'terminal'.
  * - 'boardable' / 'nonBoardable' / 'phoneArrangement' /
  *   'driverArrangement' map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3).
- *   `isTerminal` is NOT mixed in (use the position axis if needed).
+ *   `isLastStop` is NOT mixed in (use the position axis if needed).
  * - Schedule range is inclusive on both ends. `field` selects
  *   `entry.schedule.departureMinutes` (default) or
  *   `entry.schedule.arrivalMinutes`.
@@ -193,14 +193,14 @@ export interface StopEventAttributeFilters {
 }
 
 function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosition>): boolean {
-  const { isOrigin, isTerminal } = entry.patternPosition;
-  if (isOrigin && allowed.has('origin')) {
+  const { isFirstStop, isLastStop } = entry.patternPosition;
+  if (isFirstStop && allowed.has('origin')) {
     return true;
   }
-  if (isTerminal && allowed.has('terminal')) {
+  if (isLastStop && allowed.has('terminal')) {
     return true;
   }
-  if (!isOrigin && !isTerminal && allowed.has('middle')) {
+  if (!isFirstStop && !isLastStop && allowed.has('middle')) {
     return true;
   }
   return false;
@@ -268,7 +268,7 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
 export interface StopEventAttributeToggles {
   /**
    * When true, narrows to entries where this stop is the trip's origin
-   * (= `entry.patternPosition.isOrigin === true`). Includes
+   * (= `entry.patternPosition.isFirstStop === true`). Includes
    * non-boardable origins; combine with `showBoardableOnly` to
    * intersect.
    */

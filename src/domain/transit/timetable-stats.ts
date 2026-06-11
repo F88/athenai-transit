@@ -19,7 +19,7 @@ import { resolveAgencyLang } from '@/config/transit-defaults';
  * - **A (pattern position)**: `originCount` / `terminalCount` / `passingCount`.
  *   `originCount` and `terminalCount` are NOT mutually exclusive — a
  *   single-stop pattern (= `totalStops === 1`) increments both. `passingCount`
- *   is strictly mid-route (= `!isOrigin && !isTerminal`).
+ *   is strictly mid-route (= `!isFirstStop && !isLastStop`).
  * - **B (boarding)**: `boardableCount` / `nonBoardableCount` /
  *   `dropOffOnlyCount` / `noDropOffCount`. The boardable / non-boardable
  *   pair partitions all entries (sum equals `totalCount`).
@@ -41,11 +41,11 @@ export interface TimetableEntryStats {
   totalCount: number;
 
   // A axis: pattern position
-  /** Entries where this stop is the trip's origin (= `isOrigin === true`). */
+  /** Entries where this stop is the trip's origin (= `isFirstStop === true`). */
   originCount: number;
-  /** Entries where this stop is the trip's terminal (= `isTerminal === true`). */
+  /** Entries where this stop is the trip's terminal (= `isLastStop === true`). */
   terminalCount: number;
-  /** Entries where this stop is mid-route (= `!isOrigin && !isTerminal`). */
+  /** Entries where this stop is mid-route (= `!isFirstStop && !isLastStop`). */
   passingCount: number;
 
   // B axis: boarding availability
@@ -121,13 +121,13 @@ export function computeTimetableEntryStats(
   for (const entry of entries) {
     const agencyLangs = resolveAgencyLang(agencies, entry.routeDirection.route.agency_id);
 
-    if (entry.patternPosition.isOrigin) {
+    if (entry.patternPosition.isFirstStop) {
       originCount++;
     }
-    if (entry.patternPosition.isTerminal) {
+    if (entry.patternPosition.isLastStop) {
       terminalCount++;
     }
-    if (!entry.patternPosition.isOrigin && !entry.patternPosition.isTerminal) {
+    if (!entry.patternPosition.isFirstStop && !entry.patternPosition.isLastStop) {
       passingCount++;
     }
 

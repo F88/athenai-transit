@@ -61,7 +61,7 @@ export function TimetableGridEntry({
     <>
       <span className="text-muted-foreground text-sm tabular-nums">
         {String(displayMinutes % 60).padStart(2, '0')}
-        {entry.patternPosition.isTerminal && (
+        {entry.patternPosition.isLastStop && (
           <span className="text-[9px] opacity-70">{t('timetable.entry.arriving')}</span>
         )}
       </span>
@@ -80,8 +80,8 @@ export function TimetableGridEntry({
       <TimetableEntryAttributesLabels
         attributes={getTimetableEntryAttributes(entry)}
         size={'xs'}
-        showDisplayTerminal={isDisplayTerminal}
-        showDisplayOrigin={isDisplayOrigin}
+        showDisplayLastStop={isDisplayTerminal}
+        showDisplayFirstStop={isDisplayOrigin}
         showDisplayPickupUnavailable={isDisplayPickupUnavailable}
         showDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
       />

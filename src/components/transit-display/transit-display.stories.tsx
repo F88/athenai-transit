@@ -68,8 +68,8 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayDatumForUi
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '14:30',
     attributes: overrides.attributes ?? {
-      isTerminal: false,
-      isOrigin: false,
+      isLastStop: false,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
@@ -128,8 +128,8 @@ const arrivalRows: TransitDisplayDatumForUi[] = [
     routeName: '都02',
     headsign: '錦糸町駅前',
     attributes: {
-      isTerminal: true,
-      isOrigin: false,
+      isLastStop: true,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
@@ -140,8 +140,8 @@ const arrivalRows: TransitDisplayDatumForUi[] = [
     routeName: '錦27',
     headsign: '錦糸町駅前',
     attributes: {
-      isTerminal: true,
-      isOrigin: false,
+      isLastStop: true,
+      isFirstStop: false,
       isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },

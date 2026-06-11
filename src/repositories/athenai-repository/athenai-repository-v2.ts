@@ -469,7 +469,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
       const totalStops = pattern.stops.length;
       const stopIndex = group.si;
-      const isTerminalPosition = stopIndex === totalStops - 1;
+      const isLastStopPosition = stopIndex === totalStops - 1;
       const routeDirection = this.resolveRouteDirection(route, pattern, stopIndex);
       const todayTripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
       const yesterdayTripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
@@ -486,7 +486,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           fullDayCount++;
           if (!hasBoardable) {
             const pt = pickupTypes?.[j] ?? 0;
-            if (pt !== 1 && !isTerminalPosition) {
+            if (pt !== 1 && !isLastStopPosition) {
               hasBoardable = true;
             }
           }
@@ -507,8 +507,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: isTerminalPosition,
-              isOrigin: stopIndex === 0,
+              isLastStop: isLastStopPosition,
+              isFirstStop: stopIndex === 0,
             },
             serviceDate: serviceDay,
             ...(todayTripInsights !== undefined ? { insights: todayTripInsights } : {}),
@@ -531,7 +531,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           fullDayCount++;
           if (!hasBoardable) {
             const pt = pickupTypes?.[j] ?? 0;
-            if (pt !== 1 && !isTerminalPosition) {
+            if (pt !== 1 && !isLastStopPosition) {
               hasBoardable = true;
             }
           }
@@ -551,8 +551,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: isTerminalPosition,
-              isOrigin: stopIndex === 0,
+              isLastStop: isLastStopPosition,
+              isFirstStop: stopIndex === 0,
             },
             serviceDate: prevServiceDay,
             ...(yesterdayTripInsights !== undefined ? { insights: yesterdayTripInsights } : {}),
@@ -610,7 +610,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
       const totalStops = pattern.stops.length;
       const stopIndex = group.si;
-      const isTerminalPosition = stopIndex === totalStops - 1;
+      const isLastStopPosition = stopIndex === totalStops - 1;
       const routeDirection = this.resolveRouteDirection(route, pattern, stopIndex);
 
       const tripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDate);
@@ -634,8 +634,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: isTerminalPosition,
-              isOrigin: stopIndex === 0,
+              isLastStop: isLastStopPosition,
+              isFirstStop: stopIndex === 0,
             },
             tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             ...(tripInsights !== undefined ? { insights: tripInsights } : {}),

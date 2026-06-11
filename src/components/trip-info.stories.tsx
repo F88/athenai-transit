@@ -119,8 +119,8 @@ const logicalLongRd = createRouteDirection({
 });
 
 const emptyAttributes: TimetableEntryAttributes = {
-  isTerminal: false,
-  isOrigin: false,
+  isLastStop: false,
+  isFirstStop: false,
   isPickupUnavailable: false,
   isDropOffUnavailable: false,
 };
@@ -192,12 +192,12 @@ export const MultiAgenciesStop: Story = {
 
 /** Terminal stop — gray label ("終点"). */
 export const Terminal: Story = {
-  args: { attributes: { ...emptyAttributes, isTerminal: true } },
+  args: { attributes: { ...emptyAttributes, isLastStop: true } },
 };
 
 /** Origin stop — blue label ("始発"). */
 export const Origin: Story = {
-  args: { attributes: { ...emptyAttributes, isOrigin: true } },
+  args: { attributes: { ...emptyAttributes, isFirstStop: true } },
 };
 
 /** Pickup unavailable — red "乗×" label. */
@@ -214,8 +214,8 @@ export const DropOffUnavailable: Story = {
 export const AllAttributes: Story = {
   args: {
     attributes: {
-      isTerminal: true,
-      isOrigin: true,
+      isLastStop: true,
+      isFirstStop: true,
       isPickupUnavailable: true,
       isDropOffUnavailable: true,
     },
@@ -230,8 +230,8 @@ export const TimetableEntryAttributesComparison: Story = {
   render: (args) => {
     const cases: Array<{ label: string; attributes: TimetableEntryAttributes }> = [
       { label: 'none', attributes: emptyAttributes },
-      { label: 'terminal', attributes: { ...emptyAttributes, isTerminal: true } },
-      { label: 'origin', attributes: { ...emptyAttributes, isOrigin: true } },
+      { label: 'terminal', attributes: { ...emptyAttributes, isLastStop: true } },
+      { label: 'origin', attributes: { ...emptyAttributes, isFirstStop: true } },
       {
         label: 'pickup unavailable',
         attributes: { ...emptyAttributes, isPickupUnavailable: true },
@@ -243,8 +243,8 @@ export const TimetableEntryAttributesComparison: Story = {
       {
         label: 'all four',
         attributes: {
-          isTerminal: true,
-          isOrigin: true,
+          isLastStop: true,
+          isFirstStop: true,
           isPickupUnavailable: true,
           isDropOffUnavailable: true,
         },
@@ -285,8 +285,8 @@ export const TimetableEntryAttributesComparison: Story = {
 export const SizeComparison: Story = {
   args: {
     attributes: {
-      isTerminal: true,
-      isOrigin: false,
+      isLastStop: true,
+      isFirstStop: false,
       isPickupUnavailable: true,
       isDropOffUnavailable: false,
     },
@@ -419,8 +419,8 @@ export const KitchenSink: Story = {
     agency: kyotoAgency,
     infoLevel: 'verbose',
     attributes: {
-      isTerminal: true,
-      isOrigin: true,
+      isLastStop: true,
+      isFirstStop: true,
       isPickupUnavailable: true,
       isDropOffUnavailable: true,
     },

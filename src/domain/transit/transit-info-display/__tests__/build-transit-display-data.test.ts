@@ -154,7 +154,7 @@ describe('categoryQualifies', () => {
 
   describe('departures', () => {
     it('excludes terminal entries (inferred drop-off only)', () => {
-      const entry = makeContextualEntry({ route: busRoute, isTerminal: true });
+      const entry = makeContextualEntry({ route: busRoute, isLastStop: true });
       expect(categoryQualifies(entry, 'departures')).toBe(false);
     });
 
@@ -163,8 +163,8 @@ describe('categoryQualifies', () => {
       expect(categoryQualifies(entry, 'departures')).toBe(false);
     });
 
-    it('includes non-terminal entries and ignores isOrigin', () => {
-      const entry = makeContextualEntry({ route: busRoute, isOrigin: true });
+    it('includes non-terminal entries and ignores isFirstStop', () => {
+      const entry = makeContextualEntry({ route: busRoute, isFirstStop: true });
       expect(categoryQualifies(entry, 'departures')).toBe(true);
     });
 
@@ -185,7 +185,7 @@ describe('categoryQualifies', () => {
 
   describe('arrivals', () => {
     it('excludes origin entries (inferred boarding only)', () => {
-      const entry = makeContextualEntry({ route: busRoute, isOrigin: true });
+      const entry = makeContextualEntry({ route: busRoute, isFirstStop: true });
       expect(categoryQualifies(entry, 'arrivals')).toBe(false);
     });
 
@@ -194,8 +194,8 @@ describe('categoryQualifies', () => {
       expect(categoryQualifies(entry, 'arrivals')).toBe(false);
     });
 
-    it('includes non-origin entries and ignores isTerminal', () => {
-      const entry = makeContextualEntry({ route: busRoute, isTerminal: true });
+    it('includes non-origin entries and ignores isLastStop', () => {
+      const entry = makeContextualEntry({ route: busRoute, isLastStop: true });
       expect(categoryQualifies(entry, 'arrivals')).toBe(true);
     });
 
@@ -224,11 +224,11 @@ describe('categoryQualifies', () => {
   it('delegates to the domain helpers: departures = !isDropOffOnly, arrivals = !isBoardingOnly', () => {
     const entries = [
       makeContextualEntry({ route: busRoute }),
-      makeContextualEntry({ route: busRoute, isTerminal: true }),
-      makeContextualEntry({ route: busRoute, isOrigin: true }),
+      makeContextualEntry({ route: busRoute, isLastStop: true }),
+      makeContextualEntry({ route: busRoute, isFirstStop: true }),
       makeContextualEntry({ route: busRoute, pickupType: 1 }),
       makeContextualEntry({ route: busRoute, dropOffType: 1 }),
-      makeContextualEntry({ route: busRoute, isOrigin: true, isTerminal: true }),
+      makeContextualEntry({ route: busRoute, isFirstStop: true, isLastStop: true }),
     ];
 
     for (const entry of entries) {
@@ -373,14 +373,14 @@ describe('groupCandidatesIntoBoards', () => {
 
   /** A candidate with an explicit direction and terminal/origin position. */
   function cand(
-    opts: { route?: Route; direction?: 0 | 1; isOrigin?: boolean; isTerminal?: boolean } = {},
+    opts: { route?: Route; direction?: 0 | 1; isFirstStop?: boolean; isLastStop?: boolean } = {},
   ): TransitDisplayCandidate {
     return {
       timetableEntry: makeContextualEntry({
         route: opts.route ?? busRoute,
         direction: opts.direction,
-        isOrigin: opts.isOrigin,
-        isTerminal: opts.isTerminal,
+        isFirstStop: opts.isFirstStop,
+        isLastStop: opts.isLastStop,
       }),
       stop: STUB_STOP,
     };
@@ -415,7 +415,7 @@ describe('groupCandidatesIntoBoards', () => {
 
   it("not split: excludes terminal from departures and origin from arrivals, narrowing each board's directions", () => {
     const plain0 = cand({ direction: 0 }); // qualifies both
-    const terminal1 = cand({ direction: 1, isTerminal: true }); // arrivals only
+    const terminal1 = cand({ direction: 1, isLastStop: true }); // arrivals only
 
     const boards = groupCandidatesIntoBoards([plain0, terminal1], notSplit, busStops);
 
@@ -448,7 +448,7 @@ describe('groupCandidatesIntoBoards', () => {
   });
 
   it('split: drops a board left empty after category qualification', () => {
-    const terminal0 = cand({ direction: 0, isTerminal: true }); // arrivals only
+    const terminal0 = cand({ direction: 0, isLastStop: true }); // arrivals only
 
     const boards = groupCandidatesIntoBoards([terminal0], split, busStops);
 

@@ -190,7 +190,7 @@ export class MockRepository implements TransitRepository {
 
         // Count full-day entries and check boardability (per occurrence).
         fullDayCount += allMinutes.length;
-        if (!hasBoardable && pickupType !== 1 && !position.isTerminal) {
+        if (!hasBoardable && pickupType !== 1 && !position.isLastStop) {
           hasBoardable = true;
         }
 
@@ -372,8 +372,8 @@ export class MockRepository implements TransitRepository {
           patternPosition: {
             stopIndex,
             totalStops: stopSequence.length,
-            isTerminal: stopIndex === stopSequence.length - 1,
-            isOrigin: stopIndex === 0,
+            isLastStop: stopIndex === stopSequence.length - 1,
+            isFirstStop: stopIndex === 0,
           },
         },
       };

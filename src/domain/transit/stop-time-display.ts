@@ -57,9 +57,9 @@ export function shouldCollapseArrival({
 /** Inputs for {@link deriveStopTimeRoleDisplayProps}. */
 export interface DeriveStopTimeDisplayInput {
   /** Whether this stop is the trip's origin (= first stop). */
-  isOrigin: boolean;
+  isFirstStop: boolean;
   /** Whether this stop is the trip's terminal (= last stop). */
-  isTerminal: boolean;
+  isLastStop: boolean;
   /** Current info verbosity level. */
   infoLevel: InfoLevel;
 }
@@ -86,15 +86,15 @@ export interface StopTimeRoleDisplayProps {
  * to collapse same-minute dwell into a single row.
  */
 export function deriveStopTimeRoleDisplayProps({
-  isOrigin,
-  isTerminal,
+  isFirstStop,
+  isLastStop,
   infoLevel,
 }: DeriveStopTimeDisplayInput): StopTimeRoleDisplayProps {
   const isVerbose = infoLevel === 'verbose';
 
   return {
-    showArrivalTime: isVerbose || !isOrigin || isTerminal,
-    showDepartureTime: isVerbose || !isTerminal || isOrigin,
+    showArrivalTime: isVerbose || !isFirstStop || isLastStop,
+    showDepartureTime: isVerbose || !isLastStop || isFirstStop,
 
     // Tolerance for hiding the arrival row when its time is "close
     // enough" to departure that the second row adds no information.

@@ -83,13 +83,13 @@ function TripStopRow({
     ? getStopDisplayNames(tripStopTime.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
   const stopIndex = tripStopTime.timetableEntry.patternPosition.stopIndex;
-  const isLastStop = stopIndex === totalStops - 1;
+  const isLastRow = stopIndex === totalStops - 1;
   const isCurrent = stopIndex === currentPatternStopIndex;
-  const isTerminalStop = tripStopTime.timetableEntry.patternPosition.isTerminal;
-  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
+  const isLastStop = tripStopTime.timetableEntry.patternPosition.isLastStop;
+  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isFirstStop;
   const display = deriveStopTimeRoleDisplayProps({
-    isOrigin: isFirstStop,
-    isTerminal: isTerminalStop,
+    isFirstStop,
+    isLastStop,
     infoLevel,
   });
   const inspectTarget: TripInspectionTarget = {
@@ -159,12 +159,12 @@ function TripStopRow({
       className={cn(
         TRIP_STOP_TIMELINE_GUTTER_CLASS,
         handleSelectStop && 'cursor-pointer',
-        !isLastStop && 'pb-2',
+        !isLastRow && 'pb-2',
       )}
     >
       <TripStopTimelineGutter
         routeColor={routeColors.color}
-        isLast={isLastStop}
+        isLast={isLastRow}
         infoLevel={infoLevel}
       >
         <TripStopMetaInfo

@@ -5,48 +5,56 @@ import { BaseLabel, type BaseLabelSize } from './base-label';
 interface TimetableEntryAttributesLabelsProps {
   attributes: TimetableEntryAttributes;
   size?: BaseLabelSize;
-  showDisplayTerminal: boolean;
-  showDisplayOrigin: boolean;
+  showDisplayLastStop: boolean;
+  showDisplayFirstStop: boolean;
   showDisplayPickupUnavailable: boolean;
   showDisplayDropOffUnavailable: boolean;
 }
 
 /**
  * Compact labels for the four {@link TimetableEntryAttributes} flags
- * (terminal, origin, pickup unavailable, drop-off unavailable).
+ * (last stop, first stop, pickup unavailable, drop-off unavailable).
  *
  * Scope is deliberately limited to those four attributes — anything
  * beyond them (headsign, route info, etc.) belongs in other components.
+ *
+ * Display vocabulary gap (deliberate): the facts are "first/last stop
+ * of this pattern", but the user-facing words below still say origin /
+ * terminal ("timetable.entry.origin" / "timetable.entry.terminal").
+ * For through-services the words over-claim (a trip continuing beyond
+ * the feed boundary is labeled as if it ends here). The wording stays
+ * until a true service terminus can be told apart from a feed boundary
+ * -- tracked in Issue #145.
  */
 export function TimetableEntryAttributesLabels({
   attributes,
   size = 'xs',
-  showDisplayTerminal,
-  showDisplayOrigin,
+  showDisplayLastStop,
+  showDisplayFirstStop,
   showDisplayPickupUnavailable,
   showDisplayDropOffUnavailable,
 }: TimetableEntryAttributesLabelsProps) {
   const { t } = useTranslation();
 
-  const showTerminal = showDisplayTerminal && attributes.isTerminal;
-  const showOrigin = showDisplayOrigin && attributes.isOrigin;
+  const showLastStop = showDisplayLastStop && attributes.isLastStop;
+  const showFirstStop = showDisplayFirstStop && attributes.isFirstStop;
   const showPickupUnavailable = showDisplayPickupUnavailable && attributes.isPickupUnavailable;
   const showDropOffUnavailable = showDisplayDropOffUnavailable && attributes.isDropOffUnavailable;
 
-  if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
+  if (!showLastStop && !showFirstStop && !showPickupUnavailable && !showDropOffUnavailable) {
     return null;
   }
 
   return (
     <span className="inline-flex items-baseline gap-0.5">
-      {showOrigin && (
+      {showFirstStop && (
         <BaseLabel
           size={size}
           value={t('timetable.entry.origin')}
           className="border-foreground/30 border bg-blue-500 text-white"
         />
       )}
-      {showTerminal && (
+      {showLastStop && (
         <BaseLabel
           size={size}
           value={t('timetable.entry.terminal')}

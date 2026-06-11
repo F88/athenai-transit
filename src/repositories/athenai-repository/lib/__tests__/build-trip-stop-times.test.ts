@@ -474,8 +474,8 @@ describe('buildTripStopTimeFromGroup', () => {
       expect(result.timetableEntry.patternPosition).toEqual({
         stopIndex: 0,
         totalStops: 3,
-        isOrigin: true,
-        isTerminal: false,
+        isFirstStop: true,
+        isLastStop: false,
       });
     });
 
@@ -495,8 +495,8 @@ describe('buildTripStopTimeFromGroup', () => {
       expect(result.timetableEntry.patternPosition).toEqual({
         stopIndex: 2,
         totalStops: 3,
-        isOrigin: false,
-        isTerminal: true,
+        isFirstStop: false,
+        isLastStop: true,
       });
     });
 
@@ -516,8 +516,8 @@ describe('buildTripStopTimeFromGroup', () => {
       expect(result.timetableEntry.patternPosition).toEqual({
         stopIndex: 1,
         totalStops: 3,
-        isOrigin: false,
-        isTerminal: false,
+        isFirstStop: false,
+        isLastStop: false,
       });
     });
 

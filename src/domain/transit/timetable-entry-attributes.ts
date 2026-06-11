@@ -11,8 +11,8 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
  */
 export function getTimetableEntryAttributes(entry: TimetableEntry): TimetableEntryAttributes {
   return {
-    isTerminal: entry.patternPosition.isTerminal,
-    isOrigin: entry.patternPosition.isOrigin,
+    isLastStop: entry.patternPosition.isLastStop,
+    isFirstStop: entry.patternPosition.isFirstStop,
     isPickupUnavailable: entry.boarding.pickupType === 1,
     isDropOffUnavailable: entry.boarding.dropOffType === 1,
   };

@@ -443,15 +443,15 @@ describe('getUpcomingTimetableEntries', () => {
     const origin = circularEntries.find((e) => e.schedule.departureMinutes === 620)!;
     expect(origin).toBeDefined();
     expect(origin.patternPosition.stopIndex).toBe(0);
-    expect(origin.patternPosition.isOrigin).toBe(true);
-    expect(origin.patternPosition.isTerminal).toBe(false);
+    expect(origin.patternPosition.isFirstStop).toBe(true);
+    expect(origin.patternPosition.isLastStop).toBe(false);
 
     // Terminal arrival (pickupType=1, stopIndex=3)
     const terminal = circularEntries.find((e) => e.schedule.departureMinutes === 650)!;
     expect(terminal).toBeDefined();
     expect(terminal.patternPosition.stopIndex).toBe(3);
-    expect(terminal.patternPosition.isTerminal).toBe(true);
-    expect(terminal.patternPosition.isOrigin).toBe(false);
+    expect(terminal.patternPosition.isLastStop).toBe(true);
+    expect(terminal.patternPosition.isFirstStop).toBe(false);
   });
 
   it('resolves stop_headsign into RouteDirection (keio-bus: h="" + sh)', async () => {
@@ -575,14 +575,14 @@ describe('getFullDayTimetableEntries', () => {
     const origin = circularEntries.find((e) => e.schedule.departureMinutes === 620)!;
     expect(origin).toBeDefined();
     expect(origin.patternPosition.stopIndex).toBe(0);
-    expect(origin.patternPosition.isOrigin).toBe(true);
-    expect(origin.patternPosition.isTerminal).toBe(false);
+    expect(origin.patternPosition.isFirstStop).toBe(true);
+    expect(origin.patternPosition.isLastStop).toBe(false);
 
     const terminal = circularEntries.find((e) => e.schedule.departureMinutes === 650)!;
     expect(terminal).toBeDefined();
     expect(terminal.patternPosition.stopIndex).toBe(3);
-    expect(terminal.patternPosition.isOrigin).toBe(false);
-    expect(terminal.patternPosition.isTerminal).toBe(true);
+    expect(terminal.patternPosition.isFirstStop).toBe(false);
+    expect(terminal.patternPosition.isLastStop).toBe(true);
   });
 });
 

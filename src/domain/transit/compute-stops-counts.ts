@@ -9,7 +9,7 @@ function hasBoardableEntry(entries: readonly TimetableEntry[]): boolean {
   return entries.some(
     (entry) =>
       entry.boarding.pickupType === 0 &&
-      (entry.patternPosition.isOrigin || !entry.patternPosition.isTerminal),
+      (entry.patternPosition.isFirstStop || !entry.patternPosition.isLastStop),
   );
 }
 
@@ -21,7 +21,7 @@ export function computeStopsCounts<T extends StopTimesCarrier>(items: readonly T
       if (item.stopTimes.length > 0) {
         counts.nonEmpty += 1;
       }
-      if (item.stopTimes.some((entry) => entry.patternPosition.isOrigin)) {
+      if (item.stopTimes.some((entry) => entry.patternPosition.isFirstStop)) {
         counts.originCount += 1;
       }
       if (hasBoardableEntry(item.stopTimes)) {

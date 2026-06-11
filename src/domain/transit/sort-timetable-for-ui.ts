@@ -42,13 +42,13 @@ export function sortTimetableEntriesByDisplayTime<T extends TimetableEntry>(entr
     if (departureDiff !== 0) {
       return departureDiff;
     }
-    // 4. isOrigin first — true (origin) sorts before false
-    if (a.patternPosition.isOrigin !== b.patternPosition.isOrigin) {
-      return a.patternPosition.isOrigin ? -1 : 1;
+    // 4. isFirstStop first — true (origin) sorts before false
+    if (a.patternPosition.isFirstStop !== b.patternPosition.isFirstStop) {
+      return a.patternPosition.isFirstStop ? -1 : 1;
     }
-    // 5. isTerminal first — true (terminal) sorts before false
-    if (a.patternPosition.isTerminal !== b.patternPosition.isTerminal) {
-      return a.patternPosition.isTerminal ? -1 : 1;
+    // 5. isLastStop first — true (terminal) sorts before false
+    if (a.patternPosition.isLastStop !== b.patternPosition.isLastStop) {
+      return a.patternPosition.isLastStop ? -1 : 1;
     }
     // When all five keys tie, the order is unspecified.
     return 0;
@@ -68,7 +68,7 @@ export function sortTimetableEntriesByDisplayTime<T extends TimetableEntry>(entr
  * `./sort-timetable-entries`.
  *
  * Sort keys mirror the within-day variant but operate on absolute time:
- * display → arrival → departure → isOrigin (true first) → isTerminal
+ * display → arrival → departure → isFirstStop (true first) → isLastStop
  * (true first). When all five keys tie, the order is unspecified.
  *
  * Mutates the input array in place AND returns it (for chaining).
@@ -101,13 +101,13 @@ export function sortTimetableEntriesByDisplayTimeChronologically<
     if (departureDiff !== 0) {
       return departureDiff;
     }
-    // 4. isOrigin first — true (origin) sorts before false
-    if (a.entry.patternPosition.isOrigin !== b.entry.patternPosition.isOrigin) {
-      return a.entry.patternPosition.isOrigin ? -1 : 1;
+    // 4. isFirstStop first — true (origin) sorts before false
+    if (a.entry.patternPosition.isFirstStop !== b.entry.patternPosition.isFirstStop) {
+      return a.entry.patternPosition.isFirstStop ? -1 : 1;
     }
-    // 5. isTerminal first — true (terminal) sorts before false
-    if (a.entry.patternPosition.isTerminal !== b.entry.patternPosition.isTerminal) {
-      return a.entry.patternPosition.isTerminal ? -1 : 1;
+    // 5. isLastStop first — true (terminal) sorts before false
+    if (a.entry.patternPosition.isLastStop !== b.entry.patternPosition.isLastStop) {
+      return a.entry.patternPosition.isLastStop ? -1 : 1;
     }
     // When all five keys tie, the order is unspecified.
     return 0;

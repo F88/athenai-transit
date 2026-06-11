@@ -147,8 +147,8 @@ function createEntry(
     stopHeadsign: string;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
-    isTerminal: boolean;
-    isOrigin: boolean;
+    isLastStop: boolean;
+    isFirstStop: boolean;
     stopIndex: number;
     totalStops: number;
   }> = {},
@@ -173,8 +173,8 @@ function createEntry(
     patternPosition: {
       stopIndex: overrides.stopIndex ?? 3,
       totalStops: overrides.totalStops ?? 15,
-      isTerminal: overrides.isTerminal ?? false,
-      isOrigin: overrides.isOrigin ?? false,
+      isLastStop: overrides.isLastStop ?? false,
+      isFirstStop: overrides.isFirstStop ?? false,
     },
     tripLocator: {
       patternId: `${(overrides.route ?? busRoute).route_id}__${overrides.headsign ?? '大塚駅前'}`,
@@ -378,13 +378,13 @@ export const DropOffOnly: Story = {
         createEntry({
           departureMinutes: 870,
           pickupType: 1,
-          isTerminal: true,
+          isLastStop: true,
           arrivalMinutes: 870,
         }),
         createEntry({
           departureMinutes: 885,
           pickupType: 1,
-          isTerminal: true,
+          isLastStop: true,
           arrivalMinutes: 885,
           route: busRoute2,
           headsign: '日暮里駅前',
