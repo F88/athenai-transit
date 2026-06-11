@@ -10,6 +10,7 @@ import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 
 import { NearbyStop, type NearbyStopProps } from '@/components/nearby-stop';
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
 
@@ -30,6 +31,8 @@ interface StopGridProps {
   selectedStopId: string | null;
   now: Date;
   mapCenter: LatLng | null;
+  /** Display size (drives row text size); resolved from container width like the header. */
+  size: ExtendedDisplaySize;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
@@ -54,6 +57,7 @@ export function StopGrid({
   selectedStopId,
   now,
   mapCenter,
+  size,
   infoLevel,
   dataLangs,
   viewId,
@@ -115,7 +119,7 @@ export function StopGrid({
         })}
       </div>
       {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
-      {scrollOverflow.hasContentAbove && <ScrollToTopButton targetRef={contentRef} />}
+      {scrollOverflow.hasContentAbove && <ScrollToTopButton size={size} targetRef={contentRef} />}
     </div>
   );
 }

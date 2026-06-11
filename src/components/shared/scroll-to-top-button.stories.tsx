@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useScrollOverflow } from '../../hooks/use-scroll-overflow';
 import { baseStop, longNameStop } from '../../stories/fixtures';
+import type { ExtendedDisplaySize } from './display-size';
 import { ScrollFadeEdge } from './scroll-fade-edge';
 import { ScrollToTopButton } from './scroll-to-top-button';
 
@@ -18,17 +19,23 @@ import { ScrollToTopButton } from './scroll-to-top-button';
  * Sizes are inline styles (not Tailwind utilities) so the preview does not
  * depend on which utility classes the current Tailwind build has generated.
  */
-function StaticButtonPreview({ className }: { className?: string }) {
+function StaticButtonPreview({
+  size,
+  className,
+}: {
+  size?: ExtendedDisplaySize;
+  className?: string;
+}) {
   const boxRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
       ref={boxRef}
       className="relative overflow-y-auto rounded-lg border bg-white dark:bg-gray-900"
-      style={{ height: '6rem', width: '12rem' }}
+      style={{ height: '8rem', width: '12rem' }}
     >
       <div style={{ height: '100%' }} />
-      <ScrollToTopButton targetRef={boxRef} className={className} />
+      <ScrollToTopButton targetRef={boxRef} size={size} className={className} />
     </div>
   );
 }
@@ -44,10 +51,12 @@ function StaticButtonPreview({ className }: { className?: string }) {
  * an already-constrained container.
  */
 function ScrollContainerDemo({
+  size,
   className,
   itemCount,
   initialScrollTop,
 }: {
+  size?: ExtendedDisplaySize;
   className?: string;
   itemCount: number;
   initialScrollTop: number;
@@ -78,7 +87,7 @@ function ScrollContainerDemo({
       </ul>
       {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
       {scrollOverflow.hasContentAbove && (
-        <ScrollToTopButton targetRef={contentRef} className={className} />
+        <ScrollToTopButton targetRef={contentRef} size={size} className={className} />
       )}
     </div>
   );
@@ -92,6 +101,7 @@ const meta = {
   },
   argTypes: {
     targetRef: { control: false },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     className: { control: 'text' },
   },
 } satisfies Meta<typeof ScrollToTopButton>;
@@ -103,7 +113,20 @@ type Story = StoryObj<typeof meta>;
 
 /** The button itself at its resting position, without list content. */
 export const Appearance: Story = {
-  render: (args) => <StaticButtonPreview className={args.className} />,
+  render: (args) => <StaticButtonPreview size={args.size} className={args.className} />,
+};
+
+/** All display sizes side by side (xs = 32px ... xl = 64px, in 8px steps). */
+export const AppearanceSizeComparison: Story = {
+  render: (args) => (
+    <div className="flex flex-wrap gap-2">
+      <StaticButtonPreview size="xs" className={args.className} />
+      <StaticButtonPreview size="sm" className={args.className} />
+      <StaticButtonPreview size="md" className={args.className} />
+      <StaticButtonPreview size="lg" className={args.className} />
+      <StaticButtonPreview size="xl" className={args.className} />
+    </div>
+  ),
 };
 
 // --- Integrated demo ---
@@ -111,7 +134,12 @@ export const Appearance: Story = {
 /** Scrolled away from the top: the button is visible and scrolls back on click. */
 export const Demo: Story = {
   render: (args) => (
-    <ScrollContainerDemo className={args.className} itemCount={12} initialScrollTop={300} />
+    <ScrollContainerDemo
+      size={args.size}
+      className={args.className}
+      itemCount={12}
+      initialScrollTop={300}
+    />
   ),
 };
 

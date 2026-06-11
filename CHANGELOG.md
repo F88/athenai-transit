@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- StopGrid / TransitDisplaysContainer: スクロールで上端から離れている間、「一番上に戻る」フローティングボタン (`ScrollToTopButton`) を右下に表示するようにした。
+- Storybook: `ScrollToTopButton` の stories (外観 + 統合デモ) を追加した。
+
+### Changed
+
+- Hooks: `useScrollFades` を `useScrollOverflow` にリネームした (`showTop` / `showBottom` -> `hasContentAbove` / `hasContentBelow`、`handleScroll` -> `update`。フェードではなく「スクロール上下に隠れたコンテンツの有無の観測」という責務を名前に反映。挙動変更なし)。
+
 ## [2026.06.10]
 
 ### Added
