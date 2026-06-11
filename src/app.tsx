@@ -45,7 +45,7 @@ import {
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
 import { getTimetableOpenOutcomeMessage } from './domain/transit/timetable-message';
-import { getStopServiceState } from './domain/transit/timetable-utils';
+import { getStopServiceState } from './domain/transit/timetable-service-state';
 
 // hooks
 import { useAnchorRefresh } from './hooks/use-anchor-refresh';

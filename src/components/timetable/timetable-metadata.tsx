@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
+import { getDisplayMinutes } from '@/domain/transit/timetable-entry-schedule';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';

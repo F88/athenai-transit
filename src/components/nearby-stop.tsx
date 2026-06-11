@@ -5,7 +5,7 @@ import type { StopTimeViewId } from '../domain/transit/stop-time-views';
 import {
   getFilteredTimetableEntriesState,
   getTimetableEntriesState,
-} from '../domain/transit/timetable-utils';
+} from '../domain/transit/timetable-service-state';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { cn } from '../lib/utils';
 import type { LatLng } from '../types/app/map';

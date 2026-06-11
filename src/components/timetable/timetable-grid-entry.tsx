@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { TimetableEntry, TripInspectionTarget } from '../../types/app/transit-composed';
 import { useTranslation } from 'react-i18next';
-import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
+import { getDisplayMinutes } from '../../domain/transit/timetable-entry-schedule';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
 import { buildTripInspectionTarget } from '../../domain/transit/trip-inspection-target';
 import { HeadsignBadge } from '../badge/headsign-badge';

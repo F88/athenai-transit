@@ -5,7 +5,7 @@ import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { getDisplayMinutes } from '../domain/transit/timetable-entry-schedule';
 import { buildTripInspectionTarget } from '../domain/transit/trip-inspection-target';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';

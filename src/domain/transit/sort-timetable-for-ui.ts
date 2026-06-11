@@ -13,7 +13,7 @@
 
 import type { ContextualTimetableEntry, TimetableEntry } from '../../types/app/transit-composed';
 import { minutesToDate } from './calendar-utils';
-import { getDisplayMinutes } from './timetable-utils';
+import { getDisplayMinutes } from './timetable-entry-schedule';
 
 /**
  * Sort entries so their visible `:MM` labels read chronologically.
