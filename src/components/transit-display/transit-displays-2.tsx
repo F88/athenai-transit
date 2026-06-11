@@ -668,7 +668,6 @@ export function TransitDisplayEntry2({
   // resolution while data / dataLangs are unchanged.
   const resolved = useMemo(() => {
     const { stop: swc, timetableEntry: entry } = data;
-    const attributes = getTimetableEntryAttributes(entry);
     const route = entry.routeDirection.route;
     const routeAgency = swc.agencies.find((agency) => agency.agency_id === route.agency_id);
     const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
@@ -689,7 +688,6 @@ export function TransitDisplayEntry2({
     // inspectTarget is missing).
     const inspectTarget = buildTripInspectionTarget(entry, entry.serviceDate);
     return {
-      attributes,
       routeAgency,
       routeColor,
       headsign,
@@ -700,7 +698,6 @@ export function TransitDisplayEntry2({
     };
   }, [data, dataLangs]);
   const {
-    attributes,
     routeAgency,
     routeColor,
     headsign,
@@ -780,7 +777,7 @@ export function TransitDisplayEntry2({
           />
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
-            attributes={attributes}
+            attributes={getTimetableEntryAttributes(timetableEntry)}
             showDisplayTerminal={true}
             showDisplayOrigin={true}
             showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
