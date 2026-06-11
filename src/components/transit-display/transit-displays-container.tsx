@@ -4,25 +4,28 @@ import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
+import type { AppRouteTypeValue } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
+
+import { createLogger } from '@/lib/logger';
 
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 
-import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
-import type { ExtendedDisplaySize } from '@/components/shared/display-size';
-import { TransitDisplays } from '@/components/transit-display/transit-displays';
+import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
+import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
+import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
 import {
   buildTransitDisplayDataSet,
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
-import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
-import type { AppRouteTypeValue } from '@/types/app/transit';
-import { TransitDisplays2 } from './transit-displays-2';
-import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
-import { createLogger } from '@/lib/logger';
+
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
+import { TransitDisplays } from '@/components/transit-display/transit-displays';
+import { TransitDisplays2 } from '@/components/transit-display/transit-displays-2';
 
 const logger = createLogger('TransitDisplaysContainer');
 
@@ -174,6 +177,7 @@ export function TransitDisplaysContainer({
         />
       )}
       {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
+      {scrollFade.showTop && <ScrollToTopButton targetRef={contentRef} />}
     </div>
   );
 }

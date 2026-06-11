@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import type { StopTimeViewId } from '../domain/transit/stop-time-views';
-import { useScrollFades } from '../hooks/use-scroll-fades';
-import type { LatLng } from '../types/app/map';
-import type { InfoLevel } from '../types/app/settings';
-import type { TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
-import { ScrollFadeEdge } from './shared/scroll-fade-edge';
-import { NearbyStop, type NearbyStopProps } from './nearby-stop';
+
+import type { LatLng } from '@/types/app/map';
+import type { InfoLevel } from '@/types/app/settings';
+import type { TimetableEntriesState } from '@/types/app/transit';
+import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
+
+import { useScrollFades } from '@/hooks/use-scroll-fades';
+
+import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
+
+import { NearbyStop, type NearbyStopProps } from '@/components/nearby-stop';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
 
 /** Number of stops to render immediately without lazy loading. */
 const EAGER_RENDER_COUNT = 6;
@@ -110,6 +115,7 @@ export function StopGrid({
         })}
       </div>
       {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
+      {scrollFade.showTop && <ScrollToTopButton targetRef={contentRef} />}
     </div>
   );
 }
