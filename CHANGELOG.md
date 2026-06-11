@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.06.11]
+
 ### Added
 
 - StopGrid / TransitDisplaysContainer: スクロールで上端から離れている間、「一番上に戻る」フローティングボタン (`ScrollToTopButton`) を右下に表示するようにした。
