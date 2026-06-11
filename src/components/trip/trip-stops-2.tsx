@@ -73,7 +73,6 @@ function TripStopRow({
   const infoLevelFlag = useInfoLevel(infoLevel);
   const stopMeta = tripStopTime.stopMeta;
   const stopId = tripStopTime.stopMeta?.stop.stop_id;
-  const stopAttributes = getTimetableEntryAttributes(tripStopTime.timetableEntry);
   const stopAgency = stopMeta?.agencies.find(
     (agency) => agency.agency_id === tripStopTime.timetableEntry.routeDirection.route.agency_id,
   );
@@ -210,7 +209,7 @@ function TripStopRow({
               showRouteTypeIcon={false}
               agency={stopAgency}
               showAgency={false}
-              attributes={stopAttributes}
+              attributes={getTimetableEntryAttributes(tripStopTime.timetableEntry)}
             />
           </div>
         )}

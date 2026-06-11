@@ -112,9 +112,6 @@ export function buildTransitDisplayDatumForUi(
   };
 
   return datum.map(({ timetableEntry, stop: stopWithContext }) => {
-    // [IMPORTANT] Use domain logic to determine the starting/ending point.
-    const attributes = getTimetableEntryAttributes(timetableEntry);
-
     // Route
     const route = timetableEntry.routeDirection.route;
     const routeAgency = stopWithContext.agencies.find(
@@ -172,7 +169,7 @@ export function buildTransitDisplayDatumForUi(
       timeText: formatAbsoluteTime(
         minutesToDate(timetableEntry.serviceDate, categoryMinutes(timetableEntry, category)),
       ),
-      attributes,
+      attributes: getTimetableEntryAttributes(timetableEntry),
       arrivalMinutes: timetableEntry.schedule.arrivalMinutes,
       departureMinutes: timetableEntry.schedule.departureMinutes,
       serviceDate: timetableEntry.serviceDate,

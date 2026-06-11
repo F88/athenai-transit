@@ -668,7 +668,6 @@ export function TransitDisplayEntry2({
   // resolution while data / dataLangs are unchanged.
   const resolved = useMemo(() => {
     const { stop: swc, timetableEntry: entry } = data;
-    // [IMPORTANT] Use domain logic to determine the starting/ending point.
     const attributes = getTimetableEntryAttributes(entry);
     const route = entry.routeDirection.route;
     const routeAgency = swc.agencies.find((agency) => agency.agency_id === route.agency_id);

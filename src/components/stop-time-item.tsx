@@ -63,7 +63,6 @@ export function StopTimeItem({
 }: StopTimeItemProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
-  const attributes = getTimetableEntryAttributes(entry);
   const { route } = entry.routeDirection;
   const { routeColor } = resolveRouteColors(route, 'css-hex');
   const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
@@ -105,7 +104,7 @@ export function StopTimeItem({
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           showAgency={showAgency}
-          attributes={attributes}
+          attributes={getTimetableEntryAttributes(entry)}
         />
       </div>
       {showVerbose && <VerboseContextualTimetableEntry entry={entry} />}
