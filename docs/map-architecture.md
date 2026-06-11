@@ -132,14 +132,28 @@ Outline pane must remain below fill pane. Separate panes avoid same-pane mount-o
 
 - `z-0` / `z-10` are fine inside a local stacking context.
 - Do not add z-index only for decoration.
-- `ScrollFadeEdge` is local overlay; scroll-container `z-10` does not mean global layer 10.
+- `ScrollFadeEdge` and `ScrollToTopButton` are local overlays; scroll-container `z-10` does not mean global layer 10.
 - Shared primitives such as `Select` / `Popover` should not own app-specific global z-index. Callers should override when they need app chrome layering.
+
+### MapOverlay corner-panel group
+
+The corner panels (`MapControlPanel`, `MapNavigationPanel`, `MapLayerPanel`, `RenderingPanel`, `StopTypeFilterPanel`, `StopControlPanel`, `InfoPanel`) form one chrome group: a single `absolute inset-0 z-1000` wrapper inside `MapOverlay` that is deliberately a stacking context. Globally the group is one unit at 1000 (BottomSheet still covers it, dropdowns at 1001+ stay above); the panels' mutual overlap order is local (`0-99` range).
+
+On viewports shorter than the app's ~400px minimum design height the panels overlap by design; the local order decides which control stays usable. Panels stay on their assigned side (left / right), so the order is per side:
+
+| local z | Panels                       | Rationale                                       |
+| ------- | ---------------------------- | ----------------------------------------------- |
+| 10      | `StopControlPanel` (left)    | stop search wins over `StopTypeFilterPanel`     |
+| 10      | `MapNavigationPanel` (right) | locate / random-jump wins over `RenderingPanel` |
+| auto    | every other panel            | DOM order; no deliberate priority assigned      |
 
 ### App shell wrappers
 
 App shell wrappers must not create stacking contexts. App root, hoisted `MapView` wrapper, and multi-pane layout shell should provide positioning only.
 
 Avoid `relative z-0` or `fixed inset-0 z-0` on shell wrappers. Those create new stacking contexts and make the reserved global ranges compose incorrectly. Use `position: relative` / `absolute` with `z-index: auto`.
+
+This prohibition is for pass-through shells, which must let their children's global z-index (chrome 1000-1999, dialogs 2000+) compose at the root. A chrome group that deliberately closes over its children to localize their ordering (see the MapOverlay corner-panel group above) is the opposite pattern and is allowed, but it must be documented here.
 
 ## Map pan / zoom control
 

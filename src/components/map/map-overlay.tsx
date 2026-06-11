@@ -144,52 +144,62 @@ export function MapOverlay({
 }: MapOverlayProps) {
   return (
     <>
-      {map && <MapControlPanel map={map} infoLevel={infoLevel} />}
-      {map && (
-        <MapNavigationPanel
-          map={map}
+      {/*
+       * Corner-panel group: one deliberate stacking context (z-1000) so the
+       * panels' overlap order on short viewports is decided by their local
+       * z inside the group, without touching the global chrome layering.
+       * See docs/map-architecture.md "MapOverlay corner-panel group".
+       */}
+      <div className="pointer-events-none absolute inset-0 z-1000">
+        {map && <MapControlPanel map={map} infoLevel={infoLevel} />}
+        {map && (
+          <MapNavigationPanel
+            map={map}
+            infoLevel={infoLevel}
+            autoLocateEnabled={autoLocateEnabled}
+            onEnableAutoLocate={onEnableAutoLocate}
+            onDisableAutoLocate={onDisableAutoLocate}
+            locatePulseKey={locatePulseKey}
+            onLocated={onLocated}
+            onDeselectStop={onDeselectStop}
+          />
+        )}
+        <MapLayerPanel
+          tileIndex={tileIndex}
+          visibleRouteShapes={visibleRouteShapes}
           infoLevel={infoLevel}
-          autoLocateEnabled={autoLocateEnabled}
-          onEnableAutoLocate={onEnableAutoLocate}
-          onDisableAutoLocate={onDisableAutoLocate}
-          locatePulseKey={locatePulseKey}
-          onLocated={onLocated}
-          onDeselectStop={onDeselectStop}
+          onCycleTile={onCycleTile}
+          onToggleBusShapes={onToggleBusShapes}
+          onToggleNonBusShapes={onToggleNonBusShapes}
         />
-      )}
-      <MapLayerPanel
-        tileIndex={tileIndex}
-        visibleRouteShapes={visibleRouteShapes}
-        infoLevel={infoLevel}
-        onCycleTile={onCycleTile}
-        onToggleBusShapes={onToggleBusShapes}
-        onToggleNonBusShapes={onToggleNonBusShapes}
-      />
-      <RenderingPanel
-        renderMode={renderMode}
-        perfMode={perfMode}
-        infoLevel={infoLevel}
-        theme={theme}
-        lang={dataLang[0]}
-        onToggleRenderMode={onToggleRenderMode}
-        onTogglePerfMode={onTogglePerfMode}
-        onCycleInfoLevel={onCycleInfoLevel}
-        onToggleDarkMode={onToggleDarkMode}
-        onCycleLang={onCycleLang}
-      />
-      <StopTypeFilterPanel
-        visibleStopTypes={visibleStopTypes}
-        infoLevel={infoLevel}
-        onToggleStopType={onToggleStopType}
-      />
-      <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
-      <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
+        <RenderingPanel
+          renderMode={renderMode}
+          perfMode={perfMode}
+          infoLevel={infoLevel}
+          theme={theme}
+          lang={dataLang[0]}
+          onToggleRenderMode={onToggleRenderMode}
+          onTogglePerfMode={onTogglePerfMode}
+          onCycleInfoLevel={onCycleInfoLevel}
+          onToggleDarkMode={onToggleDarkMode}
+          onCycleLang={onCycleLang}
+        />
+        <StopTypeFilterPanel
+          visibleStopTypes={visibleStopTypes}
+          infoLevel={infoLevel}
+          onToggleStopType={onToggleStopType}
+        />
+        <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
+        <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
+      </div>
+
       <TimeControls
         time={virtualNow}
         isCustomTime={isCustomTime}
         onResetToNow={onResetToNow}
         onCustomTimeSet={onCustomTimeSet}
       />
+
       <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
         <StopHistory
           history={stopHistory}

@@ -109,7 +109,9 @@ export function MapNavigationPanel({
   }, [handleRandomJump, onDisableAutoLocate]);
 
   return (
-    <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>
+    // z-10 (local to the MapOverlay corner-panel group): navigation actions
+    // stay usable when this panel overlaps RenderingPanel on short viewports.
+    <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel} className="z-10">
       {/* Current location button */}
       <MapMultiStateButton
         active={!locating}

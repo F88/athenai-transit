@@ -20,6 +20,11 @@ interface ControlPanelProps {
  * Groups multiple toggle buttons into a vertical strip overlaid on the map.
  * Automatically applies `env(safe-area-inset-top)` when anchored to the top edge.
  *
+ * Carries no global z-index of its own: global layering is owned by the
+ * MapOverlay corner-panel group (one `z-1000` stacking context); a panel that
+ * must stay usable when panels overlap passes a local z via `className`.
+ * See docs/map-architecture.md "MapOverlay corner-panel group".
+ *
  * @param side - Which side to place the panel (`"left"` or `"right"`).
  * @param edge - Vertical edge (`"top"` or `"bottom"`). Only `"top"` adds safe-area inset.
  * @param offset - CSS length offset from the edge.
@@ -42,9 +47,12 @@ export function ControlPanel({
   const positionStyle: CSSProperties =
     edge === 'top' ? { top: `calc(${offset} + env(safe-area-inset-top))` } : { bottom: offset };
   return (
+    // No z-index here on purpose: the MapOverlay corner-panel group owns the
+    // global z-1000; a panel stays z-auto unless it passes a local z via
+    // className to win panel-vs-panel overlaps on short viewports.
     <div
       className={cn(
-        'pointer-events-none absolute z-1000 flex flex-col gap-0.5 *:pointer-events-auto',
+        'pointer-events-none absolute flex flex-col gap-0.5 *:pointer-events-auto',
         sideClass,
         borderClass,
         className,

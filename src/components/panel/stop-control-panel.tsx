@@ -18,7 +18,9 @@ interface StopControlPanelProps {
 export function StopControlPanel({ infoLevel, onSearchClick }: StopControlPanelProps) {
   const { t } = useTranslation();
   return (
-    <ControlPanel side="left" edge="bottom" offset="2rem" infoLevel={infoLevel}>
+    // z-10 (local to the MapOverlay corner-panel group): stop search stays
+    // usable when this panel overlaps StopTypeFilterPanel on short viewports.
+    <ControlPanel side="left" edge="bottom" offset="2rem" infoLevel={infoLevel} className="z-10">
       <MapToggleButton active onClick={onSearchClick} label={t('panel.searchStops')}>
         🔍
       </MapToggleButton>
