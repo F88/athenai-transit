@@ -33,9 +33,14 @@ export function prepareStopTimetable(
   if (includeNonBoardable) {
     return { entries: allEntries, omitted: { nonBoardable: 0 } };
   }
+  // exclude non-boardable.
   const entries = filterByStopEventAttributes(allEntries, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+    pickUpState: new Set([
+      'regularlyScheduledPickup',
+      'mustPhoneAgency',
+      'mustCoordinateWithDriver',
+    ]),
+    position: new Set(['first', 'middle', 'firstAndLast']),
   });
   return { entries, omitted: { nonBoardable: allEntries.length - entries.length } };
 }
@@ -68,9 +73,14 @@ export function prepareRouteHeadsignTimetable(
   if (includeNonBoardable) {
     return { entries: routeEntries, omitted: { nonBoardable: 0 } };
   }
+  // exclude non-boardable.
   const entries = filterByStopEventAttributes(routeEntries, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+    pickUpState: new Set([
+      'regularlyScheduledPickup',
+      'mustPhoneAgency',
+      'mustCoordinateWithDriver',
+    ]),
+    position: new Set(['first', 'middle', 'firstAndLast']),
   });
   return { entries, omitted: { nonBoardable: routeEntries.length - entries.length } };
 }
@@ -129,19 +139,35 @@ export function filterByRouteType<T extends TimetableEntry>(
 // filterByStopEventAttributes
 // ---------------------------------------------------------------------------
 
-/** Pattern position values an entry can match. */
-export type PatternPosition = 'origin' | 'terminal' | 'middle';
+/**
+ * Pattern position values an entry can match.
+ *
+ * Maps to `patternPosition.isFirstStop` / `isLastStop` flags:
+ * - `'first'`        — `isFirstStop && !isLastStop`
+ * - `'last'`         — `!isFirstStop && isLastStop`
+ * - `'middle'`       — `!isFirstStop && !isLastStop`
+ * - `'firstAndLast'` — `isFirstStop && isLastStop` (single-stop pattern)
+ * - `'unknown'`      — reserved; no entry currently produces this value
+ *
+ * Note: `'last'` does NOT imply the trip terminates here — through-services
+ * continue beyond the feed boundary (e.g. TWR Rinkai at Osaki).
+ */
+type PatternPosition = 'first' | 'middle' | 'last' | 'firstAndLast' | 'unknown';
 
 /**
  * Pick-up state values an entry can match. Maps 1:1 to GTFS
- * `pickup_type` values (= boarding side, no `drop_off_type` involvement):
+ * `pickup_type` values (= operator-declared pickup signal):
  *
- * - `'boardable'` — `pickup_type === 0` (regular pickup).
- * - `'nonBoardable'` — `pickup_type === 1` (no pickup available).
- * - `'phoneArrangement'` — `pickup_type === 2` (phone agency to arrange).
- * - `'driverArrangement'` — `pickup_type === 3` (coordinate with driver).
+ * - `'regularlyScheduledPickup'` — `pickup_type === 0` (Regularly scheduled pickup).
+ * - `'noPickupAvailable'`        — `pickup_type === 1` (No pickup available).
+ * - `'mustPhoneAgency'`          — `pickup_type === 2` (Must phone agency to arrange pickup).
+ * - `'mustCoordinateWithDriver'` — `pickup_type === 3` (Must coordinate with driver to arrange pickup).
  */
-export type PickUpState = 'boardable' | 'nonBoardable' | 'phoneArrangement' | 'driverArrangement';
+type PickUpState =
+  | 'regularlyScheduledPickup'
+  | 'noPickupAvailable'
+  | 'mustPhoneAgency'
+  | 'mustCoordinateWithDriver';
 
 /**
  * Schedule range filter for departure / arrival times.
@@ -173,11 +199,10 @@ export interface ScheduleRangeFilter {
  *
 
  * Semantics:
- * - 'origin' / 'terminal' map to `patternPosition.isFirstStop` /
- *   `.isLastStop`; 'middle' = neither. Single-stop trips
- *   (isFirstStop AND isLastStop) match both 'origin' and 'terminal'.
- * - 'boardable' / 'nonBoardable' / 'phoneArrangement' /
- *   'driverArrangement' map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3).
+ * - `PatternPosition` values map to `patternPosition.isFirstStop` /
+ *   `.isLastStop`; see {@link PatternPosition} for the full mapping.
+ * - `PickUpState` values map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3);
+ *   see {@link PickUpState} for the full mapping.
  *   `isLastStop` is NOT mixed in (use the position axis if needed).
  * - Schedule range is inclusive on both ends. `field` selects
  *   `entry.schedule.departureMinutes` (default) or
@@ -194,28 +219,28 @@ export interface StopEventAttributeFilters {
 
 function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosition>): boolean {
   const { isFirstStop, isLastStop } = entry.patternPosition;
-  if (isFirstStop && allowed.has('origin')) {
-    return true;
+  if (isFirstStop && isLastStop) {
+    return allowed.has('firstAndLast');
   }
-  if (isLastStop && allowed.has('terminal')) {
-    return true;
+  if (isFirstStop) {
+    return allowed.has('first');
   }
-  if (!isFirstStop && !isLastStop && allowed.has('middle')) {
-    return true;
+  if (isLastStop) {
+    return allowed.has('last');
   }
-  return false;
+  return allowed.has('middle');
 }
 
 function matchesPickUpState(entry: TimetableEntry, allowed: ReadonlySet<PickUpState>): boolean {
   switch (entry.boarding.pickupType) {
     case 0:
-      return allowed.has('boardable');
+      return allowed.has('regularlyScheduledPickup');
     case 1:
-      return allowed.has('nonBoardable');
+      return allowed.has('noPickupAvailable');
     case 2:
-      return allowed.has('phoneArrangement');
+      return allowed.has('mustPhoneAgency');
     case 3:
-      return allowed.has('driverArrangement');
+      return allowed.has('mustCoordinateWithDriver');
   }
 }
 
@@ -267,16 +292,13 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
 /** Toggle bundle for {@link applyStopEventAttributeToggles}. */
 export interface StopEventAttributeToggles {
   /**
-   * When true, narrows to entries where this stop is the trip's origin
-   * (= `entry.patternPosition.isFirstStop === true`). Includes
-   * non-boardable origins; combine with `showBoardableOnly` to
-   * intersect.
+   * When true, narrows to entries where this stop is the first stop of
+   * the trip.
    */
-  showOriginOnly: boolean;
+  showFirstStopOnly: boolean;
   /**
    * When true, narrows to entries with `pickup_type === 0` whose
-   * `patternPosition` is `'origin'` or `'middle'` (i.e. not a pure
-   * terminal). Composes with `showOriginOnly` (AND) when both are on.
+   * `patternPosition` is not the last stop.
    */
   showBoardableOnly: boolean;
 }
@@ -302,15 +324,19 @@ export function applyStopEventAttributeToggles<T extends TimetableEntry>(
   toggles: StopEventAttributeToggles,
 ): T[] {
   let result = entries as T[];
-  if (toggles.showOriginOnly) {
+  if (toggles.showFirstStopOnly) {
     result = filterByStopEventAttributes(result, {
-      position: new Set(['origin']),
+      position: new Set(['first', 'firstAndLast']),
     });
   }
   if (toggles.showBoardableOnly) {
     result = filterByStopEventAttributes(result, {
-      pickUpState: new Set(['boardable']),
-      position: new Set(['origin', 'middle']),
+      pickUpState: new Set([
+        'regularlyScheduledPickup',
+        'mustPhoneAgency',
+        'mustCoordinateWithDriver',
+      ]),
+      position: new Set(['first', 'middle']),
     });
   }
   return result;
@@ -328,7 +354,7 @@ export function applyStopEventAttributeTogglesToStops<T extends StopTimesCarrier
   stops: readonly T[],
   toggles: StopEventAttributeToggles,
 ): T[] {
-  if (!toggles.showOriginOnly && !toggles.showBoardableOnly) {
+  if (!toggles.showFirstStopOnly && !toggles.showBoardableOnly) {
     return stops as T[];
   }
   return stops.map((stop) => {

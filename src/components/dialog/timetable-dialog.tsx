@@ -363,7 +363,7 @@ export const TimetableDialog = memo(function TimetableDialog({
   const stopEventAttributesFilteredEntries = useMemo(
     () =>
       applyStopEventAttributeToggles(allTimetableEntries, {
-        showOriginOnly,
+        showFirstStopOnly: showOriginOnly,
         showBoardableOnly,
       }),
     [allTimetableEntries, showOriginOnly, showBoardableOnly],

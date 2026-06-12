@@ -30,8 +30,8 @@ export function VerboseNearbyStopSummary({
   viewId: StopTimeViewId;
 }) {
   const boardable = filterByStopEventAttributes(stopTimes, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+    pickUpState: new Set(['regularlyScheduledPickup']),
+    position: new Set(['first', 'middle']),
   }).length;
   const nonBoardable = stopTimes.length - boardable;
 

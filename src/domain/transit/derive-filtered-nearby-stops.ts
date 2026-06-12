@@ -99,7 +99,7 @@ export function deriveFilteredNearbyStops(
   }
 
   const stopEventAttributesApplied = applyStopEventAttributeTogglesToStops(routeTypesFiltered, {
-    showOriginOnly,
+    showFirstStopOnly: showOriginOnly,
     showBoardableOnly,
   });
 
