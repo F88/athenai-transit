@@ -454,9 +454,9 @@ export interface TimetableEntry {
    * vs unset default), and sources often leave terminal stops unmarked.
    * Deriving the operational state requires combining these signals with
    * `patternPosition`; use the domain util functions in
-   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`).
-   * For faithful display of these raw signals (no inference), use
-   * `getTimetableEntryAttributes` in
+   * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
+   * `isDeparture` / `isArrival`). For faithful display of these raw
+   * signals (no inference), use `getTimetableEntryAttributes` in
    * `src/domain/transit/timetable-entry-attributes.ts` instead.
    */
   boarding: {
@@ -486,10 +486,11 @@ export interface TimetableEntry {
    * `isFirstStop` / `isLastStop` are also inputs to boarding inference. Do not
    * judge operational boarding/alighting availability directly from these
    * flags; use the domain util functions in
-   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`),
-   * which combine them with the `boarding` source signals. For faithful
-   * display of the role flags themselves, use `getTimetableEntryAttributes`
-   * in `src/domain/transit/timetable-entry-attributes.ts`.
+   * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
+   * `isDeparture` / `isArrival`), which combine them with the `boarding`
+   * source signals. For faithful display of the role flags themselves, use
+   * `getTimetableEntryAttributes` in
+   * `src/domain/transit/timetable-entry-attributes.ts`.
    */
   patternPosition: {
     /** 0-based index of this stop in the pattern (matches `TimetableGroupV2Json.si`). */

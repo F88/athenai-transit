@@ -12,8 +12,7 @@ import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
 } from '../compute-transit-display-datum-stats';
-import { isDropOffOnly } from '../timetable-entry-boarding';
-import { isArrival } from '../timetable-entry-for-passenger';
+import { isArrival, isDeparture } from '../timetable-entry-for-passenger';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the
@@ -196,11 +195,11 @@ export function categoryQualifies(
 
   if (category === 'departures') {
     // [IMPORTANT] Use domain logic.
-    // A departures board lists trips you can actually leave on: not drop-off
-    // only, i.e. not the terminal (the trip ends here) and not a
-    // boarding-prohibited stop such as the drop-off-only stop just before a
-    // terminus.
-    return !isDropOffOnly(timetableEntry);
+    // A departures board lists trips you can actually leave on -- see
+    // isDeparture: boardable per the signal and not the pattern's last stop
+    // (the trip ends there; excludes boarding-prohibited stops such as the
+    // drop-off-only stop just before a terminus).
+    return isDeparture(timetableEntry);
   }
   // [IMPORTANT] Use domain logic.
   // An arrivals board lists trips you can alight from here -- see isArrival:

@@ -63,8 +63,8 @@ export function canAlight(entry: TimetableEntry): boolean {
  * The exact judgment rule is still being specified (state model:
  * Issue #162; feed boundaries: Issue #145). Interim rule: boardable
  * per the signal and not the pattern's last stop -- the same
- * inference as the existing isDropOffOnly, so introducing this
- * function changes no behavior anywhere.
+ * inference as the former isDropOffOnly, which this function
+ * replaces.
  */
 export function isDeparture(entry: TimetableEntry): boolean {
   if (entry.patternPosition.isLastStop) {

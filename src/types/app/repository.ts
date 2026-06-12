@@ -37,8 +37,8 @@ export type CollectionResult<T> =
 export interface TimetableOmitted {
   /**
    * Number of non-boardable entries omitted (= entries where
-   * `isDropOffOnly` returns true: `pickup_type === 1` or
-   * pattern-inferred `isLastStop`).
+   * `isDeparture` returns false: `pickup_type === 1` or the
+   * pattern's last stop).
    */
   nonBoardable: number;
 }

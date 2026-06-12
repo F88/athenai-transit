@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { canAlight, canBoard, isArrival, isDeparture } from '../timetable-entry-for-passenger';
-import { isDropOffOnly } from '../timetable-entry-boarding';
 import { makeEntry } from './make-timetable-entry';
 
 // ---------------------------------------------------------------------------
@@ -116,17 +115,22 @@ describe('isDeparture', () => {
     );
   });
 
-  it('equals !isDropOffOnly for every signal/position combination', () => {
+  it('matches the interim truth table for every signal/position combination', () => {
+    // Expected = boardable per the signal (pickupType !== 1) and not the
+    // pattern's last stop. isFirstStop never affects the result. Written as
+    // literal expectations so the spec is pinned independently of any
+    // implementation expression.
     const pickupTypes = [0, 1, 2, 3] as const;
     const flags = [false, true] as const;
     for (const pickupType of pickupTypes) {
       for (const isFirstStop of flags) {
         for (const isLastStop of flags) {
+          const expected = !isLastStop && pickupType !== 1;
           const entry = makeEntry({ pickupType, isFirstStop, isLastStop });
           expect(
             isDeparture(entry),
             `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
-          ).toBe(!isDropOffOnly(entry));
+          ).toBe(expected);
         }
       }
     }
