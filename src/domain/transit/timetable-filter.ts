@@ -137,7 +137,7 @@ export function filterByRouteType<T extends TimetableEntry>(
 }
 
 // ---------------------------------------------------------------------------
-// filterByStopEventAttributes
+// StopEvent filters
 // ---------------------------------------------------------------------------
 
 /**
@@ -206,15 +206,12 @@ export interface ScheduleRangeFilter {
  * (AND semantics across axes); an undefined field disables that axis.
  * An empty Set yields no matches (literal interpretation).
  *
-
  * Semantics:
  * - `PatternPosition` values map to `patternPosition.isFirstStop` /
  *   `.isLastStop`; see {@link PatternPosition} for the full mapping.
  * - `PickUpState` values map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3);
  *   see {@link PickUpState} for the full mapping.
  *   `isLastStop` is NOT mixed in (use the position axis if needed).
- * - `boardability` delegates to {@link isDeparture} (passenger-perspective
- *   heuristic). Distinct from the raw `pickUpState` axis.
  * - Schedule range is inclusive on both ends. `field` selects
  *   `entry.schedule.departureMinutes` (default) or
  *   `entry.schedule.arrivalMinutes`.
@@ -226,6 +223,14 @@ export interface StopEventAttributeFilters {
   pickUpState?: ReadonlySet<PickUpState>;
   /** Pattern positions to keep. Omit to disable. */
   position?: ReadonlySet<PatternPosition>;
+}
+
+/**
+ * Semantics:
+ * - `boardability` delegates to {@link isDeparture} (passenger-perspective
+ *   heuristic). Distinct from the raw `pickUpState` axis.
+ */
+export interface StopEventBoardabilityFilters {
   /** Boardability states to keep. Omit to disable. */
   boardability?: ReadonlySet<BoarabilityState>;
 }
@@ -279,10 +284,12 @@ function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boo
 
 /**
  * Filter entries by stop-event-level attributes (schedule / pick-up
- * state / pattern position / boardability) in a single array pass.
+ * state / pattern position) in a single array pass.
  *
  * Trip-level attributes (route, headsign, agency) are NOT considered —
  * use {@link filterByAgency} / {@link filterByRouteType} for those.
+ * For rider-perspective boardability filtering, use
+ * {@link filterByStopEventBoardability}.
  *
  * When all axes are undefined, the input reference is returned
  * unchanged (no allocation), so this is safe to call with an empty
@@ -292,8 +299,8 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
   entries: readonly T[],
   filters: StopEventAttributeFilters,
 ): T[] {
-  const { position, pickUpState, schedule, boardability } = filters;
-  if (!position && !pickUpState && !schedule && !boardability) {
+  const { position, pickUpState, schedule } = filters;
+  if (!position && !pickUpState && !schedule) {
     return entries as T[];
   }
   return entries.filter((entry) => {
@@ -303,9 +310,6 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
     if (pickUpState && !matchesPickUpState(entry, pickUpState)) {
       return false;
     }
-    if (boardability && !matchesBoardability(entry, boardability)) {
-      return false;
-    }
     if (schedule && !matchesSchedule(entry, schedule)) {
       return false;
     }
@@ -313,7 +317,33 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
   });
 }
 
-/** Toggle bundle for {@link applyStopEventAttributeToggles}. */
+/**
+ * Filter entries by rider-perspective boardability in a single array pass.
+ *
+ * Boardability is judged by {@link isDeparture} (passenger-side heuristic),
+ * not by raw GTFS attributes. For attribute-level filtering (pickup_type,
+ * pattern position, schedule), use {@link filterByStopEventAttributes}.
+ *
+ * When `boardability` is undefined, the input reference is returned
+ * unchanged (no allocation).
+ */
+export function filterByStopEventBoardability<T extends TimetableEntry>(
+  entries: readonly T[],
+  filters: StopEventBoardabilityFilters,
+): T[] {
+  const { boardability } = filters;
+  if (boardability === undefined) {
+    return entries as T[];
+  }
+  return entries.filter((entry) => {
+    if (!matchesBoardability(entry, boardability)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/** Toggle bundle for {@link filterTimetableEntries}. */
 export interface StopEventAttributeToggles {
   /**
    * When true, narrows to entries where this stop is the first stop of
@@ -335,26 +365,35 @@ interface StopTimesCarrier<T extends TimetableEntry = TimetableEntry> {
  * Apply the user-facing entry-attribute toggles
  * (`showFirstStopOnly` / `showBoardableOnly`) to a list of entries.
  *
- * Each enabled toggle narrows the result via
- * {@link filterByStopEventAttributes} (AND across toggles). When both
+ * Each enabled toggle independently narrows the result (AND across
+ * toggles): `showFirstStopOnly` via {@link filterByStopEventAttributes},
+ * `showBoardableOnly` via {@link filterByStopEventBoardability}. When both
  * toggles are false, the input reference is returned unchanged.
  *
  * Used by both BottomSheet (per-stop entries) and TimetableDialog (the
  * stop's full timetable) so the toggle semantics stay aligned across
  * surfaces.
  */
-export function applyStopEventAttributeToggles<T extends TimetableEntry>(
+export function filterTimetableEntries<T extends TimetableEntry>(
   entries: readonly T[],
   toggles: StopEventAttributeToggles,
 ): T[] {
   let result = entries as T[];
   if (toggles.showFirstStopOnly) {
+    // First stop of the trip.
     result = filterByStopEventAttributes(result, {
       position: new Set(['first', 'firstAndLast']),
     });
   }
   if (toggles.showBoardableOnly) {
-    result = filterByStopEventAttributes(result, { boardability: new Set(['bordable']) });
+    // Entries considered boardable
+    result = filterByStopEventBoardability(result, {
+      // Only Boardable entries are kept; NotBoardable entries are filtered out.
+      boardability: new Set([
+        'bordable',
+        // 'notBoardable',
+      ]),
+    });
   }
   return result;
 }
@@ -367,7 +406,7 @@ export function applyStopEventAttributeToggles<T extends TimetableEntry>(
  * can decide in a separate step whether empty stops should remain for
  * placeholder rendering or be omitted from the list entirely.
  */
-export function applyStopEventAttributeTogglesToStops<T extends StopTimesCarrier>(
+export function filterTimetableEntriesToStops<T extends StopTimesCarrier>(
   stops: readonly T[],
   toggles: StopEventAttributeToggles,
 ): T[] {
@@ -375,7 +414,7 @@ export function applyStopEventAttributeTogglesToStops<T extends StopTimesCarrier
     return stops as T[];
   }
   return stops.map((stop) => {
-    const filtered = applyStopEventAttributeToggles(stop.stopTimes, toggles);
+    const filtered = filterTimetableEntries(stop.stopTimes, toggles);
     return filtered === stop.stopTimes ? stop : { ...stop, stopTimes: filtered };
   });
 }

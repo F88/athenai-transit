@@ -3,10 +3,7 @@ import type { TimetableEntriesState } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 
 import { computeStopsCounts } from './compute-stops-counts';
-import {
-  applyStopEventAttributeTogglesToStops,
-  omitStopsWithoutStopTimes,
-} from './timetable-filter';
+import { filterTimetableEntriesToStops, omitStopsWithoutStopTimes } from './timetable-filter';
 import { getTimetableEntriesState } from './timetable-service-state';
 
 /**
@@ -98,7 +95,7 @@ export function deriveFilteredNearbyStops(
     timetableEntriesStateByStopId.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
   }
 
-  const stopEventAttributesApplied = applyStopEventAttributeTogglesToStops(routeTypesFiltered, {
+  const stopEventAttributesApplied = filterTimetableEntriesToStops(routeTypesFiltered, {
     showFirstStopOnly: showOriginOnly,
     showBoardableOnly,
   });

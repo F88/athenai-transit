@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
 import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import {
-  applyStopEventAttributeToggles,
-  applyStopEventAttributeTogglesToStops,
+  filterTimetableEntries,
+  filterTimetableEntriesToStops,
   filterByAgency,
   filterByRouteType,
   filterByStopEventAttributes,
@@ -649,11 +649,11 @@ describe('filterByRouteType', () => {
   });
 });
 
-describe('applyStopEventAttributeTogglesToStops', () => {
+describe('filterTimetableEntriesToStops', () => {
   it('returns the input reference unchanged when both toggles are false', () => {
     const stops = [{ stopTimes: [makeEntry({ isFirstStop: true })] }, { stopTimes: [makeEntry()] }];
 
-    const result = applyStopEventAttributeTogglesToStops(stops, {
+    const result = filterTimetableEntriesToStops(stops, {
       showFirstStopOnly: false,
       showBoardableOnly: false,
     });
@@ -665,7 +665,7 @@ describe('applyStopEventAttributeTogglesToStops', () => {
     const untouched = { stopTimes: [makeEntry({ isFirstStop: true })] };
     const changed = { stopTimes: [makeEntry({ isFirstStop: false })] };
 
-    const result = applyStopEventAttributeTogglesToStops([untouched, changed], {
+    const result = filterTimetableEntriesToStops([untouched, changed], {
       showFirstStopOnly: true,
       showBoardableOnly: false,
     });
@@ -680,7 +680,7 @@ describe('applyStopEventAttributeTogglesToStops', () => {
 
   it('handles empty input', () => {
     expect(
-      applyStopEventAttributeTogglesToStops([], {
+      filterTimetableEntriesToStops([], {
         showFirstStopOnly: true,
         showBoardableOnly: true,
       }),
@@ -1065,10 +1065,10 @@ describe('filterByStopEventAttributes', () => {
 });
 
 // ---------------------------------------------------------------------------
-// applyStopEventAttributeToggles
+// filterTimetableEntries
 // ---------------------------------------------------------------------------
 
-describe('applyStopEventAttributeToggles', () => {
+describe('filterTimetableEntries', () => {
   const originPt0 = makeEntry({ isFirstStop: true, pickupType: 0, departureMinutes: 480 });
   const originPt1 = makeEntry({ isFirstStop: true, pickupType: 1, departureMinutes: 540 });
   const middlePt0 = makeEntry({ pickupType: 0, departureMinutes: 600 });
@@ -1078,7 +1078,7 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('identity / fast-path', () => {
     it('returns the input reference unchanged when both toggles are false', () => {
-      const result = applyStopEventAttributeToggles(entries, {
+      const result = filterTimetableEntries(entries, {
         showFirstStopOnly: false,
         showBoardableOnly: false,
       });
@@ -1088,7 +1088,7 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('showOriginOnly only', () => {
     it('keeps origin entries (boardable AND non-boardable origins)', () => {
-      const result = applyStopEventAttributeToggles(entries, {
+      const result = filterTimetableEntries(entries, {
         showFirstStopOnly: true,
         showBoardableOnly: false,
       });
@@ -1098,7 +1098,7 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('showBoardableOnly only', () => {
     it('keeps pickup_type=0/2/3 entries at non-pure-terminal positions', () => {
-      const result = applyStopEventAttributeToggles(entries, {
+      const result = filterTimetableEntries(entries, {
         showFirstStopOnly: false,
         showBoardableOnly: true,
       });
@@ -1113,7 +1113,7 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('both toggles on (AND composition)', () => {
     it('keeps only origin AND boardable entries', () => {
-      const result = applyStopEventAttributeToggles(entries, {
+      const result = filterTimetableEntries(entries, {
         showFirstStopOnly: true,
         showBoardableOnly: true,
       });
@@ -1128,7 +1128,7 @@ describe('applyStopEventAttributeToggles', () => {
         { ...makeEntry({ isFirstStop: true, pickupType: 0 }), serviceDate: new Date(2026, 3, 30) },
         { ...makeEntry({ pickupType: 1 }), serviceDate: new Date(2026, 3, 30) },
       ];
-      const filtered: ContextualTimetableEntry[] = applyStopEventAttributeToggles(contextual, {
+      const filtered: ContextualTimetableEntry[] = filterTimetableEntries(contextual, {
         showFirstStopOnly: true,
         showBoardableOnly: false,
       });
