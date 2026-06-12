@@ -8,6 +8,7 @@
  */
 
 import type { InfoLevel } from '@/types/app/settings';
+import type { TimetableEntry } from '@/types/app/transit-composed';
 
 /** Inputs for {@link shouldCollapseArrival}. */
 export interface ShouldCollapseArrivalInput {
@@ -56,14 +57,9 @@ export function shouldCollapseArrival({
 
 /** Inputs for {@link deriveStopTimeRoleDisplayProps}. */
 export interface DeriveStopTimeDisplayInput {
-  /** Whether this stop is the trip's origin (= first stop). */
-  isFirstStop: boolean;
-  /** Whether this stop is the trip's terminal (= last stop). */
-  isLastStop: boolean;
-  /** Current info verbosity level. */
+  timetableEntry: TimetableEntry;
   infoLevel: InfoLevel;
 }
-
 /**
  * Subset of `StopTimeTimeInfoProps` whose values depend on the
  * stop's role (origin / middle / terminal) and the current info
@@ -86,15 +82,16 @@ export interface StopTimeRoleDisplayProps {
  * to collapse same-minute dwell into a single row.
  */
 export function deriveStopTimeRoleDisplayProps({
-  isFirstStop,
-  isLastStop,
+  timetableEntry,
   infoLevel,
 }: DeriveStopTimeDisplayInput): StopTimeRoleDisplayProps {
+  const { isFirstStop, isLastStop } = timetableEntry.patternPosition;
   const isVerbose = infoLevel === 'verbose';
 
   return {
+    //  isFirstStop && isLastStop が有り得る為、両方の値から判定する必要がある.
     showArrivalTime: isVerbose || !isFirstStop || isLastStop,
-    showDepartureTime: isVerbose || !isLastStop || isFirstStop,
+    showDepartureTime: isVerbose || isFirstStop || !isLastStop,
 
     // Tolerance for hiding the arrival row when its time is "close
     // enough" to departure that the second row adds no information.

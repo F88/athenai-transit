@@ -6,6 +6,7 @@ import {
   type ShouldCollapseArrivalInput,
   shouldCollapseArrival,
 } from '../stop-time-display';
+import { makeEntry } from './make-timetable-entry';
 
 /** Build a fully-specified input with sensible defaults. */
 function makeInput(
@@ -129,7 +130,10 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('origin shows departure only at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isFirstStop: true, isLastStop: false, infoLevel }),
+        deriveStopTimeRoleDisplayProps({
+          timetableEntry: makeEntry({ isFirstStop: true, isLastStop: false }),
+          infoLevel,
+        }),
       ).toEqual({
         showArrivalTime: false,
         showDepartureTime: true,
@@ -139,7 +143,10 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('terminal shows arrival only at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isFirstStop: false, isLastStop: true, infoLevel }),
+        deriveStopTimeRoleDisplayProps({
+          timetableEntry: makeEntry({ isFirstStop: false, isLastStop: true }),
+          infoLevel,
+        }),
       ).toEqual({
         showArrivalTime: true,
         showDepartureTime: false,
@@ -149,7 +156,10 @@ describe('deriveStopTimeRoleDisplayProps', () => {
 
     it.each(nonVerboseLevels)('middle stop shows both rows at %s', (infoLevel) => {
       expect(
-        deriveStopTimeRoleDisplayProps({ isFirstStop: false, isLastStop: false, infoLevel }),
+        deriveStopTimeRoleDisplayProps({
+          timetableEntry: makeEntry({ isFirstStop: false, isLastStop: false }),
+          infoLevel,
+        }),
       ).toEqual({
         showArrivalTime: true,
         showDepartureTime: true,
@@ -165,8 +175,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
       // exposes both for fidelity.
       expect(
         deriveStopTimeRoleDisplayProps({
-          isFirstStop: true,
-          isLastStop: false,
+          timetableEntry: makeEntry({ isFirstStop: true, isLastStop: false }),
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -179,8 +188,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('terminal exposes operator-recorded departure_time (turnaround dwell)', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isFirstStop: false,
-          isLastStop: true,
+          timetableEntry: makeEntry({ isFirstStop: false, isLastStop: true }),
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -193,8 +201,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('middle stop shows both rows with collapse disabled', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isFirstStop: false,
-          isLastStop: false,
+          timetableEntry: makeEntry({ isFirstStop: false, isLastStop: false }),
           infoLevel: 'verbose',
         }),
       ).toEqual({
@@ -214,8 +221,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
       // them into a single visual row downstream.
       expect(
         deriveStopTimeRoleDisplayProps({
-          isFirstStop: true,
-          isLastStop: true,
+          timetableEntry: makeEntry({ isFirstStop: true, isLastStop: true }),
           infoLevel: 'normal',
         }),
       ).toEqual({
@@ -228,8 +234,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
     it('shows both rows when verbose with collapse disabled', () => {
       expect(
         deriveStopTimeRoleDisplayProps({
-          isFirstStop: true,
-          isLastStop: true,
+          timetableEntry: makeEntry({ isFirstStop: true, isLastStop: true }),
           infoLevel: 'verbose',
         }),
       ).toEqual({
