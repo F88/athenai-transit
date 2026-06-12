@@ -2,12 +2,12 @@
   "sourceName": "kagoshima-maritime-bureau",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-11T05:55:59.032Z",
+  "downloadedAt": "2026-06-12T05:47:45.116Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KagoshimaCityMaritimeBureau/AllLines.zip?date=20251010",
   "size": 8016,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 997,
-  "archivePath": "workspace/_archives/gtfs/kagoshima-maritime-bureau/AllLines_20260611-055600.zip",
+  "durationMs": 1228,
+  "archivePath": "workspace/_archives/gtfs/kagoshima-maritime-bureau/AllLines_20260612-054746.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
