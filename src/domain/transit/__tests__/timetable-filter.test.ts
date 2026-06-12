@@ -7,6 +7,7 @@ import {
   filterByAgency,
   filterByRouteType,
   filterByStopEventAttributes,
+  matchesBoardability,
   omitStopsWithoutStopTimes,
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -1134,5 +1135,48 @@ describe('applyStopEventAttributeToggles', () => {
       expect(filtered).toHaveLength(1);
       expect(filtered[0].serviceDate.getTime()).toBe(contextual[0].serviceDate.getTime());
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// matchesBoardability
+// ---------------------------------------------------------------------------
+
+describe('matchesBoardability', () => {
+  // boardable: pickup_type=0, middle stop (isDeparture === true)
+  const boardable = makeEntry({ pickupType: 0, isFirstStop: false, isLastStop: false });
+  // not-boardable: last stop (isDeparture === false regardless of pickup signal)
+  const notBoardable = makeEntry({ pickupType: 0, isLastStop: true });
+
+  it('empty set -> false for boardable entry', () => {
+    expect(matchesBoardability(boardable, new Set())).toBe(false);
+  });
+
+  it('empty set -> false for not-boardable entry', () => {
+    expect(matchesBoardability(notBoardable, new Set())).toBe(false);
+  });
+
+  it("Set(['bordable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['bordable']))).toBe(true);
+  });
+
+  it("Set(['bordable']) -> false for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['bordable']))).toBe(false);
+  });
+
+  it("Set(['notBoardable']) -> false for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['notBoardable']))).toBe(false);
+  });
+
+  it("Set(['notBoardable']) -> true for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['notBoardable']))).toBe(true);
+  });
+
+  it("Set(['bordable', 'notBoardable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['bordable', 'notBoardable']))).toBe(true);
+  });
+
+  it("Set(['bordable', 'notBoardable']) -> true for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['bordable', 'notBoardable']))).toBe(true);
   });
 });
