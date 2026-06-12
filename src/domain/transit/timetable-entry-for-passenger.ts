@@ -67,7 +67,46 @@ export function canAlight(entry: TimetableEntry): boolean {
  * replaces.
  */
 export function isDeparture(entry: TimetableEntry): boolean {
-  if (entry.patternPosition.isLastStop) {
+  // Last-stop inference with a single-stop exemption -- `!isFirstStop`
+  // is NOT an oversight:
+  // - Normal patterns: the last stop is judged not to be a departure,
+  //   compensating for sources that leave pickup_type at 0 on real
+  //   terminals (e.g. Toei Bus).
+  // - Single-stop patterns (isFirstStop && isLastStop): the premise
+  //   "last stop = the journey ends here" has no basis. A trip is, per
+  //   the GTFS spec, "a sequence of two or more stops", so these are
+  //   feed-boundary artifacts -- e.g. Tokyo Metro weekday trips through
+  //   onto JR Joban consist of one served row at Ayase (pickup 0 /
+  //   drop_off 1) -- and the operator writes the signals correctly
+  //   there. The signal decides.
+
+  // 本来は canBoard だけで判定したいが、現状のデータ品質では不可能である
+  // - 東京メトロ(例) の場合は LastStop であっても乗車可と判断することは可能
+  // - 但し、全ての事事業者の地下鉄が同様のデータではないため、路線種別で判定することは出来ない
+  //
+  // /** 実装例: All cases */
+  // return canBoard(entry)
+  //
+  // /** 実装例: 路線種別が地下鉄の場合は、LastStop であっても乗車可と判断する */
+  //
+  // const routeType = entry.routeDirection.route.route_type;
+  // switch (routeType) {
+  //   case 1: // Subway
+  //     return canBoard(entry);
+  //   case 2: // Rail
+  //     return canBoard(entry);
+  //   default:
+  //     if (entry.patternPosition.isFirstStop) {
+  //       return false;
+  //     } else {
+  //       return canBoard(entry);
+  //     }
+  // }
+
+  // 現時点では LastStop を乗車不可と判断することが現実的な実装である.
+  // LastStop(!=終点(他路線乗り入れでは終点ではない)) を乗車不可とみなす.
+
+  if (entry.patternPosition.isFirstStop) {
     return false;
   }
 
