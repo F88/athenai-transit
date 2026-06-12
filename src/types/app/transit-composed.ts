@@ -455,8 +455,9 @@ export interface TimetableEntry {
    * Deriving the operational state requires combining these signals with
    * `patternPosition`; use the domain util functions in
    * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
-   * `isDeparture` / `isArrival`). For faithful display of these raw
-   * signals (no inference), use `getTimetableEntryAttributes` in
+   * `isBoardableForPassenger` / `isAlightableForPassenger`). For faithful
+   * display of these raw signals (no inference), use
+   * `getTimetableEntryAttributes` in
    * `src/domain/transit/timetable-entry-attributes.ts` instead.
    */
   boarding: {
@@ -487,9 +488,9 @@ export interface TimetableEntry {
    * judge operational boarding/alighting availability directly from these
    * flags; use the domain util functions in
    * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
-   * `isDeparture` / `isArrival`), which combine them with the `boarding`
-   * source signals. For faithful display of the role flags themselves, use
-   * `getTimetableEntryAttributes` in
+   * `isBoardableForPassenger` / `isAlightableForPassenger`), which combine
+   * them with the `boarding` source signals. For faithful display of the
+   * role flags themselves, use `getTimetableEntryAttributes` in
    * `src/domain/transit/timetable-entry-attributes.ts`.
    */
   patternPosition: {

@@ -1143,9 +1143,9 @@ describe('filterTimetableEntries', () => {
 // ---------------------------------------------------------------------------
 
 describe('matchesBoardability', () => {
-  // boardable: pickup_type=0, middle stop (isDeparture === true)
+  // boardable: pickup_type=0, middle stop (isBoardableForPassenger === true)
   const boardable = makeEntry({ pickupType: 0, isFirstStop: false, isLastStop: false });
-  // not-boardable: last stop (isDeparture === false regardless of pickup signal)
+  // not-boardable: last stop (isBoardableForPassenger === false regardless of pickup signal)
   const notBoardable = makeEntry({ pickupType: 0, isLastStop: true });
 
   it('empty set -> false for boardable entry', () => {

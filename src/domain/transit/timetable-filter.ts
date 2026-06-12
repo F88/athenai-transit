@@ -11,7 +11,7 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { getEffectiveHeadsign } from './get-effective-headsign';
-import { isDeparture } from './timetable-entry-for-passenger';
+import { isBoardableForPassenger } from './timetable-entry-for-passenger';
 
 /**
  * Filter and compute omitted stats for a stop timetable.
@@ -227,7 +227,7 @@ export interface StopEventAttributeFilters {
 
 /**
  * Semantics:
- * - `boardability` delegates to {@link isDeparture} (passenger-perspective
+ * - `boardability` delegates to {@link isBoardableForPassenger} (passenger-perspective
  *   heuristic). Distinct from the raw `pickUpState` axis.
  */
 export interface StopEventBoardabilityFilters {
@@ -266,7 +266,7 @@ export function matchesBoardability(
   entry: TimetableEntry,
   allowed: ReadonlySet<BoarabilityState>,
 ): boolean {
-  const state: BoarabilityState = isDeparture(entry) ? 'bordable' : 'notBoardable';
+  const state: BoarabilityState = isBoardableForPassenger(entry) ? 'bordable' : 'notBoardable';
   return allowed.has(state);
 }
 
@@ -320,7 +320,7 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
 /**
  * Filter entries by rider-perspective boardability in a single array pass.
  *
- * Boardability is judged by {@link isDeparture} (passenger-side heuristic),
+ * Boardability is judged by {@link isBoardableForPassenger} (passenger-side heuristic),
  * not by raw GTFS attributes. For attribute-level filtering (pickup_type,
  * pattern position, schedule), use {@link filterByStopEventAttributes}.
  *
@@ -352,7 +352,7 @@ export interface StopEventAttributeToggles {
   showFirstStopOnly: boolean;
   /**
    * When true, narrows to entries where the passenger can board,
-   * judged by {@link isDeparture} (passenger-perspective heuristic).
+   * judged by {@link isBoardableForPassenger} (passenger-perspective heuristic).
    */
   showBoardableOnly: boolean;
 }

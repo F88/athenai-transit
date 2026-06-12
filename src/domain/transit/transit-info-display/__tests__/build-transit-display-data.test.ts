@@ -14,7 +14,7 @@ import type {
   StopWithContext,
 } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
-import { isArrival, isDeparture } from '../../timetable-entry-for-passenger';
+import { isArrival, isDeparture } from '../../timetable-entry-for-transit-display';
 import {
   buildTransitDisplayDataSet,
   categoryQualifies,
@@ -221,7 +221,7 @@ describe('categoryQualifies', () => {
     expect(categoryQualifies(entry, 'arrivals')).toBe(true);
   });
 
-  it('delegates to the domain helpers: departures = isDeparture, arrivals = isArrival', () => {
+  it('delegates to the transit-display helpers: departures = isDeparture, arrivals = isArrival', () => {
     const entries = [
       makeContextualEntry({ route: busRoute }),
       makeContextualEntry({ route: busRoute, isLastStop: true }),

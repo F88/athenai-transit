@@ -37,7 +37,7 @@ export type CollectionResult<T> =
 export interface TimetableOmitted {
   /**
    * Number of non-boardable entries omitted (= entries where
-   * `isDeparture` returns false: `pickup_type === 1` or the
+   * `isBoardableForPassenger` returns false: `pickup_type === 1` or the
    * pattern's last stop).
    */
   nonBoardable: number;

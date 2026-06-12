@@ -67,13 +67,13 @@ describe('computeStopsCounts', () => {
       total: 5,
       nonEmpty: 4,
       originCount: 2,
-      // oneStopTrip is NOT boardable: isDeparture treats a last-stop row
+      // oneStopTrip is NOT boardable: isBoardableForPassenger treats a last-stop row
       // as not boardable even when it is also the first stop.
       boardableCount: 1,
     });
   });
 
-  it('judges boardability by isDeparture (boardable signal AND not the last stop)', () => {
+  it('judges boardability by isBoardableForPassenger (boardable signal AND not the last stop)', () => {
     const pureTerminal = {
       stopTimes: [makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 })],
     };

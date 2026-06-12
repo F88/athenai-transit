@@ -3,10 +3,12 @@
  *
  * Passenger-perspective questions over a single {@link TimetableEntry}.
  * The subject of every function here is the passenger: can they board,
- * can they alight, does this stop event work as a departure or an
- * arrival for them. The raw operator-declared facts live on
+ * can they alight, is this stop event a service they can actually ride
+ * or actually alight from. The raw operator-declared facts live on
  * `entry.boarding` (pickup_type / drop_off_type) and need no wrapper;
- * this module interprets them for the passenger.
+ * this module interprets them for the passenger. How a stop event is
+ * presented on a transit display (departure / arrival) is a separate
+ * question -- see `timetable-entry-for-transit-display.ts`.
  *
  * The judgment rules are PROVISIONAL: the state model is being
  * specified in Issue #162 and the feed-boundary refinement in
@@ -58,7 +60,9 @@ export function canAlight(entry: TimetableEntry): boolean {
 }
 
 /**
- * PROVISIONAL: whether this stop event is presented as a departure.
+ * PROVISIONAL: whether a passenger can board this stop event as a
+ * service they can actually ride. Unlike {@link canBoard} (signal
+ * only), this combines the signal with the pattern position.
  *
  * The exact judgment rule is still being specified (state model:
  * Issue #162; feed boundaries: Issue #145). Interim rule: boardable
@@ -66,7 +70,7 @@ export function canAlight(entry: TimetableEntry): boolean {
  * inference as the former isDropOffOnly, which this function
  * replaces.
  */
-export function isDeparture(entry: TimetableEntry): boolean {
+export function isBoardableForPassenger(entry: TimetableEntry): boolean {
   // The last-stop rule below knowingly excludes two real-world classes
   // of boardable through-services (kept for reference; both measured on
   // the 2026-06-11 feed snapshots):
@@ -140,14 +144,16 @@ export function isDeparture(entry: TimetableEntry): boolean {
 }
 
 /**
- * PROVISIONAL: whether this stop event is presented as an arrival.
+ * PROVISIONAL: whether a passenger can alight from this stop event as
+ * a service they actually arrive on. Unlike {@link canAlight} (signal
+ * only), this combines the signal with the pattern position.
  *
- * Symmetric to {@link isDeparture}; the rule is equally interim.
- * Interim rule: alightable per the signal and not the pattern's
- * first stop -- the same inference as the former isBoardingOnly,
- * which this function replaces.
+ * Symmetric to {@link isBoardableForPassenger}; the rule is equally
+ * interim. Interim rule: alightable per the signal and not the
+ * pattern's first stop -- the same inference as the former
+ * isBoardingOnly, which this function replaces.
  */
-export function isArrival(entry: TimetableEntry): boolean {
+export function isAlightableForPassenger(entry: TimetableEntry): boolean {
   if (entry.patternPosition.isFirstStop) {
     return false;
   }
