@@ -67,27 +67,47 @@ export function canAlight(entry: TimetableEntry): boolean {
  * replaces.
  */
 export function isDeparture(entry: TimetableEntry): boolean {
-  // Last-stop inference with a single-stop exemption -- `!isFirstStop`
-  // is NOT an oversight:
-  // - Normal patterns: the last stop is judged not to be a departure,
-  //   compensating for sources that leave pickup_type at 0 on real
-  //   terminals (e.g. Toei Bus).
-  // - Single-stop patterns (isFirstStop && isLastStop): the premise
-  //   "last stop = the journey ends here" has no basis. A trip is, per
-  //   the GTFS spec, "a sequence of two or more stops", so these are
-  //   feed-boundary artifacts -- e.g. Tokyo Metro weekday trips through
-  //   onto JR Joban consist of one served row at Ayase (pickup 0 /
-  //   drop_off 1) -- and the operator writes the signals correctly
-  //   there. The signal decides.
-
-  // 本来は canBoard だけで判定したいが、現状のデータ品質では不可能である
-  // - 東京メトロ(例) の場合は LastStop であっても乗車可と判断することは可能
-  // - 但し、全ての事事業者の地下鉄が同様のデータではないため、路線種別で判定することは出来ない
+  // The last-stop rule below knowingly excludes two real-world classes
+  // of boardable through-services (kept for reference; both measured on
+  // the 2026-06-11 feed snapshots):
   //
-  // /** 実装例: All cases */
+  // 1. Single-stop patterns (isFirstStop && isLastStop): trips whose
+  //    feed description is one served row -- below the GTFS definition
+  //    of a trip ("a sequence of two or more stops"). Real instance:
+  //    5 Tokyo Metro weekday trips through onto JR Joban, departing
+  //    Ayase 05:45-06:33 toward Toride / Matsudo with pickup 0 /
+  //    drop_off 1 (trip_id 50B0509K00 etc.). The operator writes the
+  //    signals correctly there, so the signal alone could judge them.
+  //
+  // 2. Full-run last rows of through-services: the pattern's last stop
+  //    is a feed boundary, not a terminus -- the train continues onto
+  //    another operator's line. Real instances: Tokyo Metro at Ayase,
+  //    e.g. 07:06 Toride / 07:10 Kashiwa (stop 19 of 19, pickup 0);
+  //    TWR Rinkai at Osaki, 152 rows/day continuing onto JR toward
+  //    Kawagoe etc. About 4,700 rows/day across the rail sources.
+  //
+  // Why class 1 is not exempted on its own: releasing only the 5
+  // single-row departures while the far more numerous class-2 trains
+  // stay hidden would render a misleading board at Ayase ("only 5
+  // trains toward Toride all morning"). Both classes must be released
+  // together, which requires the per-source signal-trust policy
+  // tracked in Issue #145 (e.g. Yokohama Municipal Subway leaves
+  // pickup_type 0 on real terminals, so a blanket signal-trust or a
+  // route_type split alone is not safe).
+
+  // Ideally this would be judged by canBoard alone, but current data
+  // quality makes that impossible:
+  // - For a source like Tokyo Metro, a last-stop row could safely be
+  //   judged boardable (its signals are written reliably).
+  // - But not every subway operator produces data of that quality
+  //   (e.g. Yokohama Municipal Subway leaves pickup_type 0 on real
+  //   terminals), so the decision cannot be made by route type alone.
+  //
+  // /** Implementation sketch: trust the signal in all cases */
   // return canBoard(entry)
   //
-  // /** 実装例: 路線種別が地下鉄の場合は、LastStop であっても乗車可と判断する */
+  // /** Implementation sketch: for subway / rail route types, judge a
+  //  *  last-stop row boardable per the signal */
   //
   // const routeType = entry.routeDirection.route.route_type;
   // switch (routeType) {
@@ -96,17 +116,19 @@ export function isDeparture(entry: TimetableEntry): boolean {
   //   case 2: // Rail
   //     return canBoard(entry);
   //   default:
-  //     if (entry.patternPosition.isFirstStop) {
+  //     if (entry.patternPosition.isLastStop) {
   //       return false;
   //     } else {
   //       return canBoard(entry);
   //     }
   // }
 
-  // 現時点では LastStop を乗車不可と判断することが現実的な実装である.
-  // LastStop(!=終点(他路線乗り入れでは終点ではない)) を乗車不可とみなす.
+  // For now, treating the last stop as not boardable is the realistic
+  // implementation. Note that a last stop is NOT necessarily a terminus
+  // (a through-service onto another line continues past it), but it is
+  // still treated as not boardable here.
 
-  if (entry.patternPosition.isFirstStop) {
+  if (entry.patternPosition.isLastStop) {
     return false;
   }
 
