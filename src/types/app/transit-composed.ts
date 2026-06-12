@@ -497,6 +497,22 @@ export interface TimetableEntry {
     /** Total number of stops in the pattern. */
     totalStops: number;
     /**
+     * Whether this stop is the first stop of this pattern.
+     *
+     * "First" means the start of this feed's description, NOT
+     * necessarily the journey origin: through-services enter from
+     * beyond the feed boundary (e.g. TWR Rinkai trips starting at
+     * Osaki in the data but arriving from JR). Distinguishing a true
+     * service origin from a feed boundary is tracked in Issue #145.
+     *
+     * Note: `isFirstStop` and `isLastStop` can BOTH be true on the
+     * same entry -- single-stop patterns exist in real data (e.g.
+     * Tokyo Metro weekday trips through onto JR Joban consist of one
+     * served row at Ayase). Do not assume the two flags are mutually
+     * exclusive.
+     */
+    isFirstStop: boolean;
+    /**
      * Whether this stop is the last stop of this pattern.
      *
      * "Last" means the end of this feed's description, NOT necessarily
@@ -504,16 +520,14 @@ export interface TimetableEntry {
      * boundary (e.g. TWR Rinkai trips ending at Osaki in the data but
      * continuing onto JR). Distinguishing a true service terminus from
      * a feed boundary is tracked in Issue #145.
+     *
+     * Note: `isLastStop` and `isFirstStop` can BOTH be true on the
+     * same entry -- single-stop patterns exist in real data (e.g.
+     * Tokyo Metro weekday trips through onto JR Joban consist of one
+     * served row at Ayase). Do not assume the two flags are mutually
+     * exclusive.
      */
     isLastStop: boolean;
-    /**
-     * Whether this stop is the first stop of this pattern.
-     *
-     * "First" means the start of this feed's description, NOT
-     * necessarily the journey origin: through-services enter from
-     * beyond the feed boundary. See Issue #145.
-     */
-    isFirstStop: boolean;
   };
 
   /**
