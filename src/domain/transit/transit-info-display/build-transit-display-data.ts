@@ -181,11 +181,20 @@ export function categoryMinutes(
 }
 
 /**
- * Whether an entry belongs on the given category's board, using signboard
- * semantics specific to this Transit Board: a departures board lists trips you
- * can board here (and that continue past here), an arrivals board lists trips you
- * can alight here. Other views still show the data as-is; only this board applies
- * the boardable / alightable rule.
+ * Whether an entry belongs on the given category's board: a departures
+ * board lists entries judged boardable here ({@link isDeparture}), an
+ * arrivals board entries judged alightable here ({@link isArrival}).
+ *
+ * This is the Transit Board's selection policy. It currently matches the
+ * shared passenger-perspective judgments exactly; if the board ever needs
+ * to deviate from them, this function is where that policy difference
+ * belongs. Note that other surfaces apply their own filtering too (the
+ * timetable dialog's simple/normal prepare step, the boardable-only
+ * toggle) -- this board is not the only filter point.
+ *
+ * Known limitation (inherited from the interim judgments): through-services
+ * at feed boundaries are excluded even when the signals say boardable --
+ * see Issue #145.
  */
 export function categoryQualifies(
   timetableEntry: ContextualTimetableEntry,
