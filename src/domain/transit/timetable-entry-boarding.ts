@@ -38,26 +38,6 @@ export function isDropOffOnly(entry: TimetableEntry): boolean {
 }
 
 /**
- * Whether this stop is boarding only (passengers cannot alight).
- *
- * Same two-signal approach as {@link isDropOffOnly}:
- * 1. Source data: dropOffType === 1 (explicitly not available)
- * 2. Pattern inference: isFirstStop (first stop — no one is on the bus yet)
- *
- * See {@link isDropOffOnly} for details on signal trust levels and
- * the ambiguity of default value 0.
- */
-export function isBoardingOnly(entry: TimetableEntry): boolean {
-  if (entry.patternPosition.isFirstStop) {
-    return true;
-  }
-  if (entry.boarding.dropOffType === 1) {
-    return true;
-  }
-  return false;
-}
-
-/**
  * Whether this entry requires special boarding arrangement
  * (phone reservation or driver coordination).
  */

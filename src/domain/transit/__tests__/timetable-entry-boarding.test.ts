@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   isDropOffOnly,
-  isBoardingOnly,
   isNoPassengerService,
   requiresArrangement,
 } from '../timetable-entry-boarding';
@@ -48,24 +47,6 @@ describe('isDropOffOnly', () => {
     expect(isDropOffOnly(makeEntry({ isFirstStop: true, isLastStop: true, pickupType: 0 }))).toBe(
       true,
     );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isBoardingOnly
-// ---------------------------------------------------------------------------
-
-describe('isBoardingOnly', () => {
-  it('returns true when dropOffType is 1 (source signal)', () => {
-    expect(isBoardingOnly(makeEntry({ dropOffType: 1 }))).toBe(true);
-  });
-
-  it('returns true when isFirstStop (pattern inference)', () => {
-    expect(isBoardingOnly(makeEntry({ isFirstStop: true }))).toBe(true);
-  });
-
-  it('returns false for regular mid-route stop', () => {
-    expect(isBoardingOnly(makeEntry())).toBe(false);
   });
 });
 

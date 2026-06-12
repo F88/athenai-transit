@@ -14,7 +14,8 @@ import type {
   StopWithContext,
 } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
-import { isBoardingOnly, isDropOffOnly } from '../../timetable-entry-boarding';
+import { isDropOffOnly } from '../../timetable-entry-boarding';
+import { isArrival } from '../../timetable-entry-for-passenger';
 import {
   buildTransitDisplayDataSet,
   categoryQualifies,
@@ -221,7 +222,7 @@ describe('categoryQualifies', () => {
     expect(categoryQualifies(entry, 'arrivals')).toBe(true);
   });
 
-  it('delegates to the domain helpers: departures = !isDropOffOnly, arrivals = !isBoardingOnly', () => {
+  it('delegates to the domain helpers: departures = !isDropOffOnly, arrivals = isArrival', () => {
     const entries = [
       makeContextualEntry({ route: busRoute }),
       makeContextualEntry({ route: busRoute, isLastStop: true }),
@@ -233,7 +234,7 @@ describe('categoryQualifies', () => {
 
     for (const entry of entries) {
       expect(categoryQualifies(entry, 'departures')).toBe(!isDropOffOnly(entry));
-      expect(categoryQualifies(entry, 'arrivals')).toBe(!isBoardingOnly(entry));
+      expect(categoryQualifies(entry, 'arrivals')).toBe(isArrival(entry));
     }
   });
 });

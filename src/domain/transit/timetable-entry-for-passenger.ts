@@ -83,7 +83,8 @@ export function isDeparture(entry: TimetableEntry): boolean {
  *
  * Symmetric to {@link isDeparture}; the rule is equally interim.
  * Interim rule: alightable per the signal and not the pattern's
- * first stop -- the same inference as the existing isBoardingOnly.
+ * first stop -- the same inference as the former isBoardingOnly,
+ * which this function replaces.
  */
 export function isArrival(entry: TimetableEntry): boolean {
   if (entry.patternPosition.isFirstStop) {
