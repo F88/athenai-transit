@@ -14,10 +14,11 @@ import type {
   StopServiceStateInput,
   TimetableEntriesState,
 } from '../../types/app/transit';
-import { isDropOffOnly } from './timetable-entry-boarding';
+import { isDeparture } from './timetable-entry-for-passenger';
 
 /**
- * Whether at least one entry in the list is boardable (not drop-off only).
+ * Whether at least one entry in the list is boardable (= qualifies as a
+ * departure, see {@link isDeparture}).
  *
  * Works at any grouping level:
  * - **Stop level**: pass all entries for a stop → "is this stop boardable?"
@@ -26,7 +27,7 @@ import { isDropOffOnly } from './timetable-entry-boarding';
  * Returns false for an empty list (no stop times = nothing to board).
  */
 export function hasBoardable(entries: TimetableEntry[]): boolean {
-  return entries.some((entry) => !isDropOffOnly(entry));
+  return entries.some((entry) => isDeparture(entry));
 }
 
 /**

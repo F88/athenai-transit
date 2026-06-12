@@ -2,7 +2,7 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { StopServiceState } from '../../types/app/transit';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { formatDateKey } from '../../domain/transit/calendar-utils';
-import { isDropOffOnly } from '../../domain/transit/timetable-entry-boarding';
+import { isDeparture } from '../../domain/transit/timetable-entry-for-passenger';
 
 /**
  * Debug dump of timetable-level metadata and entry statistics.
@@ -24,9 +24,10 @@ export function VerboseTimetableSummary({
   omitted: TimetableOmitted;
   stopServiceState: StopServiceState;
 }) {
-  // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isLastStop).
-  // pickupType 2/3 (phone/coordination required) are considered boardable.
-  const dropOff = timetableEntries.filter((e) => isDropOffOnly(e)).length;
+  // Domain-consistent counts using isDeparture (pickupType !== 1 AND not the
+  // pattern's last stop). pickupType 2/3 (phone/coordination required) are
+  // considered boardable.
+  const dropOff = timetableEntries.filter((e) => !isDeparture(e)).length;
   const boardable = timetableEntries.length - dropOff;
   const originCount = timetableEntries.filter((e) => e.patternPosition.isFirstStop).length;
   const terminalCount = timetableEntries.filter((e) => e.patternPosition.isLastStop).length;

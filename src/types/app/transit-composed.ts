@@ -454,9 +454,9 @@ export interface TimetableEntry {
    * vs unset default), and sources often leave terminal stops unmarked.
    * Deriving the operational state requires combining these signals with
    * `patternPosition`; use the domain util functions in
-   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`).
-   * For faithful display of these raw signals (no inference), use
-   * `getTimetableEntryAttributes` in
+   * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
+   * `isDeparture` / `isArrival`). For faithful display of these raw
+   * signals (no inference), use `getTimetableEntryAttributes` in
    * `src/domain/transit/timetable-entry-attributes.ts` instead.
    */
   boarding: {
@@ -486,16 +486,33 @@ export interface TimetableEntry {
    * `isFirstStop` / `isLastStop` are also inputs to boarding inference. Do not
    * judge operational boarding/alighting availability directly from these
    * flags; use the domain util functions in
-   * `src/domain/transit/timetable-entry-boarding.ts` (e.g. `isDropOffOnly`),
-   * which combine them with the `boarding` source signals. For faithful
-   * display of the role flags themselves, use `getTimetableEntryAttributes`
-   * in `src/domain/transit/timetable-entry-attributes.ts`.
+   * `src/domain/transit/timetable-entry-for-passenger.ts` (e.g.
+   * `isDeparture` / `isArrival`), which combine them with the `boarding`
+   * source signals. For faithful display of the role flags themselves, use
+   * `getTimetableEntryAttributes` in
+   * `src/domain/transit/timetable-entry-attributes.ts`.
    */
   patternPosition: {
     /** 0-based index of this stop in the pattern (matches `TimetableGroupV2Json.si`). */
     stopIndex: number;
     /** Total number of stops in the pattern. */
     totalStops: number;
+    /**
+     * Whether this stop is the first stop of this pattern.
+     *
+     * "First" means the start of this feed's description, NOT
+     * necessarily the journey origin: through-services enter from
+     * beyond the feed boundary (e.g. TWR Rinkai trips starting at
+     * Osaki in the data but arriving from JR). Distinguishing a true
+     * service origin from a feed boundary is tracked in Issue #145.
+     *
+     * Note: `isFirstStop` and `isLastStop` can BOTH be true on the
+     * same entry -- single-stop patterns exist in real data (e.g.
+     * Tokyo Metro weekday trips through onto JR Joban consist of one
+     * served row at Ayase). Do not assume the two flags are mutually
+     * exclusive.
+     */
+    isFirstStop: boolean;
     /**
      * Whether this stop is the last stop of this pattern.
      *
@@ -504,16 +521,14 @@ export interface TimetableEntry {
      * boundary (e.g. TWR Rinkai trips ending at Osaki in the data but
      * continuing onto JR). Distinguishing a true service terminus from
      * a feed boundary is tracked in Issue #145.
+     *
+     * Note: `isLastStop` and `isFirstStop` can BOTH be true on the
+     * same entry -- single-stop patterns exist in real data (e.g.
+     * Tokyo Metro weekday trips through onto JR Joban consist of one
+     * served row at Ayase). Do not assume the two flags are mutually
+     * exclusive.
      */
     isLastStop: boolean;
-    /**
-     * Whether this stop is the first stop of this pattern.
-     *
-     * "First" means the start of this feed's description, NOT
-     * necessarily the journey origin: through-services enter from
-     * beyond the feed boundary. See Issue #145.
-     */
-    isFirstStop: boolean;
   };
 
   /**

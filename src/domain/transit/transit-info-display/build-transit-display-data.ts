@@ -12,7 +12,7 @@ import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
 } from '../compute-transit-display-datum-stats';
-import { isBoardingOnly, isDropOffOnly } from '../timetable-entry-boarding';
+import { isArrival, isDeparture } from '../timetable-entry-for-passenger';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the
@@ -181,11 +181,20 @@ export function categoryMinutes(
 }
 
 /**
- * Whether an entry belongs on the given category's board, using signboard
- * semantics specific to this Transit Board: a departures board lists trips you
- * can board here (and that continue past here), an arrivals board lists trips you
- * can alight here. Other views still show the data as-is; only this board applies
- * the boardable / alightable rule.
+ * Whether an entry belongs on the given category's board: a departures
+ * board lists entries judged boardable here ({@link isDeparture}), an
+ * arrivals board entries judged alightable here ({@link isArrival}).
+ *
+ * This is the Transit Board's selection policy. It currently matches the
+ * shared passenger-perspective judgments exactly; if the board ever needs
+ * to deviate from them, this function is where that policy difference
+ * belongs. Note that other surfaces apply their own filtering too (the
+ * timetable dialog's simple/normal prepare step, the boardable-only
+ * toggle) -- this board is not the only filter point.
+ *
+ * Known limitation (inherited from the interim judgments): through-services
+ * at feed boundaries are excluded even when the signals say boardable --
+ * see Issue #145.
  */
 export function categoryQualifies(
   timetableEntry: ContextualTimetableEntry,
@@ -195,17 +204,18 @@ export function categoryQualifies(
 
   if (category === 'departures') {
     // [IMPORTANT] Use domain logic.
-    // A departures board lists trips you can actually leave on: not drop-off
-    // only, i.e. not the terminal (the trip ends here) and not a
-    // boarding-prohibited stop such as the drop-off-only stop just before a
-    // terminus.
-    return !isDropOffOnly(timetableEntry);
+    // A departures board lists trips you can actually leave on -- see
+    // isDeparture: boardable per the signal and not the pattern's last stop
+    // (the trip ends there; excludes boarding-prohibited stops such as the
+    // drop-off-only stop just before a terminus).
+    return isDeparture(timetableEntry);
   }
   // [IMPORTANT] Use domain logic.
-  // An arrivals board lists trips you can alight from here: not boarding-only,
-  // i.e. not the origin (the trip starts here) and not a pickup-only leg such
-  // as the boarding leg of a turn-around / boarding-swap stop.
-  return !isBoardingOnly(timetableEntry);
+  // An arrivals board lists trips you can alight from here -- see isArrival:
+  // alightable per the signal and not the pattern's first stop (the trip
+  // starts there; excludes pickup-only legs such as the boarding leg of a
+  // turn-around / boarding-swap stop).
+  return isArrival(timetableEntry);
 }
 
 /**
