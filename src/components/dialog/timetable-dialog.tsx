@@ -501,6 +501,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                 headsign={data.headsign}
                 serviceDate={data.serviceDate}
                 timetableEntries={stopEventAttributesFilteredEntries}
+                stats={stopEventAttributesFilteredEntriesStats}
                 omitted={data.omitted}
                 stopServiceState={data.stopServiceState}
               />
