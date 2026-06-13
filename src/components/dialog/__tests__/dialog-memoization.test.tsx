@@ -306,20 +306,16 @@ beforeEach(() => {
   computeTimetableEntryStatsMock.mockReset();
   computeTimetableEntryStatsMock.mockReturnValue({
     totalCount: 1,
-    originCount: 1,
-    terminalCount: 0,
-    passingCount: 0,
-    boardableCount: 1,
-    nonBoardableCount: 0,
-    dropOffOnlyCount: 0,
-    noDropOffCount: 0,
-    routeCount: 1,
-    directionCount: 1,
-    tripHeadsignCount: 1,
-    stopHeadsignCount: 1,
-    patternCount: 1,
-    serviceCount: 1,
-    uniqueTripCount: 1,
+    position: { originCount: 1, terminalCount: 0, passingCount: 0 },
+    signal: { noPickupCount: 0, noDropOffCount: 0 },
+    passenger: { boardableCount: 1, nonBoardableCount: 0 },
+    routeDirection: {
+      routeCount: 1,
+      directionCount: 1,
+      tripHeadsignCount: 1,
+      stopHeadsignCount: 1,
+    },
+    tripLocator: { patternCount: 1, serviceCount: 1, uniqueTripCount: 1 },
   });
   tripStopsRenderMock.mockReset();
   vi.stubGlobal(

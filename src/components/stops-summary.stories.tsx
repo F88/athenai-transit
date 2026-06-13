@@ -6,22 +6,22 @@ import { StopsSummary } from './stops-summary';
 const defaultTotalCount: StopsCounts = {
   total: 60,
   nonEmpty: 42,
-  originCount: 8,
-  boardableCount: 36,
+  position: { originCount: 8 },
+  passenger: { boardableCount: 36 },
 };
 
 const emptyCount: StopsCounts = {
   total: 0,
   nonEmpty: 0,
-  originCount: 0,
-  boardableCount: 0,
+  position: { originCount: 0 },
+  passenger: { boardableCount: 0 },
 };
 
 const noOperatingCount: StopsCounts = {
   total: 24,
   nonEmpty: 0,
-  originCount: 0,
-  boardableCount: 0,
+  position: { originCount: 0 },
+  passenger: { boardableCount: 0 },
 };
 
 const meta = {
@@ -176,8 +176,8 @@ const kitchenSinkArgs = {
   totalCount: {
     total: 1_234,
     nonEmpty: 987,
-    originCount: 321,
-    boardableCount: 876,
+    position: { originCount: 321 },
+    passenger: { boardableCount: 876 },
   },
   filteredCount: 987,
   nearbyRadius: 2_000,

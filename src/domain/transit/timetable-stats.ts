@@ -10,29 +10,34 @@ import { resolveAgencyLang } from '@/config/transit-defaults';
 /**
  * Aggregated statistics computed from a list of {@link TimetableEntry}.
  *
- * Each count answers a single question on a single axis. Counts on
- * different axes are independent, so summing them is meaningless
- * (e.g. one entry can be counted in both `originCount` and
- * `boardableCount`).
+ * Counts are grouped into sub-objects by axis. Each axis answers a
+ * single kind of question; counts on different axes are independent, so
+ * summing across them is meaningless (e.g. one entry can be counted in
+ * both `position.originCount` and `passenger.boardableCount`).
  *
- * Axes:
- * - **A (pattern position)**: `originCount` / `terminalCount` / `passingCount`.
- *   `originCount` and `terminalCount` are NOT mutually exclusive — a
- *   single-stop pattern (= `totalStops === 1`) increments both. `passingCount`
- *   is strictly mid-route (= `!isFirstStop && !isLastStop`).
- * - **B (boarding)**: `boardableCount` / `nonBoardableCount` /
- *   `dropOffOnlyCount` / `noDropOffCount`. The boardable / non-boardable
- *   pair partitions all entries (sum equals `totalCount`).
- *   `dropOffOnlyCount` (= explicit `pickup_type === 1`) and `noDropOffCount`
- *   (= explicit `drop_off_type === 1`) are independent GTFS signals.
- * - **C (route direction)**: unique counts of `route_id`, resolved
- *   headsign (= the user-facing string from {@link getHeadsignDisplayNames}),
- *   `(route, headsign)` pairs, observed `direction` values, plus the
- *   number of entries whose `stopHeadsign` is set.
- * - **D (trip locator)**: unique counts of `patternId`, `serviceId`,
- *   and `(patternId, serviceId, tripIndex)` triples. `uniqueTripCount`
- *   can be lower than `totalCount` for 6-shape / circular patterns
- *   where the same trip visits the same stop more than once.
+ * The grouping keeps two semantic layers from being mixed under one
+ * heading (Issue #162): faithful counts read straight from the source
+ * (`position`, `signal`) vs interpreted counts that combine the signal
+ * with the pattern position for the passenger (`passenger`).
+ *
+ * - **`position`** (faithful, pattern role): `originCount` /
+ *   `terminalCount` / `passingCount`. `originCount` and `terminalCount`
+ *   are NOT mutually exclusive — a single-stop pattern (= `totalStops
+ *   === 1`) increments both. `passingCount` is strictly mid-route
+ *   (= `!isFirstStop && !isLastStop`).
+ * - **`signal`** (faithful, raw GTFS pickup/drop-off): `noPickupCount`
+ *   (= explicit `pickup_type === 1`) and `noDropOffCount` (= explicit
+ *   `drop_off_type === 1`) are independent GTFS signals.
+ * - **`passenger`** (interpreted, value for passenger): `boardableCount`
+ *   / `nonBoardableCount`, judged by {@link isBoardableForPassenger}.
+ *   The pair partitions all entries (sum equals `totalCount`).
+ * - **`routeDirection`** (identity): unique counts of `route_id`,
+ *   observed `direction` values, resolved trip/stop headsigns (the
+ *   user-facing strings from {@link getHeadsignDisplayNames}).
+ * - **`tripLocator`** (identity): unique counts of `patternId`,
+ *   `serviceId`, and `(patternId, serviceId, tripIndex)` triples.
+ *   `uniqueTripCount` can be lower than `totalCount` for 6-shape /
+ *   circular patterns where the same trip visits the same stop twice.
  *
  * @see computeTimetableEntryStats
  */
@@ -40,43 +45,55 @@ export interface TimetableEntryStats {
   /** Total number of entries (= input length). */
   totalCount: number;
 
-  // A axis: pattern position
-  /** Entries where this stop is the trip's origin (= `isFirstStop === true`). */
-  originCount: number;
-  /** Entries where this stop is the trip's terminal (= `isLastStop === true`). */
-  terminalCount: number;
-  /** Entries where this stop is mid-route (= `!isFirstStop && !isLastStop`). */
-  passingCount: number;
+  /** Faithful: pattern role of the stop event. */
+  position: {
+    /** Entries where this stop is the trip's origin (= `isFirstStop === true`). */
+    originCount: number;
+    /** Entries where this stop is the trip's terminal (= `isLastStop === true`). */
+    terminalCount: number;
+    /** Entries where this stop is mid-route (= `!isFirstStop && !isLastStop`). */
+    passingCount: number;
+  };
 
-  // B axis: boarding availability
-  /** Entries where boarding is available (= `isBoardableForPassenger`). */
-  boardableCount: number;
-  /** Entries where boarding is NOT available (= `!isBoardableForPassenger`). */
-  nonBoardableCount: number;
-  /** Entries with explicit `pickup_type === 1` (= GTFS "drop-off only"). */
-  dropOffOnlyCount: number;
-  /** Entries with explicit `drop_off_type === 1` (= alighting unavailable). */
-  noDropOffCount: number;
+  /** Faithful: raw GTFS pickup / drop-off signals. */
+  signal: {
+    /** Entries with explicit `pickup_type === 1` (no pickup available). */
+    noPickupCount: number;
+    /** Entries with explicit `drop_off_type === 1` (no drop-off available). */
+    noDropOffCount: number;
+  };
 
-  // C axis: route direction
-  /** Number of unique `route_id` values across the entries. */
-  routeCount: number;
-  /** Number of unique `direction` values observed (`undefined` is one value). */
-  directionCount: number;
-  tripHeadsignCount: number;
-  stopHeadsignCount: number;
+  /** Interpreted: value for the passenger. */
+  passenger: {
+    /** Entries where boarding is available (= `isBoardableForPassenger`). */
+    boardableCount: number;
+    /** Entries where boarding is NOT available (= `!isBoardableForPassenger`). */
+    nonBoardableCount: number;
+  };
 
-  // D axis: trip locator
-  /** Number of unique `patternId` values. */
-  patternCount: number;
-  /** Number of unique `serviceId` values. */
-  serviceCount: number;
-  /**
-   * Number of unique `(patternId, serviceId, tripIndex)` triples.
-   * Differs from `totalCount` when 6-shape / circular patterns place
-   * the same trip at the same stop multiple times.
-   */
-  uniqueTripCount: number;
+  /** Identity: route / direction / headsign uniqueness. */
+  routeDirection: {
+    /** Number of unique `route_id` values across the entries. */
+    routeCount: number;
+    /** Number of unique `direction` values observed (`undefined` is one value). */
+    directionCount: number;
+    tripHeadsignCount: number;
+    stopHeadsignCount: number;
+  };
+
+  /** Identity: trip locator uniqueness. */
+  tripLocator: {
+    /** Number of unique `patternId` values. */
+    patternCount: number;
+    /** Number of unique `serviceId` values. */
+    serviceCount: number;
+    /**
+     * Number of unique `(patternId, serviceId, tripIndex)` triples.
+     * Differs from `totalCount` when 6-shape / circular patterns place
+     * the same trip at the same stop multiple times.
+     */
+    uniqueTripCount: number;
+  };
 }
 
 /**
@@ -107,7 +124,7 @@ export function computeTimetableEntryStats(
   let passingCount = 0;
   let boardableCount = 0;
   let nonBoardableCount = 0;
-  let dropOffOnlyCount = 0;
+  let noPickupCount = 0;
   let noDropOffCount = 0;
 
   const routeIds = new Set<string>();
@@ -137,7 +154,7 @@ export function computeTimetableEntryStats(
       nonBoardableCount++;
     }
     if (entry.boarding.pickupType === 1) {
-      dropOffOnlyCount++;
+      noPickupCount++;
     }
     if (entry.boarding.dropOffType === 1) {
       noDropOffCount++;
@@ -179,19 +196,29 @@ export function computeTimetableEntryStats(
 
   return {
     totalCount: entries.length,
-    originCount,
-    terminalCount,
-    passingCount,
-    boardableCount,
-    nonBoardableCount,
-    dropOffOnlyCount,
-    noDropOffCount,
-    routeCount: routeIds.size,
-    directionCount: directions.size,
-    tripHeadsignCount: tripsHeadsigns.size,
-    stopHeadsignCount: stopHeadsigns.size,
-    patternCount: patternIds.size,
-    serviceCount: serviceIds.size,
-    uniqueTripCount: trips.size,
+    position: {
+      originCount,
+      terminalCount,
+      passingCount,
+    },
+    signal: {
+      noPickupCount,
+      noDropOffCount,
+    },
+    passenger: {
+      boardableCount,
+      nonBoardableCount,
+    },
+    routeDirection: {
+      routeCount: routeIds.size,
+      directionCount: directions.size,
+      tripHeadsignCount: tripsHeadsigns.size,
+      stopHeadsignCount: stopHeadsigns.size,
+    },
+    tripLocator: {
+      patternCount: patternIds.size,
+      serviceCount: serviceIds.size,
+      uniqueTripCount: trips.size,
+    },
   };
 }

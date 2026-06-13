@@ -41,8 +41,8 @@ describe('computeStopsCounts', () => {
     expect(computeStopsCounts([])).toEqual({
       total: 0,
       nonEmpty: 0,
-      originCount: 0,
-      boardableCount: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
     });
   });
 
@@ -66,10 +66,10 @@ describe('computeStopsCounts', () => {
     ).toEqual({
       total: 5,
       nonEmpty: 4,
-      originCount: 2,
+      position: { originCount: 2 },
       // oneStopTrip is NOT boardable: isBoardableForPassenger treats a last-stop row
       // as not boardable even when it is also the first stop.
-      boardableCount: 1,
+      passenger: { boardableCount: 1 },
     });
   });
 
@@ -108,8 +108,8 @@ describe('computeStopsCounts', () => {
     ).toEqual({
       total: 6,
       nonEmpty: 6,
-      originCount: 2,
-      boardableCount: 3,
+      position: { originCount: 2 },
+      passenger: { boardableCount: 3 },
     });
   });
 });

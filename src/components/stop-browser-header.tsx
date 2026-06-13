@@ -121,7 +121,7 @@ export function StopBrowserHeader({
 
   const operatingStopsActiveBg = 'var(--info)';
   const operatingStopsBorder = 'var(--info)';
-  const shouldShowOriginFilter = showOriginOnly || nearbyStopsCounts.originCount > 0;
+  const shouldShowOriginFilter = showOriginOnly || nearbyStopsCounts.position.originCount > 0;
   const nearbyStopsCountsDebugLog = formatStopsCountsDebugLog(nearbyStopsCounts);
   const filteredNearbyStopsCountsDebugLog = formatStopsCountsDebugLog(filteredNearbyStopsCounts);
   const countsDebugLog = formatStopsCountsDebugLog(counts);
@@ -202,7 +202,7 @@ export function StopBrowserHeader({
         <BoardabilityFilter
           boardable={showBoardableOnly}
           onToggleBoardable={onToggleShowBoardableOnly}
-          count={countsForFilterLabel.boardableCount}
+          count={countsForFilterLabel.passenger.boardableCount}
           size={pillSize}
         />
 
@@ -211,7 +211,7 @@ export function StopBrowserHeader({
           <OriginFilter
             origin={showOriginOnly}
             onToggleOrigin={onToggleShowOriginOnly}
-            count={countsForFilterLabel.originCount}
+            count={countsForFilterLabel.position.originCount}
             size={pillSize}
           />
         )}
@@ -272,5 +272,5 @@ export function StopBrowserHeader({
 }
 
 function formatStopsCountsDebugLog(counts: StopsCounts): string {
-  return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.boardableCount} origin=${counts.originCount}`;
+  return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.passenger.boardableCount} origin=${counts.position.originCount}`;
 }

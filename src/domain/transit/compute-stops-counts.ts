@@ -26,10 +26,10 @@ export function computeStopsCounts<T extends StopTimesCarrier>(items: readonly T
         counts.nonEmpty += 1;
       }
       if (item.stopTimes.some((entry) => entry.patternPosition.isFirstStop)) {
-        counts.originCount += 1;
+        counts.position.originCount += 1;
       }
       if (hasBoardableEntry(item.stopTimes)) {
-        counts.boardableCount += 1;
+        counts.passenger.boardableCount += 1;
       }
 
       return counts;
@@ -37,8 +37,8 @@ export function computeStopsCounts<T extends StopTimesCarrier>(items: readonly T
     {
       total: 0,
       nonEmpty: 0,
-      originCount: 0,
-      boardableCount: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
     },
   );
 }

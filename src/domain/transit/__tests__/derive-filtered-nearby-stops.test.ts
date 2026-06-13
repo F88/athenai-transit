@@ -82,12 +82,17 @@ describe('deriveFilteredNearbyStops', () => {
 
     expect(result.filtered).toEqual([]);
     expect(result.timetableEntriesStateByStopId.size).toBe(0);
-    expect(result.rawCounts).toEqual({ total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 });
+    expect(result.rawCounts).toEqual({
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    });
     expect(result.filteredCounts).toEqual({
       total: 0,
       nonEmpty: 0,
-      originCount: 0,
-      boardableCount: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
     });
   });
 
@@ -231,15 +236,15 @@ describe('deriveFilteredNearbyStops', () => {
     // (1 stop, originCount=1 since the stop has at least one origin
     // entry, boardableCount=1 since at least one boardable entry exists).
     expect(result.rawCounts.total).toBe(1);
-    expect(result.rawCounts.originCount).toBe(1);
-    expect(result.rawCounts.boardableCount).toBe(1);
+    expect(result.rawCounts.position.originCount).toBe(1);
+    expect(result.rawCounts.passenger.boardableCount).toBe(1);
 
     // filteredCounts is post-globalFilter; still 1 stop because we did
     // not enable omitEmptyStops, and the remaining entry is both an
     // origin and boardable so all per-attribute counts are 1.
     expect(result.filteredCounts.total).toBe(1);
-    expect(result.filteredCounts.originCount).toBe(1);
-    expect(result.filteredCounts.boardableCount).toBe(1);
+    expect(result.filteredCounts.position.originCount).toBe(1);
+    expect(result.filteredCounts.passenger.boardableCount).toBe(1);
   });
 
   it('returns drop-off-only state when every pre-globalFilter entry is drop-off-only', () => {
@@ -340,8 +345,8 @@ describe('deriveFilteredNearbyStops', () => {
     expect(result.rawCounts).toEqual({
       total: 4,
       nonEmpty: 3,
-      originCount: 1,
-      boardableCount: 2,
+      position: { originCount: 1 },
+      passenger: { boardableCount: 2 },
     });
 
     // filteredCounts: showBoardableOnly removes the entries inside
@@ -351,8 +356,8 @@ describe('deriveFilteredNearbyStops', () => {
     expect(result.filteredCounts).toEqual({
       total: 2,
       nonEmpty: 2,
-      originCount: 1,
-      boardableCount: 2,
+      position: { originCount: 1 },
+      passenger: { boardableCount: 2 },
     });
 
     // Filtered list reflects the same two stops in input order.
@@ -427,10 +432,10 @@ describe('deriveFilteredNearbyStops', () => {
 
     // rawCounts: both stops counted, route-type filter only.
     expect(result.rawCounts.total).toBe(2);
-    expect(result.rawCounts.originCount).toBe(1);
+    expect(result.rawCounts.position.originCount).toBe(1);
     // filteredCounts: only the origin stop survives the globalFilter + omit.
     expect(result.filteredCounts.total).toBe(1);
-    expect(result.filteredCounts.originCount).toBe(1);
+    expect(result.filteredCounts.position.originCount).toBe(1);
   });
 
   it('returns no-service state for stops with empty stopTimes pre-filter', () => {
@@ -502,12 +507,17 @@ describe('deriveFilteredNearbyStops', () => {
 
     expect(result.filtered).toEqual([]);
     expect(result.timetableEntriesStateByStopId.size).toBe(0);
-    expect(result.rawCounts).toEqual({ total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 });
+    expect(result.rawCounts).toEqual({
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    });
     expect(result.filteredCounts).toEqual({
       total: 0,
       nonEmpty: 0,
-      originCount: 0,
-      boardableCount: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
     });
   });
 
@@ -529,12 +539,17 @@ describe('deriveFilteredNearbyStops', () => {
 
     expect(result.filtered).toEqual([]);
     expect(result.timetableEntriesStateByStopId.size).toBe(0);
-    expect(result.rawCounts).toEqual({ total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 });
+    expect(result.rawCounts).toEqual({
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    });
     expect(result.filteredCounts).toEqual({
       total: 0,
       nonEmpty: 0,
-      originCount: 0,
-      boardableCount: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
     });
   });
 

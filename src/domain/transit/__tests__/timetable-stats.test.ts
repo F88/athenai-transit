@@ -72,20 +72,16 @@ describe('computeTimetableEntryStats', () => {
     const stats = computeTimetableEntryStats([], TEST_AGENCIES, TEST_LANGS);
     expect(stats).toEqual({
       totalCount: 0,
-      originCount: 0,
-      terminalCount: 0,
-      passingCount: 0,
-      boardableCount: 0,
-      nonBoardableCount: 0,
-      dropOffOnlyCount: 0,
-      noDropOffCount: 0,
-      routeCount: 0,
-      directionCount: 0,
-      tripHeadsignCount: 0,
-      stopHeadsignCount: 0,
-      patternCount: 0,
-      serviceCount: 0,
-      uniqueTripCount: 0,
+      position: { originCount: 0, terminalCount: 0, passingCount: 0 },
+      signal: { noPickupCount: 0, noDropOffCount: 0 },
+      passenger: { boardableCount: 0, nonBoardableCount: 0 },
+      routeDirection: {
+        routeCount: 0,
+        directionCount: 0,
+        tripHeadsignCount: 0,
+        stopHeadsignCount: 0,
+      },
+      tripLocator: { patternCount: 0, serviceCount: 0, uniqueTripCount: 0 },
     });
   });
 
@@ -99,9 +95,9 @@ describe('computeTimetableEntryStats', () => {
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(4);
-      expect(stats.originCount).toBe(1);
-      expect(stats.terminalCount).toBe(1);
-      expect(stats.passingCount).toBe(2);
+      expect(stats.position.originCount).toBe(1);
+      expect(stats.position.terminalCount).toBe(1);
+      expect(stats.position.passingCount).toBe(2);
     });
 
     it('counts both origin and terminal on a single-stop pattern', () => {
@@ -110,9 +106,9 @@ describe('computeTimetableEntryStats', () => {
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(1);
-      expect(stats.originCount).toBe(1);
-      expect(stats.terminalCount).toBe(1);
-      expect(stats.passingCount).toBe(0);
+      expect(stats.position.originCount).toBe(1);
+      expect(stats.position.terminalCount).toBe(1);
+      expect(stats.position.passingCount).toBe(0);
     });
   });
 
@@ -121,12 +117,14 @@ describe('computeTimetableEntryStats', () => {
       const entries = [makeEntry(), makeEntry({ isLastStop: true }), makeEntry({ pickupType: 1 })];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(3);
-      expect(stats.boardableCount).toBe(1);
-      expect(stats.nonBoardableCount).toBe(2);
-      expect(stats.boardableCount + stats.nonBoardableCount).toBe(stats.totalCount);
+      expect(stats.passenger.boardableCount).toBe(1);
+      expect(stats.passenger.nonBoardableCount).toBe(2);
+      expect(stats.passenger.boardableCount + stats.passenger.nonBoardableCount).toBe(
+        stats.totalCount,
+      );
     });
 
-    it('counts dropOffOnly entries (= explicit pickup_type === 1)', () => {
+    it('counts no-pickup entries (= explicit pickup_type === 1)', () => {
       const entries = [
         makeEntry({ pickupType: 1 }),
         makeEntry({ pickupType: 1 }),
@@ -134,8 +132,8 @@ describe('computeTimetableEntryStats', () => {
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.dropOffOnlyCount).toBe(2);
-      expect(stats.nonBoardableCount).toBe(3);
+      expect(stats.signal.noPickupCount).toBe(2);
+      expect(stats.passenger.nonBoardableCount).toBe(3);
     });
 
     it('counts noDropOff entries (= explicit drop_off_type === 1)', () => {
@@ -145,7 +143,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.noDropOffCount).toBe(2);
+      expect(stats.signal.noDropOffCount).toBe(2);
     });
   });
 
@@ -158,9 +156,9 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ routeId: 'rB', headsign: 'X' }),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.routeCount).toBe(2);
-      expect(stats.stopHeadsignCount).toBe(2);
-      expect(stats.tripHeadsignCount).toBe(2);
+      expect(stats.routeDirection.routeCount).toBe(2);
+      expect(stats.routeDirection.stopHeadsignCount).toBe(2);
+      expect(stats.routeDirection.tripHeadsignCount).toBe(2);
     });
 
     it('counts unique resolved stop headsigns', () => {
@@ -170,7 +168,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.stopHeadsignCount).toBe(3);
+      expect(stats.routeDirection.stopHeadsignCount).toBe(3);
     });
 
     it('counts unique direction values (undefined is one value)', () => {
@@ -181,7 +179,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.directionCount).toBe(3);
+      expect(stats.routeDirection.directionCount).toBe(3);
     });
   });
 
@@ -193,8 +191,8 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ patternId: 'p2', serviceId: 's1', tripIndex: 2 }),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.patternCount).toBe(2);
-      expect(stats.serviceCount).toBe(2);
+      expect(stats.tripLocator.patternCount).toBe(2);
+      expect(stats.tripLocator.serviceCount).toBe(2);
     });
 
     it('uniqueTripCount equals totalCount for a non-circular pattern', () => {
@@ -204,8 +202,8 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ patternId: 'p1', serviceId: 's1', tripIndex: 2 }),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.uniqueTripCount).toBe(3);
-      expect(stats.uniqueTripCount).toBe(stats.totalCount);
+      expect(stats.tripLocator.uniqueTripCount).toBe(3);
+      expect(stats.tripLocator.uniqueTripCount).toBe(stats.totalCount);
     });
 
     it('uniqueTripCount is lower than totalCount for circular patterns', () => {
@@ -219,7 +217,7 @@ describe('computeTimetableEntryStats', () => {
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(4);
-      expect(stats.uniqueTripCount).toBe(2);
+      expect(stats.tripLocator.uniqueTripCount).toBe(2);
     });
   });
 
@@ -272,26 +270,26 @@ describe('computeTimetableEntryStats', () => {
     expect(stats.totalCount).toBe(4);
 
     // A axis
-    expect(stats.originCount).toBe(2);
-    expect(stats.terminalCount).toBe(1);
-    expect(stats.passingCount).toBe(1);
+    expect(stats.position.originCount).toBe(2);
+    expect(stats.position.terminalCount).toBe(1);
+    expect(stats.position.passingCount).toBe(1);
 
     // B axis
-    expect(stats.boardableCount).toBe(2);
-    expect(stats.nonBoardableCount).toBe(2);
-    expect(stats.dropOffOnlyCount).toBe(1);
-    expect(stats.noDropOffCount).toBe(0);
+    expect(stats.passenger.boardableCount).toBe(2);
+    expect(stats.passenger.nonBoardableCount).toBe(2);
+    expect(stats.signal.noPickupCount).toBe(1);
+    expect(stats.signal.noDropOffCount).toBe(0);
 
     // C axis: resolver picks stopHeadsign when present (entry 2 -> 'X-via'),
     // so headsign and routeHeadsign uniqueness reflects that override.
-    expect(stats.routeCount).toBe(2);
-    expect(stats.stopHeadsignCount).toBe(3); // X, X-via, Y
-    expect(stats.tripHeadsignCount).toBe(2); // X, Y
-    expect(stats.directionCount).toBe(2);
+    expect(stats.routeDirection.routeCount).toBe(2);
+    expect(stats.routeDirection.stopHeadsignCount).toBe(3); // X, X-via, Y
+    expect(stats.routeDirection.tripHeadsignCount).toBe(2); // X, Y
+    expect(stats.routeDirection.directionCount).toBe(2);
 
     // D axis
-    expect(stats.patternCount).toBe(2);
-    expect(stats.serviceCount).toBe(1);
-    expect(stats.uniqueTripCount).toBe(2);
+    expect(stats.tripLocator.patternCount).toBe(2);
+    expect(stats.tripLocator.serviceCount).toBe(1);
+    expect(stats.tripLocator.uniqueTripCount).toBe(2);
   });
 });
