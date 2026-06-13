@@ -38,6 +38,13 @@ import { extractPrefix } from './prefixed-id';
  * loss. (A per-feed property: Toei Train `toaran` qualifies; Toei Bus
  * `minkuru`, same brand different feed, does not.)
  *
+ * A counter-example for (1): Yokohama Municipal Subway `yht` leaves
+ * pickup_type 0 on its real terminals -- all 1,901 last-stop rows are
+ * pickup_type 0 (2026-06-14: Shonandai, Azamino, Nakayama, Hiyoshi, plus
+ * short-turn terminals), and the network is self-contained (no
+ * through-running). Adding it here would wrongly release every terminus
+ * as boardable, so it fails (1) and (2) both.
+ *
  * TEMPORARY / local prototype, each entry verified individually. Toei
  * Train checked at the terminal level (2026-06-13): through lines
  * (Asakusa / Mita / Shinjuku) carry pickup_type 0 only at real
