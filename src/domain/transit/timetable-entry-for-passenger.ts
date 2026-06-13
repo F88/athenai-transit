@@ -45,8 +45,8 @@ import { extractPrefix } from './prefixed-id';
  * through-running). Adding it here would wrongly release every terminus
  * as boardable, so it fails (1) and (2) both.
  *
- * TEMPORARY / local prototype, each entry verified individually. Toei
- * Train checked at the terminal level (2026-06-13): through lines
+ * Each entry is verified individually. Toei Train was checked at the
+ * terminal level (2026-06-13): through lines
  * (Asakusa / Mita / Shinjuku) carry pickup_type 0 only at real
  * boundaries (Oshiage, Sengakuji, Meguro, Shinjuku); the non-through
  * Oedo line marks every terminal pickup_type 1. See Issue #145.
@@ -150,7 +150,8 @@ export function isBoardableForPassengerBySignalAndPosition(
  * - otherwise: {@link isBoardableForPassengerBySignalAndPosition}
  *   (signal AND pattern position).
  *
- * TEMPORARY local prototype; the trusted set is hardcoded. See Issue #145.
+ * The trusted set is configured in
+ * {@link THROUGH_RUNNING_SIGNAL_TRUSTED_PREFIXES}.
  */
 export function isBoardableForPassenger(entry: TimetableEntry): boolean {
   const { pickupType } = entry.boarding;
@@ -227,7 +228,8 @@ export function isAlightableForPassengerBySignalAndPosition(
  * - otherwise: {@link isAlightableForPassengerBySignalAndPosition}
  *   (signal AND pattern position).
  *
- * TEMPORARY local prototype; the trusted set is hardcoded. See Issue #145.
+ * The trusted set is configured in
+ * {@link THROUGH_RUNNING_SIGNAL_TRUSTED_PREFIXES}.
  */
 export function isAlightableForPassenger(entry: TimetableEntry): boolean {
   const { dropOffType } = entry.boarding;
