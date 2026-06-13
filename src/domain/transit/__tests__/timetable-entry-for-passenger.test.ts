@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  canAlight,
-  canBoard,
-  canBoardSignal,
   isAlightableForPassenger,
+  isAlightableForPassengerBySignal,
+  isAlightableForPassengerBySignalAndPosition,
   isBoardableForPassenger,
   isBoardableForPassengerBySignal,
   isBoardableForPassengerBySignalAndPosition,
@@ -61,90 +60,7 @@ describe('isEndpointSignalTrustedByRoute', () => {
 });
 
 // ---------------------------------------------------------------------------
-// canBoardSignal
-// ---------------------------------------------------------------------------
-
-describe('canBoardSignal', () => {
-  it('interprets each pickup_type value', () => {
-    expect(canBoardSignal(0)).toBe(true); // regularly scheduled pickup
-    expect(canBoardSignal(1)).toBe(false); // no pickup available
-    expect(canBoardSignal(2)).toBe(true); // must phone agency
-    expect(canBoardSignal(3)).toBe(true); // must coordinate with driver
-  });
-});
-
-// ---------------------------------------------------------------------------
-// canBoard
-// ---------------------------------------------------------------------------
-
-describe('canBoard', () => {
-  it('returns true for pickupType 0 (regularly scheduled pickup)', () => {
-    expect(canBoard(makeEntry({ pickupType: 0 }))).toBe(true);
-  });
-
-  it('returns false for pickupType 1 (no pickup available)', () => {
-    expect(canBoard(makeEntry({ pickupType: 1 }))).toBe(false);
-  });
-
-  it('returns true for pickupType 2 (must phone agency)', () => {
-    expect(canBoard(makeEntry({ pickupType: 2 }))).toBe(true);
-  });
-
-  it('returns true for pickupType 3 (must coordinate with driver)', () => {
-    expect(canBoard(makeEntry({ pickupType: 3 }))).toBe(true);
-  });
-
-  it('ignores pattern position (signal-only): last stop with pickupType 0', () => {
-    expect(canBoard(makeEntry({ pickupType: 0, isLastStop: true }))).toBe(true);
-  });
-
-  it('ignores pattern position (signal-only): single-stop pattern', () => {
-    expect(canBoard(makeEntry({ pickupType: 0, isFirstStop: true, isLastStop: true }))).toBe(true);
-  });
-
-  it('ignores dropOffType', () => {
-    expect(canBoard(makeEntry({ pickupType: 0, dropOffType: 1 }))).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// canAlight
-// ---------------------------------------------------------------------------
-
-describe('canAlight', () => {
-  it('returns true for dropOffType 0 (regularly scheduled drop off)', () => {
-    expect(canAlight(makeEntry({ dropOffType: 0 }))).toBe(true);
-  });
-
-  it('returns false for dropOffType 1 (no drop off available)', () => {
-    expect(canAlight(makeEntry({ dropOffType: 1 }))).toBe(false);
-  });
-
-  it('returns true for dropOffType 2 (must phone agency)', () => {
-    expect(canAlight(makeEntry({ dropOffType: 2 }))).toBe(true);
-  });
-
-  it('returns true for dropOffType 3 (must coordinate with driver)', () => {
-    expect(canAlight(makeEntry({ dropOffType: 3 }))).toBe(true);
-  });
-
-  it('ignores pattern position (signal-only): first stop with dropOffType 0', () => {
-    expect(canAlight(makeEntry({ dropOffType: 0, isFirstStop: true }))).toBe(true);
-  });
-
-  it('ignores pattern position (signal-only): single-stop pattern', () => {
-    expect(canAlight(makeEntry({ dropOffType: 0, isFirstStop: true, isLastStop: true }))).toBe(
-      true,
-    );
-  });
-
-  it('ignores pickupType', () => {
-    expect(canAlight(makeEntry({ dropOffType: 0, pickupType: 1 }))).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isBoardableForPassenger (PROVISIONAL interim rule: canBoard && !isLastStop)
+// isBoardableForPassenger (PROVISIONAL interim rule: signal boardable && not last stop)
 // ---------------------------------------------------------------------------
 
 describe('isBoardableForPassenger', () => {
@@ -186,6 +102,16 @@ describe('isBoardableForPassenger', () => {
     ).toBe(false);
   });
 
+  it('releases a last-stop boardable row for an endpoint-signal-trusted source', () => {
+    // tome (Tokyo Metro) is endpoint-signal-trusted, so the selector judges
+    // by signal alone: a last-stop through-service row stays boardable.
+    expect(
+      isBoardableForPassenger(
+        makeEntry({ pickupType: 0, isLastStop: true, route: routeWithId('tome:5') }),
+      ),
+    ).toBe(true);
+  });
+
   it('matches the interim truth table for every signal/position combination', () => {
     // Expected = boardable per the signal (pickupType !== 1) and not the
     // pattern's last stop. isFirstStop never affects the result. Written as
@@ -218,13 +144,6 @@ describe('isBoardableForPassengerBySignal', () => {
     expect(isBoardableForPassengerBySignal(1)).toBe(false);
     expect(isBoardableForPassengerBySignal(2)).toBe(true);
     expect(isBoardableForPassengerBySignal(3)).toBe(true);
-  });
-
-  it('mirrors canBoardSignal exactly', () => {
-    const pickupTypes = [0, 1, 2, 3] as const;
-    for (const pickupType of pickupTypes) {
-      expect(isBoardableForPassengerBySignal(pickupType)).toBe(canBoardSignal(pickupType));
-    }
   });
 });
 
@@ -262,7 +181,7 @@ describe('isBoardableForPassengerBySignalAndPosition', () => {
 });
 
 // ---------------------------------------------------------------------------
-// isAlightableForPassenger (PROVISIONAL interim rule: canAlight && !isFirstStop)
+// isAlightableForPassenger (PROVISIONAL interim rule: signal alightable && not first stop)
 // ---------------------------------------------------------------------------
 
 describe('isAlightableForPassenger', () => {
@@ -302,6 +221,16 @@ describe('isAlightableForPassenger', () => {
     ).toBe(false);
   });
 
+  it('releases a first-stop alightable row for an endpoint-signal-trusted source', () => {
+    // tome (Tokyo Metro) is endpoint-signal-trusted, so the selector judges
+    // by signal alone: a first-stop through-service arrival stays alightable.
+    expect(
+      isAlightableForPassenger(
+        makeEntry({ dropOffType: 0, isFirstStop: true, route: routeWithId('tome:5') }),
+      ),
+    ).toBe(true);
+  });
+
   it('matches the interim truth table for every signal/position combination', () => {
     // Expected = alightable per the signal (dropOffType !== 1) and not the
     // pattern's first stop. isLastStop never affects the result. Written as
@@ -318,6 +247,52 @@ describe('isAlightableForPassenger', () => {
             isAlightableForPassenger(entry),
             `dropOff=${dropOffType} first=${isFirstStop} last=${isLastStop}`,
           ).toBe(expected);
+        }
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAlightableForPassengerBySignal
+// ---------------------------------------------------------------------------
+
+describe('isAlightableForPassengerBySignal', () => {
+  it('judges from the raw drop_off_type alone, ignoring the position', () => {
+    expect(isAlightableForPassengerBySignal(0)).toBe(true);
+    expect(isAlightableForPassengerBySignal(1)).toBe(false);
+    expect(isAlightableForPassengerBySignal(2)).toBe(true);
+    expect(isAlightableForPassengerBySignal(3)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAlightableForPassengerBySignalAndPosition
+// ---------------------------------------------------------------------------
+
+describe('isAlightableForPassengerBySignalAndPosition', () => {
+  it('judges from the raw drop_off_type and the first-stop flag', () => {
+    expect(isAlightableForPassengerBySignalAndPosition(0, false)).toBe(true);
+    expect(isAlightableForPassengerBySignalAndPosition(1, false)).toBe(false);
+    expect(isAlightableForPassengerBySignalAndPosition(0, true)).toBe(false);
+    expect(isAlightableForPassengerBySignalAndPosition(2, false)).toBe(true);
+    expect(isAlightableForPassengerBySignalAndPosition(3, false)).toBe(true);
+  });
+
+  it('matches isAlightableForPassenger for every signal/position combination', () => {
+    // makeEntry's route prefix ('r1') is not endpoint-signal-trusted, so
+    // isAlightableForPassenger selects this signal-and-position form. This
+    // pins the equivalence from the other side so the two cannot drift apart.
+    const dropOffTypes = [0, 1, 2, 3] as const;
+    const flags = [false, true] as const;
+    for (const dropOffType of dropOffTypes) {
+      for (const isFirstStop of flags) {
+        for (const isLastStop of flags) {
+          const entry = makeEntry({ dropOffType, isFirstStop, isLastStop });
+          expect(
+            isAlightableForPassengerBySignalAndPosition(dropOffType, isFirstStop),
+            `dropOff=${dropOffType} first=${isFirstStop} last=${isLastStop}`,
+          ).toBe(isAlightableForPassenger(entry));
         }
       }
     }
