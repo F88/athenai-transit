@@ -85,7 +85,11 @@ export function VerboseTimetableSummary({
             {stats.passenger.nonBoardableCount}
           </span>
           <span className="block">
-            [signal] noPickup={stats.signal.noPickupCount} noDropOff={stats.signal.noDropOffCount}
+            [boarding] pickupType(0/1/2/3)={stats.boarding.pickupTypeCounts[0]}/
+            {stats.boarding.pickupTypeCounts[1]}/{stats.boarding.pickupTypeCounts[2]}/
+            {stats.boarding.pickupTypeCounts[3]} dropOffType(0/1/2/3)=
+            {stats.boarding.dropOffTypeCounts[0]}/{stats.boarding.dropOffTypeCounts[1]}/
+            {stats.boarding.dropOffTypeCounts[2]}/{stats.boarding.dropOffTypeCounts[3]}
           </span>
           <span className="block">
             [routeDirection] routes={stats.routeDirection.routeCount} directions=

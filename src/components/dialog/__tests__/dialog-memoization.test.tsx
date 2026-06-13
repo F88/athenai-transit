@@ -307,7 +307,10 @@ beforeEach(() => {
   computeTimetableEntryStatsMock.mockReturnValue({
     totalCount: 1,
     position: { originCount: 1, terminalCount: 0, passingCount: 0 },
-    signal: { noPickupCount: 0, noDropOffCount: 0 },
+    boarding: {
+      pickupTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+      dropOffTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    },
     passenger: { boardableCount: 1, nonBoardableCount: 0 },
     routeDirection: {
       routeCount: 1,

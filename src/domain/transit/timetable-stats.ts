@@ -1,4 +1,4 @@
-import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { StopServiceType, TimetableEntry } from '@/types/app/transit-composed';
 import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-names';
 import { isBoardableForPassenger } from './timetable-entry-for-passenger';
 import type { Agency } from '@/types/app/transit';
@@ -25,9 +25,10 @@ import { resolveAgencyLang } from '@/config/transit-defaults';
  *   are NOT mutually exclusive — a single-stop pattern (= `totalStops
  *   === 1`) increments both. `passingCount` is strictly mid-route
  *   (= `!isFirstStop && !isLastStop`).
- * - **`signal`** (faithful, raw GTFS pickup/drop-off): `noPickupCount`
- *   (= explicit `pickup_type === 1`) and `noDropOffCount` (= explicit
- *   `drop_off_type === 1`) are independent GTFS signals.
+ * - **`boarding`** (faithful, `TimetableEntry.boarding`): per-value
+ *   distributions `pickupTypeCounts` / `dropOffTypeCounts` over the
+ *   `boarding.pickupType` / `boarding.dropOffType` values (0/1/2/3). No
+ *   interpretation; each value's meaning follows the GTFS spec.
  * - **`passenger`** (interpreted, value for passenger): `boardableCount`
  *   / `nonBoardableCount`, judged by {@link isBoardableForPassenger}.
  *   The pair partitions all entries (sum equals `totalCount`).
@@ -55,12 +56,16 @@ export interface TimetableEntryStats {
     passingCount: number;
   };
 
-  /** Faithful: raw GTFS pickup / drop-off signals. */
-  signal: {
-    /** Entries with explicit `pickup_type === 1` (no pickup available). */
-    noPickupCount: number;
-    /** Entries with explicit `drop_off_type === 1` (no drop-off available). */
-    noDropOffCount: number;
+  /** Faithful: distribution of `TimetableEntry.boarding` values. */
+  boarding: {
+    /**
+     * Count of entries per `boarding.pickupType` value (0=regular,
+     * 1=not available, 2=phone agency, 3=coordinate with driver).
+     * Faithful distribution; no interpretation.
+     */
+    pickupTypeCounts: Record<StopServiceType, number>;
+    /** Count of entries per `boarding.dropOffType` value (same encoding). */
+    dropOffTypeCounts: Record<StopServiceType, number>;
   };
 
   /** Interpreted: value for the passenger. */
@@ -119,13 +124,19 @@ export function computeTimetableEntryStats(
   agencies: readonly Agency[],
   preferredDisplayLangs: readonly string[],
 ): TimetableEntryStats {
-  let originCount = 0;
-  let terminalCount = 0;
+  // stop position in the trip pattern (origin/terminal/passing) is a fundamental structural
+  let firstStop = 0;
+  let lastStopCount = 0;
   let passingCount = 0;
-  let boardableCount = 0;
-  let nonBoardableCount = 0;
-  let noPickupCount = 0;
-  let noDropOffCount = 0;
+
+  // faithful per-value distribution of boarding.pickupType / dropOffType
+  // (0/1/2/3); independent of pattern position and of boardable/alightable
+  const pickupTypeCounts: Record<StopServiceType, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  const dropOffTypeCounts: Record<StopServiceType, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+
+  // boardability for passenger is a derived interpretation of the raw GTFS signals,
+  let boardableForPassengerCount = 0;
+  let nonBoardableForPassengerCount = 0;
 
   const routeIds = new Set<string>();
   const tripsHeadsigns = new Set<string>();
@@ -139,26 +150,22 @@ export function computeTimetableEntryStats(
     const agencyLangs = resolveAgencyLang(agencies, entry.routeDirection.route.agency_id);
 
     if (entry.patternPosition.isFirstStop) {
-      originCount++;
+      firstStop++;
     }
     if (entry.patternPosition.isLastStop) {
-      terminalCount++;
+      lastStopCount++;
     }
     if (!entry.patternPosition.isFirstStop && !entry.patternPosition.isLastStop) {
       passingCount++;
     }
 
     if (isBoardableForPassenger(entry)) {
-      boardableCount++;
+      boardableForPassengerCount++;
     } else {
-      nonBoardableCount++;
+      nonBoardableForPassengerCount++;
     }
-    if (entry.boarding.pickupType === 1) {
-      noPickupCount++;
-    }
-    if (entry.boarding.dropOffType === 1) {
-      noDropOffCount++;
-    }
+    pickupTypeCounts[entry.boarding.pickupType]++;
+    dropOffTypeCounts[entry.boarding.dropOffType]++;
 
     const routeId = entry.routeDirection.route.route_id;
     routeIds.add(routeId);
@@ -197,17 +204,17 @@ export function computeTimetableEntryStats(
   return {
     totalCount: entries.length,
     position: {
-      originCount,
-      terminalCount,
+      originCount: firstStop,
+      terminalCount: lastStopCount,
       passingCount,
     },
-    signal: {
-      noPickupCount,
-      noDropOffCount,
+    boarding: {
+      pickupTypeCounts,
+      dropOffTypeCounts,
     },
     passenger: {
-      boardableCount,
-      nonBoardableCount,
+      boardableCount: boardableForPassengerCount,
+      nonBoardableCount: nonBoardableForPassengerCount,
     },
     routeDirection: {
       routeCount: routeIds.size,

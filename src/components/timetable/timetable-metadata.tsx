@@ -110,11 +110,11 @@ function BoardingAxisStats({ stats }: { stats: TimetableEntryStats }) {
       })}
       {' / '}
       {t('timetable.metadata.dropOffOnlyCount', {
-        count: stats.signal.noPickupCount.toLocaleString(i18n.language),
+        count: stats.boarding.pickupTypeCounts[1].toLocaleString(i18n.language),
       })}
       {' / '}
       {t('timetable.metadata.noDropOffCount', {
-        count: stats.signal.noDropOffCount.toLocaleString(i18n.language),
+        count: stats.boarding.dropOffTypeCounts[1].toLocaleString(i18n.language),
       })}
       {']'}
     </span>
@@ -147,10 +147,10 @@ function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
         labelClassName={noPickupLabelBadgeClassName}
         countClassName={noPickupCountBadgeClassName}
       />
-      {/* <LabelCountBadge label={t('timetable.entry.noDropOff')} count={stats.signal.noDropOffCount} /> */}
+      {/* <LabelCountBadge label={t('timetable.entry.noDropOff')} count={stats.boarding.dropOffTypeCounts[1]} /> */}
       <LabelCountBadge
         label={t('timetable.entry.noDropOff')}
-        count={stats.signal.noDropOffCount}
+        count={stats.boarding.dropOffTypeCounts[1]}
         size="sm"
         frameClassName="border-dashed border-yellow-600"
         labelClassName={noDropOffLabelBadgeClassName}
@@ -158,7 +158,7 @@ function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
       />
       <LabelCountBadge
         label={t('stop.serviceState.dropOffOnly')}
-        count={stats.signal.noPickupCount}
+        count={stats.boarding.pickupTypeCounts[1]}
         size="sm"
       />
     </div>
