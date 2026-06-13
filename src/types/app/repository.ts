@@ -58,7 +58,8 @@ export interface TimetableQueryMeta {
    * what `data` contains. A stop with `isBoardableOnServiceDay === false`
    * and `totalEntries > 0` is a drop-off-only stop.
    *
-   * Boardability is judged by `isBoardableForPassengerSignal` in
+   * Boardability is judged by `isBoardableForPassengerBySignal` /
+   * `isBoardableForPassengerBySignalAndPosition` (per-source policy) in
    * `src/domain/transit/timetable-entry-for-passenger.ts` (the
    * signal-level form of `isBoardableForPassenger`).
    */

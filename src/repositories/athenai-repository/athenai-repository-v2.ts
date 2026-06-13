@@ -35,7 +35,11 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
-import { isBoardableForPassengerSignal } from '../../domain/transit/timetable-entry-for-passenger';
+import {
+  isBoardableForPassengerBySignal,
+  isBoardableForPassengerBySignalAndPosition,
+  isEndpointSignalTrustedByRoute,
+} from '../../domain/transit/timetable-entry-for-passenger';
 import { getTimetableEntriesState } from '../../domain/transit/timetable-service-state';
 import { createLogger } from '../../lib/logger';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
@@ -471,6 +475,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       const totalStops = pattern.stops.length;
       const stopIndex = group.si;
       const isLastStopPosition = stopIndex === totalStops - 1;
+      // Per-source policy (constant per group); future criteria are
+      // absorbed inside isEndpointSignalTrustedByRoute. See Issue #145.
+      const trustEndpointSignal = isEndpointSignalTrustedByRoute(route);
       const routeDirection = this.resolveRouteDirection(route, pattern, stopIndex);
       const todayTripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
       const yesterdayTripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
@@ -509,7 +516,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             fullDayCount++;
             if (!hasBoardable) {
               const pt = pickupTypes?.[j] ?? 0;
-              if (isBoardableForPassengerSignal(pt, isLastStopPosition)) {
+              const boardable = trustEndpointSignal
+                ? isBoardableForPassengerBySignal(pt)
+                : isBoardableForPassengerBySignalAndPosition(pt, isLastStopPosition);
+              if (boardable) {
                 hasBoardable = true;
               }
             }
