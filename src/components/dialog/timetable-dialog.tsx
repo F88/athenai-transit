@@ -501,6 +501,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                 headsign={data.headsign}
                 serviceDate={data.serviceDate}
                 timetableEntries={stopEventAttributesFilteredEntries}
+                stats={stopEventAttributesFilteredEntriesStats}
                 omitted={data.omitted}
                 stopServiceState={data.stopServiceState}
               />
@@ -564,14 +565,14 @@ export const TimetableDialog = memo(function TimetableDialog({
               {/* Boardability filter */}
               <BoardabilityFilter
                 boardable={showBoardableOnly}
-                count={stopEventAttributesFilteredEntriesStats.boardableCount}
+                count={stopEventAttributesFilteredEntriesStats.passenger.boardableCount}
                 onToggleBoardable={onToggleShowBoardableOnly}
               />
               {/* Origin filter — hidden when no origin entries exist at this stop */}
-              {stopEventAttributesFilteredEntriesStats.originCount > 0 && (
+              {stopEventAttributesFilteredEntriesStats.position.originCount > 0 && (
                 <OriginFilter
                   origin={showOriginOnly}
-                  count={stopEventAttributesFilteredEntriesStats.originCount}
+                  count={stopEventAttributesFilteredEntriesStats.position.originCount}
                   onToggleOrigin={onToggleShowOriginOnly}
                 />
               )}

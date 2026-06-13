@@ -57,13 +57,16 @@ vi.mock('@/components/verbose/verbose-timetable-summary', () => ({
 vi.mock('@/domain/transit/timetable-stats', () => ({
   computeTimetableEntryStats: () => ({
     totalCount: 0,
-    originCount: 0,
-    terminalCount: 0,
-    boardableCount: 0,
-    nonBoardableCount: 0,
-    noPickupCount: 0,
-    noDropOffCount: 0,
-    dropOffOnlyCount: 0,
+    position: { originCount: 0, terminalCount: 0, passingCount: 0 },
+    signal: { noPickupCount: 0, noDropOffCount: 0 },
+    passenger: { boardableCount: 0, nonBoardableCount: 0 },
+    routeDirection: {
+      routeCount: 0,
+      directionCount: 0,
+      tripHeadsignCount: 0,
+      stopHeadsignCount: 0,
+    },
+    tripLocator: { patternCount: 0, serviceCount: 0, uniqueTripCount: 0 },
   }),
 }));
 

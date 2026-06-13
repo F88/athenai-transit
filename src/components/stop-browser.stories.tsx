@@ -189,8 +189,18 @@ export const Loading: Story = {
     hasNearbyLoaded: false,
     stopTimes: [],
     timetableEntriesStateByStopId: new Map<string, TimetableEntriesState>(),
-    nearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
-    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: {
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    },
+    filteredNearbyStopsCounts: {
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    },
   },
 };
 
@@ -198,8 +208,18 @@ export const NoStops: Story = {
   args: {
     stopTimes: [],
     timetableEntriesStateByStopId: new Map<string, TimetableEntriesState>(),
-    nearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
-    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: {
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    },
+    filteredNearbyStopsCounts: {
+      total: 0,
+      nonEmpty: 0,
+      position: { originCount: 0 },
+      passenger: { boardableCount: 0 },
+    },
   },
 };
 

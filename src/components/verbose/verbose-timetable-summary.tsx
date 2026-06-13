@@ -1,19 +1,27 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { StopServiceState } from '../../types/app/transit';
 import type { TimetableOmitted } from '../../types/app/repository';
+import type { TimetableEntryStats } from '../../domain/transit/timetable-stats';
 import { formatDateKey } from '../../domain/transit/calendar-utils';
-import { isBoardableForPassenger } from '../../domain/transit/timetable-entry-for-passenger';
 
 /**
  * Debug dump of timetable-level metadata and entry statistics.
  * Includes its own details/summary for collapsed display.
  * Only rendered in verbose info level.
+ *
+ * Goal is an exhaustive, debug-useful dump of the data. The canonical
+ * scalar counts come from {@link TimetableEntryStats} (passed in, not
+ * recomputed, so this dump always agrees with the dialog metadata and
+ * the boardable-only filter), grouped by the same axes. Breakdowns that
+ * the stats object does not carry (per-direction / per-pattern tallies,
+ * dwell) are computed inline from `timetableEntries`.
  */
 export function VerboseTimetableSummary({
   type,
   headsign,
   serviceDate,
   timetableEntries,
+  stats,
   omitted,
   stopServiceState,
 }: {
@@ -21,16 +29,14 @@ export function VerboseTimetableSummary({
   headsign?: string;
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
+  /** Canonical aggregated counts for `timetableEntries` (computed by the parent). */
+  stats: TimetableEntryStats;
   omitted: TimetableOmitted;
   stopServiceState: StopServiceState;
 }) {
-  // Domain-consistent counts using isBoardableForPassenger (pickupType !== 1 AND not the
-  // pattern's last stop). pickupType 2/3 (phone/coordination required) are
-  // considered boardable.
-  const dropOff = timetableEntries.filter((e) => !isBoardableForPassenger(e)).length;
-  const boardable = timetableEntries.length - dropOff;
-  const originCount = timetableEntries.filter((e) => e.patternPosition.isFirstStop).length;
-  const terminalCount = timetableEntries.filter((e) => e.patternPosition.isLastStop).length;
+  // Breakdowns not carried by TimetableEntryStats (per-value tallies),
+  // computed inline because the verbose dump wants the full distribution,
+  // not just the unique-value count the stats object exposes.
 
   // Direction breakdown
   const dirCounts = new Map<string, number>();
@@ -68,8 +74,28 @@ export function VerboseTimetableSummary({
           </span>
           {headsign != null && <span className="block">[headsign] &quot;{headsign}&quot;</span>}
           <span className="block">
-            [entries] total={timetableEntries.length} boardable={boardable} dropOffOnly={dropOff}{' '}
-            origin={originCount} terminal={terminalCount}
+            [entries] total={stats.totalCount} uniqueTrips={stats.tripLocator.uniqueTripCount}
+          </span>
+          <span className="block">
+            [position] origin={stats.position.originCount} terminal={stats.position.terminalCount}{' '}
+            passing={stats.position.passingCount}
+          </span>
+          <span className="block">
+            [passenger] boardable={stats.passenger.boardableCount} nonBoardable=
+            {stats.passenger.nonBoardableCount}
+          </span>
+          <span className="block">
+            [signal] noPickup={stats.signal.noPickupCount} noDropOff={stats.signal.noDropOffCount}
+          </span>
+          <span className="block">
+            [routeDirection] routes={stats.routeDirection.routeCount} directions=
+            {stats.routeDirection.directionCount} tripHeadsigns=
+            {stats.routeDirection.tripHeadsignCount} stopHeadsigns=
+            {stats.routeDirection.stopHeadsignCount}
+          </span>
+          <span className="block">
+            [tripLocator] patterns={stats.tripLocator.patternCount} services=
+            {stats.tripLocator.serviceCount}
           </span>
           <span className="block">
             [direction]{' '}

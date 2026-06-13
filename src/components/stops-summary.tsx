@@ -71,7 +71,7 @@ function buildStopsSummaryText(
 }
 
 function formatStopsCountsDebugLog(counts: StopsCounts): string {
-  return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.boardableCount} origin=${counts.originCount}`;
+  return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.passenger.boardableCount} origin=${counts.position.originCount}`;
 }
 
 export function StopsSummary({

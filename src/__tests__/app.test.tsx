@@ -304,8 +304,8 @@ describe('App anchor error toast', () => {
       filteredNearbyStopsCounts: {
         total: number;
         nonEmpty: number;
-        originCount: number;
-        boardableCount: number;
+        position: { originCount: number };
+        passenger: { boardableCount: number };
       };
     };
   };
@@ -600,7 +600,7 @@ describe('App anchor error toast', () => {
       expect(props.globalFilter.omitEmptyStops).toBe(true);
       expect(props.globalFilter.isOmitEmptyStopsForced).toBe(true);
       expect(props.filteredNearbyStopsCounts.total).toBe(1);
-      expect(props.filteredNearbyStopsCounts.boardableCount).toBe(1);
+      expect(props.filteredNearbyStopsCounts.passenger.boardableCount).toBe(1);
     });
   });
 
