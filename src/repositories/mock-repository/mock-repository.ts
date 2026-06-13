@@ -22,7 +22,11 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
-import { isBoardableForPassengerSignal } from '../../domain/transit/timetable-entry-for-passenger';
+import {
+  isBoardableForPassengerBySignal,
+  isBoardableForPassengerBySignalAndPosition,
+  isEndpointSignalTrustedByRoute,
+} from '../../domain/transit/timetable-entry-for-passenger';
 import { getTimetableEntriesState } from '../../domain/transit/timetable-service-state';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type {
@@ -176,6 +180,8 @@ export class MockRepository implements TransitRepository {
       if (!route) {
         continue;
       }
+      // Per-source policy (constant per route); see Issue #145.
+      const trustEndpointSignal = isEndpointSignalTrustedByRoute(route);
 
       const allMinutes = generateFixedMinutes(routeId, headsign);
 
@@ -191,8 +197,13 @@ export class MockRepository implements TransitRepository {
 
         // Count full-day entries and check boardability (per occurrence).
         fullDayCount += allMinutes.length;
-        if (!hasBoardable && isBoardableForPassengerSignal(pickupType, position.isLastStop)) {
-          hasBoardable = true;
+        if (!hasBoardable) {
+          const boardable = trustEndpointSignal
+            ? isBoardableForPassengerBySignal(pickupType)
+            : isBoardableForPassengerBySignalAndPosition(pickupType, position.isLastStop);
+          if (boardable) {
+            hasBoardable = true;
+          }
         }
 
         const upcoming = allMinutes

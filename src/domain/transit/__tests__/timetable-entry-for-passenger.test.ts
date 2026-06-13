@@ -5,9 +5,60 @@ import {
   canBoardSignal,
   isAlightableForPassenger,
   isBoardableForPassenger,
-  isBoardableForPassengerSignal,
+  isBoardableForPassengerBySignal,
+  isBoardableForPassengerBySignalAndPosition,
+  isEndpointSignalTrustedByPrefix,
+  isEndpointSignalTrustedByRoute,
 } from '../timetable-entry-for-passenger';
+import type { Route } from '../../../types/app/transit';
 import { makeEntry } from './make-timetable-entry';
+
+// ---------------------------------------------------------------------------
+// isEndpointSignalTrustedByRoute (per-source endpoint-signal trust policy)
+// ---------------------------------------------------------------------------
+
+function routeWithId(routeId: string): Route {
+  return {
+    route_id: routeId,
+    route_type: 1,
+    agency_id: `${routeId.split(':')[0]}:agency`,
+    route_short_name: '',
+    route_short_names: {},
+    route_long_name: '',
+    route_long_names: {},
+    route_color: '000000',
+    route_text_color: 'FFFFFF',
+  };
+}
+
+describe('isEndpointSignalTrustedByPrefix', () => {
+  it('trusts the configured through-running rail/subway source prefixes', () => {
+    expect(isEndpointSignalTrustedByPrefix('tome')).toBe(true);
+    expect(isEndpointSignalTrustedByPrefix('twrr')).toBe(true);
+    expect(isEndpointSignalTrustedByPrefix('toaran')).toBe(true);
+  });
+
+  it('does not trust prefixes outside the set', () => {
+    expect(isEndpointSignalTrustedByPrefix('minkuru')).toBe(false);
+    expect(isEndpointSignalTrustedByPrefix('kobus')).toBe(false);
+    expect(isEndpointSignalTrustedByPrefix('')).toBe(false);
+  });
+});
+
+describe('isEndpointSignalTrustedByRoute', () => {
+  it('trusts through-running rail/subway sources whose endpoint signals are spec-correct', () => {
+    expect(isEndpointSignalTrustedByRoute(routeWithId('tome:5'))).toBe(true); // Tokyo Metro
+    expect(isEndpointSignalTrustedByRoute(routeWithId('twrr:1'))).toBe(true); // TWR Rinkai
+    expect(isEndpointSignalTrustedByRoute(routeWithId('toaran:4'))).toBe(true); // Toei Train
+  });
+
+  it('does not trust sources outside the set (absence is not a reliability judgment)', () => {
+    expect(isEndpointSignalTrustedByRoute(routeWithId('minkuru:1'))).toBe(false); // Toei Bus
+    expect(isEndpointSignalTrustedByRoute(routeWithId('kobus:10'))).toBe(false); // Keio Bus (diligent but no through-running)
+    expect(isEndpointSignalTrustedByRoute(routeWithId('yht:3'))).toBe(false); // Yokohama Municipal Subway
+    expect(isEndpointSignalTrustedByRoute(routeWithId('unknown:1'))).toBe(false);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // canBoardSignal
@@ -158,21 +209,42 @@ describe('isBoardableForPassenger', () => {
 });
 
 // ---------------------------------------------------------------------------
-// isBoardableForPassengerSignal
+// isBoardableForPassengerBySignal
 // ---------------------------------------------------------------------------
 
-describe('isBoardableForPassengerSignal', () => {
+describe('isBoardableForPassengerBySignal', () => {
+  it('judges from the raw pickup_type alone, ignoring the position', () => {
+    expect(isBoardableForPassengerBySignal(0)).toBe(true);
+    expect(isBoardableForPassengerBySignal(1)).toBe(false);
+    expect(isBoardableForPassengerBySignal(2)).toBe(true);
+    expect(isBoardableForPassengerBySignal(3)).toBe(true);
+  });
+
+  it('mirrors canBoardSignal exactly', () => {
+    const pickupTypes = [0, 1, 2, 3] as const;
+    for (const pickupType of pickupTypes) {
+      expect(isBoardableForPassengerBySignal(pickupType)).toBe(canBoardSignal(pickupType));
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isBoardableForPassengerBySignalAndPosition
+// ---------------------------------------------------------------------------
+
+describe('isBoardableForPassengerBySignalAndPosition', () => {
   it('judges from the raw pickup_type and the last-stop flag', () => {
-    expect(isBoardableForPassengerSignal(0, false)).toBe(true);
-    expect(isBoardableForPassengerSignal(1, false)).toBe(false);
-    expect(isBoardableForPassengerSignal(0, true)).toBe(false);
-    expect(isBoardableForPassengerSignal(2, false)).toBe(true);
-    expect(isBoardableForPassengerSignal(3, false)).toBe(true);
+    expect(isBoardableForPassengerBySignalAndPosition(0, false)).toBe(true);
+    expect(isBoardableForPassengerBySignalAndPosition(1, false)).toBe(false);
+    expect(isBoardableForPassengerBySignalAndPosition(0, true)).toBe(false);
+    expect(isBoardableForPassengerBySignalAndPosition(2, false)).toBe(true);
+    expect(isBoardableForPassengerBySignalAndPosition(3, false)).toBe(true);
   });
 
   it('matches isBoardableForPassenger for every signal/position combination', () => {
-    // The entry-based judgment delegates here; this pins the equivalence
-    // from the other side so the two forms cannot drift apart.
+    // makeEntry's route prefix ('r1') is not endpoint-signal-trusted, so
+    // isBoardableForPassenger selects this signal-and-position form. This
+    // pins the equivalence from the other side so the two cannot drift apart.
     const pickupTypes = [0, 1, 2, 3] as const;
     const flags = [false, true] as const;
     for (const pickupType of pickupTypes) {
@@ -180,7 +252,7 @@ describe('isBoardableForPassengerSignal', () => {
         for (const isLastStop of flags) {
           const entry = makeEntry({ pickupType, isFirstStop, isLastStop });
           expect(
-            isBoardableForPassengerSignal(pickupType, isLastStop),
+            isBoardableForPassengerBySignalAndPosition(pickupType, isLastStop),
             `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
           ).toBe(isBoardableForPassenger(entry));
         }

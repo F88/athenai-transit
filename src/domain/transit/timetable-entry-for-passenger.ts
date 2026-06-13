@@ -16,6 +16,63 @@
  */
 
 import type { StopServiceType, TimetableEntry } from '../../types/app/transit-composed';
+import type { Route } from '../../types/app/transit';
+import { extractPrefix } from './prefixed-id';
+
+/**
+ * Source prefixes whose Last-stop / First-stop signal is trusted
+ * directly: the boarding/drop-off signal alone decides at endpoints,
+ * without the pattern-position fallback.
+ *
+ * A prefix belongs here when BOTH hold:
+ *  1. The feed sets pickup_type / drop_off_type at the Last stop and the
+ *     First stop per the GTFS spec -- true terminals marked pickup_type 1,
+ *     true origins drop_off_type 1 -- so the endpoint signal is correct.
+ *  2. It is a railway / subway whose real operation runs beyond the
+ *     feed's trip (inter-operator through-running), so a Last/First stop
+ *     can be a feed boundary rather than a real terminus / origin.
+ *
+ * This is NOT a data-reliability ranking, and absence does NOT mean a
+ * source is less reliable: most buses satisfy (1) but not (2) -- no
+ * through-running, so nothing to release -- and are excluded with no
+ * loss. (A per-feed property: Toei Train `toaran` qualifies; Toei Bus
+ * `minkuru`, same brand different feed, does not.)
+ *
+ * TEMPORARY / local prototype, each entry verified individually. Toei
+ * Train checked at the terminal level (2026-06-13): through lines
+ * (Asakusa / Mita / Shinjuku) carry pickup_type 0 only at real
+ * boundaries (Oshiage, Sengakuji, Meguro, Shinjuku); the non-through
+ * Oedo line marks every terminal pickup_type 1. See Issue #145.
+ */
+const THROUGH_RUNNING_SIGNAL_TRUSTED_PREFIXES: ReadonlySet<string> = new Set<string>([
+  'tome', // Tokyo Metro
+  'twrr', // TWR Rinkai
+  'toaran', // Toei Train
+]);
+
+/**
+ * Whether the endpoint signal is trusted for the given source prefix.
+ * Core, source-level check (see {@link THROUGH_RUNNING_SIGNAL_TRUSTED_PREFIXES}).
+ * For callers that already hold a prefix; otherwise use
+ * {@link isEndpointSignalTrustedByRoute}.
+ */
+export function isEndpointSignalTrustedByPrefix(prefix: string): boolean {
+  return THROUGH_RUNNING_SIGNAL_TRUSTED_PREFIXES.has(prefix);
+}
+
+/**
+ * Whether the endpoint signal is trusted for the given route. Resolves
+ * the source prefix from `route_id` and delegates to
+ * {@link isEndpointSignalTrustedByPrefix}.
+ *
+ * The judgment currently keys on the source prefix only, but taking the
+ * whole {@link Route} lets a future criterion (e.g. `route_type` /
+ * `agency_id`) be absorbed here without changing the call sites.
+ */
+export function isEndpointSignalTrustedByRoute(route: Route): boolean {
+  const prefix = extractPrefix(route.route_id);
+  return isEndpointSignalTrustedByPrefix(prefix);
+}
 
 /**
  * Whether a passenger can board per a raw GTFS pickup_type value.
@@ -72,17 +129,31 @@ export function canAlight(entry: TimetableEntry): boolean {
 }
 
 /**
- * PROVISIONAL: signal-level form of {@link isBoardableForPassenger},
- * for callers that scan raw timetable rows before {@link TimetableEntry}
- * objects exist (e.g. the repositories' full-service-day boardability
- * scan in getUpcomingTimetableEntries).
+ * PROVISIONAL: boardability judged by the pickup signal ALONE (mode A) --
+ * the pattern position is ignored. Applied when the source's endpoint
+ * signals are trusted (see {@link isEndpointSignalTrustedByRoute}), so a
+ * last-stop through-service row is released as boardable.
+ *
+ * Scalar form (no {@link TimetableEntry}) so repositories can call it
+ * while scanning raw timetable rows.
+ */
+export function isBoardableForPassengerBySignal(pickupType: StopServiceType): boolean {
+  return canBoardSignal(pickupType);
+}
+
+/**
+ * PROVISIONAL: boardability judged by the pickup signal AND the pattern
+ * position (mode B) -- a last stop is treated as not boardable. This is
+ * the conservative default for sources whose endpoint signals are not
+ * trusted; scalar form so repositories can call it while scanning raw
+ * timetable rows.
  *
  * The exact judgment rule is still being specified (state model:
- * Issue #162; feed boundaries: Issue #145). Interim rule: boardable
- * per the signal and not the pattern's last stop -- the same
- * inference as the former isDropOffOnly, which this rule replaces.
+ * Issue #162; feed boundaries: Issue #145). Interim rule: boardable per
+ * the signal and not the pattern's last stop -- the same inference as the
+ * former isDropOffOnly, which this rule replaces.
  */
-export function isBoardableForPassengerSignal(
+export function isBoardableForPassengerBySignalAndPosition(
   pickupType: StopServiceType,
   isLastStop: boolean,
 ): boolean {
@@ -160,14 +231,22 @@ export function isBoardableForPassengerSignal(
 
 /**
  * PROVISIONAL: whether a passenger can board this stop event as a
- * service they can actually ride. Unlike {@link canBoard} (signal
- * only), this combines the signal with the pattern position.
+ * service they can actually ride.
  *
- * Delegates to {@link isBoardableForPassengerSignal}; the interim rule
- * and its rationale live there.
+ * Picks the judgment by per-source policy:
+ * - endpoint-signal-trusted source ({@link isEndpointSignalTrustedByRoute}):
+ *   {@link isBoardableForPassengerBySignal} (signal alone).
+ * - otherwise: {@link isBoardableForPassengerBySignalAndPosition}
+ *   (signal AND pattern position).
+ *
+ * TEMPORARY local prototype; the trusted set is hardcoded. See Issue #145.
  */
 export function isBoardableForPassenger(entry: TimetableEntry): boolean {
-  return isBoardableForPassengerSignal(entry.boarding.pickupType, entry.patternPosition.isLastStop);
+  const { pickupType } = entry.boarding;
+  if (isEndpointSignalTrustedByRoute(entry.routeDirection.route)) {
+    return isBoardableForPassengerBySignal(pickupType);
+  }
+  return isBoardableForPassengerBySignalAndPosition(pickupType, entry.patternPosition.isLastStop);
 }
 
 /**
