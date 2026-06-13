@@ -22,6 +22,7 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
+import { isBoardableForPassengerSignal } from '../../domain/transit/timetable-entry-for-passenger';
 import { getTimetableEntriesState } from '../../domain/transit/timetable-service-state';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type {
@@ -190,7 +191,7 @@ export class MockRepository implements TransitRepository {
 
         // Count full-day entries and check boardability (per occurrence).
         fullDayCount += allMinutes.length;
-        if (!hasBoardable && pickupType !== 1 && !position.isLastStop) {
+        if (!hasBoardable && isBoardableForPassengerSignal(pickupType, position.isLastStop)) {
           hasBoardable = true;
         }
 

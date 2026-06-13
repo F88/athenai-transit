@@ -15,19 +15,22 @@
  * Issue #145.
  */
 
-import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { StopServiceType, TimetableEntry } from '../../types/app/transit-composed';
 
 /**
- * Whether a passenger can board at this stop event, judged from the
- * GTFS pickup_type signal alone (no pattern-role inference).
+ * Whether a passenger can board per a raw GTFS pickup_type value.
+ *
+ * Signal-level form of {@link canBoard} for callers that hold the raw
+ * value without a {@link TimetableEntry} (e.g. repositories scanning
+ * timetable JSON arrays).
  *
  * Arrangement-required values 2 (phone agency) and 3 (coordinate with
  * driver) count as boardable; combine with `requiresArrangement` in
  * `timetable-entry-boarding.ts` to tell them apart from a regular
  * pickup.
  */
-export function canBoard(entry: TimetableEntry): boolean {
-  switch (entry.boarding.pickupType) {
+export function canBoardSignal(pickupType: StopServiceType): boolean {
+  switch (pickupType) {
     case 0: // GTFS: Regularly scheduled pickup
       return true;
     case 1: // GTFS: No pickup available.
@@ -37,6 +40,15 @@ export function canBoard(entry: TimetableEntry): boolean {
     case 3: // GTFS: Must coordinate with driver to arrange pickup.
       return true;
   }
+}
+
+/**
+ * Whether a passenger can board at this stop event, judged from the
+ * GTFS pickup_type signal alone (no pattern-role inference). See
+ * {@link canBoardSignal} for the value interpretation.
+ */
+export function canBoard(entry: TimetableEntry): boolean {
+  return canBoardSignal(entry.boarding.pickupType);
 }
 
 /**
@@ -60,17 +72,20 @@ export function canAlight(entry: TimetableEntry): boolean {
 }
 
 /**
- * PROVISIONAL: whether a passenger can board this stop event as a
- * service they can actually ride. Unlike {@link canBoard} (signal
- * only), this combines the signal with the pattern position.
+ * PROVISIONAL: signal-level form of {@link isBoardableForPassenger},
+ * for callers that scan raw timetable rows before {@link TimetableEntry}
+ * objects exist (e.g. the repositories' full-service-day boardability
+ * scan in getUpcomingTimetableEntries).
  *
  * The exact judgment rule is still being specified (state model:
  * Issue #162; feed boundaries: Issue #145). Interim rule: boardable
  * per the signal and not the pattern's last stop -- the same
- * inference as the former isDropOffOnly, which this function
- * replaces.
+ * inference as the former isDropOffOnly, which this rule replaces.
  */
-export function isBoardableForPassenger(entry: TimetableEntry): boolean {
+export function isBoardableForPassengerSignal(
+  pickupType: StopServiceType,
+  isLastStop: boolean,
+): boolean {
   // The last-stop rule below knowingly excludes two real-world classes
   // of boardable through-services (kept for reference; both measured on
   // the 2026-06-11 feed snapshots):
@@ -99,8 +114,8 @@ export function isBoardableForPassenger(entry: TimetableEntry): boolean {
   // pickup_type 0 on real terminals, so a blanket signal-trust or a
   // route_type split alone is not safe).
 
-  // Ideally this would be judged by canBoard alone, but current data
-  // quality makes that impossible:
+  // Ideally this would be judged by the boarding signal alone, but
+  // current data quality makes that impossible:
   // - For a source like Tokyo Metro, a last-stop row could safely be
   //   judged boardable (its signals are written reliably).
   // - But not every subway operator produces data of that quality
@@ -108,22 +123,22 @@ export function isBoardableForPassenger(entry: TimetableEntry): boolean {
   //   terminals), so the decision cannot be made by route type alone.
   //
   // /** Implementation sketch: trust the signal in all cases */
-  // return canBoard(entry)
+  // return canBoardSignal(pickupType)
   //
   // /** Implementation sketch: for subway / rail route types, judge a
-  //  *  last-stop row boardable per the signal */
+  //  *  last-stop row boardable per the signal (route_type would have
+  //  *  to become a parameter of this function) */
   //
-  // const routeType = entry.routeDirection.route.route_type;
   // switch (routeType) {
   //   case 1: // Subway
-  //     return canBoard(entry);
+  //     return canBoardSignal(pickupType);
   //   case 2: // Rail
-  //     return canBoard(entry);
+  //     return canBoardSignal(pickupType);
   //   default:
-  //     if (entry.patternPosition.isLastStop) {
+  //     if (isLastStop) {
   //       return false;
   //     } else {
-  //       return canBoard(entry);
+  //       return canBoardSignal(pickupType);
   //     }
   // }
 
@@ -132,15 +147,27 @@ export function isBoardableForPassenger(entry: TimetableEntry): boolean {
   // (a through-service onto another line continues past it), but it is
   // still treated as not boardable here.
 
-  if (entry.patternPosition.isLastStop) {
+  if (isLastStop) {
     return false;
   }
 
-  if (!canBoard(entry)) {
+  if (!canBoardSignal(pickupType)) {
     return false;
   }
 
   return true;
+}
+
+/**
+ * PROVISIONAL: whether a passenger can board this stop event as a
+ * service they can actually ride. Unlike {@link canBoard} (signal
+ * only), this combines the signal with the pattern position.
+ *
+ * Delegates to {@link isBoardableForPassengerSignal}; the interim rule
+ * and its rationale live there.
+ */
+export function isBoardableForPassenger(entry: TimetableEntry): boolean {
+  return isBoardableForPassengerSignal(entry.boarding.pickupType, entry.patternPosition.isLastStop);
 }
 
 /**

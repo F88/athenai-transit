@@ -2,10 +2,25 @@ import { describe, it, expect } from 'vitest';
 import {
   canAlight,
   canBoard,
+  canBoardSignal,
   isAlightableForPassenger,
   isBoardableForPassenger,
+  isBoardableForPassengerSignal,
 } from '../timetable-entry-for-passenger';
 import { makeEntry } from './make-timetable-entry';
+
+// ---------------------------------------------------------------------------
+// canBoardSignal
+// ---------------------------------------------------------------------------
+
+describe('canBoardSignal', () => {
+  it('interprets each pickup_type value', () => {
+    expect(canBoardSignal(0)).toBe(true); // regularly scheduled pickup
+    expect(canBoardSignal(1)).toBe(false); // no pickup available
+    expect(canBoardSignal(2)).toBe(true); // must phone agency
+    expect(canBoardSignal(3)).toBe(true); // must coordinate with driver
+  });
+});
 
 // ---------------------------------------------------------------------------
 // canBoard
@@ -136,6 +151,38 @@ describe('isBoardableForPassenger', () => {
             isBoardableForPassenger(entry),
             `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
           ).toBe(expected);
+        }
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isBoardableForPassengerSignal
+// ---------------------------------------------------------------------------
+
+describe('isBoardableForPassengerSignal', () => {
+  it('judges from the raw pickup_type and the last-stop flag', () => {
+    expect(isBoardableForPassengerSignal(0, false)).toBe(true);
+    expect(isBoardableForPassengerSignal(1, false)).toBe(false);
+    expect(isBoardableForPassengerSignal(0, true)).toBe(false);
+    expect(isBoardableForPassengerSignal(2, false)).toBe(true);
+    expect(isBoardableForPassengerSignal(3, false)).toBe(true);
+  });
+
+  it('matches isBoardableForPassenger for every signal/position combination', () => {
+    // The entry-based judgment delegates here; this pins the equivalence
+    // from the other side so the two forms cannot drift apart.
+    const pickupTypes = [0, 1, 2, 3] as const;
+    const flags = [false, true] as const;
+    for (const pickupType of pickupTypes) {
+      for (const isFirstStop of flags) {
+        for (const isLastStop of flags) {
+          const entry = makeEntry({ pickupType, isFirstStop, isLastStop });
+          expect(
+            isBoardableForPassengerSignal(pickupType, isLastStop),
+            `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
+          ).toBe(isBoardableForPassenger(entry));
         }
       }
     }
