@@ -143,10 +143,10 @@ export function filterByRouteType<T extends TimetableEntry>(
 /**
  * Rider-perspective boardability at a stop event.
  *
- * - `'bordable'`    — the rider can board here.
+ * - `'boardable'`    — the rider can board here.
  * - `'notBoardable'` — the rider cannot board here.
  */
-type BoarabilityState = 'bordable' | 'notBoardable';
+type BoardabilityState = 'boardable' | 'notBoardable';
 
 /**
  * Pattern position values an entry can match.
@@ -232,7 +232,7 @@ export interface StopEventAttributeFilters {
  */
 export interface StopEventBoardabilityFilters {
   /** Boardability states to keep. Omit to disable. */
-  boardability?: ReadonlySet<BoarabilityState>;
+  boardability?: ReadonlySet<BoardabilityState>;
 }
 
 function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosition>): boolean {
@@ -264,9 +264,9 @@ function matchesPickUpState(entry: TimetableEntry, allowed: ReadonlySet<PickUpSt
 
 export function matchesBoardability(
   entry: TimetableEntry,
-  allowed: ReadonlySet<BoarabilityState>,
+  allowed: ReadonlySet<BoardabilityState>,
 ): boolean {
-  const state: BoarabilityState = isBoardableForPassenger(entry) ? 'bordable' : 'notBoardable';
+  const state: BoardabilityState = isBoardableForPassenger(entry) ? 'boardable' : 'notBoardable';
   return allowed.has(state);
 }
 
@@ -390,7 +390,7 @@ export function filterTimetableEntries<T extends TimetableEntry>(
     result = filterByStopEventBoardability(result, {
       // Only Boardable entries are kept; NotBoardable entries are filtered out.
       boardability: new Set([
-        'bordable',
+        'boardable',
         // 'notBoardable',
       ]),
     });

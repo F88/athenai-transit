@@ -1156,12 +1156,12 @@ describe('matchesBoardability', () => {
     expect(matchesBoardability(notBoardable, new Set())).toBe(false);
   });
 
-  it("Set(['bordable']) -> true for boardable entry", () => {
-    expect(matchesBoardability(boardable, new Set(['bordable']))).toBe(true);
+  it("Set(['boardable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['boardable']))).toBe(true);
   });
 
-  it("Set(['bordable']) -> false for not-boardable entry", () => {
-    expect(matchesBoardability(notBoardable, new Set(['bordable']))).toBe(false);
+  it("Set(['boardable']) -> false for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['boardable']))).toBe(false);
   });
 
   it("Set(['notBoardable']) -> false for boardable entry", () => {
@@ -1172,11 +1172,11 @@ describe('matchesBoardability', () => {
     expect(matchesBoardability(notBoardable, new Set(['notBoardable']))).toBe(true);
   });
 
-  it("Set(['bordable', 'notBoardable']) -> true for boardable entry", () => {
-    expect(matchesBoardability(boardable, new Set(['bordable', 'notBoardable']))).toBe(true);
+  it("Set(['boardable', 'notBoardable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['boardable', 'notBoardable']))).toBe(true);
   });
 
-  it("Set(['bordable', 'notBoardable']) -> true for not-boardable entry", () => {
-    expect(matchesBoardability(notBoardable, new Set(['bordable', 'notBoardable']))).toBe(true);
+  it("Set(['boardable', 'notBoardable']) -> true for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['boardable', 'notBoardable']))).toBe(true);
   });
 });
