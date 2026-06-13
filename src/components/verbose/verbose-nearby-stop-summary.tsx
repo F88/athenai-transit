@@ -1,5 +1,5 @@
 import type { StopTimeViewId } from '../../domain/transit/stop-time-views';
-import { filterByStopEventAttributes } from '../../domain/transit/timetable-filter';
+import { filterTimetableEntries } from '../../domain/transit/timetable-filter';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import type { StopServiceState } from '../../types/app/transit';
 
@@ -29,9 +29,9 @@ export function VerboseNearbyStopSummary({
   isAnchor: boolean;
   viewId: StopTimeViewId;
 }) {
-  const boardable = filterByStopEventAttributes(stopTimes, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+  const boardable = filterTimetableEntries(stopTimes, {
+    showFirstStopOnly: false,
+    showBoardableOnly: true,
   }).length;
   const nonBoardable = stopTimes.length - boardable;
 

@@ -1,6 +1,6 @@
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-names';
-import { isDeparture } from './timetable-entry-for-passenger';
+import { isBoardableForPassenger } from './timetable-entry-for-passenger';
 import type { Agency } from '@/types/app/transit';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 // import { createLogger } from '../../lib/logger';
@@ -49,9 +49,9 @@ export interface TimetableEntryStats {
   passingCount: number;
 
   // B axis: boarding availability
-  /** Entries where boarding is available (= `isDeparture`). */
+  /** Entries where boarding is available (= `isBoardableForPassenger`). */
   boardableCount: number;
-  /** Entries where boarding is NOT available (= `!isDeparture`). */
+  /** Entries where boarding is NOT available (= `!isBoardableForPassenger`). */
   nonBoardableCount: number;
   /** Entries with explicit `pickup_type === 1` (= GTFS "drop-off only"). */
   dropOffOnlyCount: number;
@@ -131,7 +131,7 @@ export function computeTimetableEntryStats(
       passingCount++;
     }
 
-    if (isDeparture(entry)) {
+    if (isBoardableForPassenger(entry)) {
       boardableCount++;
     } else {
       nonBoardableCount++;

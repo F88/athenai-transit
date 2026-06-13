@@ -35,6 +35,7 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
+import { isBoardableForPassengerSignal } from '../../domain/transit/timetable-entry-for-passenger';
 import { getTimetableEntriesState } from '../../domain/transit/timetable-service-state';
 import { createLogger } from '../../lib/logger';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
@@ -474,91 +475,91 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       const todayTripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
       const yesterdayTripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
 
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!todayServiceIds.has(serviceId)) {
-          continue;
-        }
-        const arrivals = group.a?.[serviceId];
-        const pickupTypes = group.pt?.[serviceId];
-        const dropOffTypes = group.dt?.[serviceId];
-
-        for (let j = 0; j < times.length; j++) {
-          fullDayCount++;
-          if (!hasBoardable) {
-            const pt = pickupTypes?.[j] ?? 0;
-            if (pt !== 1 && !isLastStopPosition) {
-              hasBoardable = true;
-            }
-          }
-        }
-
-        const startIdx = binarySearchFirstGte(times, nowMinutes);
-        for (let i = startIdx; i < times.length; i++) {
-          const pickupType = pickupTypes?.[i] ?? 0;
-          const dropOffType = dropOffTypes?.[i] ?? 0;
-          entries.push({
-            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
-            schedule: {
-              departureMinutes: times[i],
-              arrivalMinutes: arrivals?.[i] ?? times[i],
-            },
-            routeDirection,
-            boarding: { pickupType, dropOffType },
-            patternPosition: {
-              stopIndex,
-              totalStops,
-              isLastStop: isLastStopPosition,
-              isFirstStop: stopIndex === 0,
-            },
-            serviceDate: serviceDay,
-            ...(todayTripInsights !== undefined ? { insights: todayTripInsights } : {}),
-          });
-        }
-      }
-
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!yesterdayServiceIds.has(serviceId)) {
-          continue;
-        }
-        const arrivals = group.a?.[serviceId];
-        const pickupTypes = group.pt?.[serviceId];
-        const dropOffTypes = group.dt?.[serviceId];
-
-        for (let j = 0; j < times.length; j++) {
-          if (times[j] < 1440) {
+      // Scan one service-day bucket of this group: count its rows into
+      // the service-day stats (fullDayCount / hasBoardable) and
+      // materialize the upcoming entries. Called for today's services
+      // and for yesterday's (whose overnight tail belongs to today).
+      const scanServiceDay = (scan: {
+        /** Active service IDs of the bucket's service day. */
+        serviceIds: ReadonlySet<string>;
+        /**
+         * Rows below this minute are excluded from the service-day
+         * stats: 1440 for yesterday's bucket, so only its overnight
+         * tail (>= 24:00) counts toward today's service day.
+         */
+        countFromMinutes: number;
+        /** First minute (in the bucket's own clock) considered upcoming. */
+        upcomingFromMinutes: number;
+        /** Service date stamped on materialized entries. */
+        serviceDate: Date;
+        tripInsights: ContextualTimetableEntry['insights'];
+      }): void => {
+        for (const [serviceId, times] of Object.entries(group.d)) {
+          if (!scan.serviceIds.has(serviceId)) {
             continue;
           }
-          fullDayCount++;
-          if (!hasBoardable) {
-            const pt = pickupTypes?.[j] ?? 0;
-            if (pt !== 1 && !isLastStopPosition) {
-              hasBoardable = true;
+          const arrivals = group.a?.[serviceId];
+          const pickupTypes = group.pt?.[serviceId];
+          const dropOffTypes = group.dt?.[serviceId];
+
+          for (let j = 0; j < times.length; j++) {
+            if (times[j] < scan.countFromMinutes) {
+              continue;
+            }
+            fullDayCount++;
+            if (!hasBoardable) {
+              const pt = pickupTypes?.[j] ?? 0;
+              if (isBoardableForPassengerSignal(pt, isLastStopPosition)) {
+                hasBoardable = true;
+              }
             }
           }
+
+          const startIdx = binarySearchFirstGte(times, scan.upcomingFromMinutes);
+          for (let i = startIdx; i < times.length; i++) {
+            const pickupType = pickupTypes?.[i] ?? 0;
+            const dropOffType = dropOffTypes?.[i] ?? 0;
+            entries.push({
+              tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
+              schedule: {
+                departureMinutes: times[i],
+                arrivalMinutes: arrivals?.[i] ?? times[i],
+              },
+              routeDirection,
+              boarding: { pickupType, dropOffType },
+              patternPosition: {
+                stopIndex,
+                totalStops,
+                isLastStop: isLastStopPosition,
+                isFirstStop: stopIndex === 0,
+              },
+              serviceDate: scan.serviceDate,
+              ...(scan.tripInsights !== undefined ? { insights: scan.tripInsights } : {}),
+            });
+          }
         }
-        const startIdx = binarySearchFirstGte(times, overnightTarget);
-        for (let i = startIdx; i < times.length; i++) {
-          const pickupType = pickupTypes?.[i] ?? 0;
-          const dropOffType = dropOffTypes?.[i] ?? 0;
-          entries.push({
-            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
-            schedule: {
-              departureMinutes: times[i],
-              arrivalMinutes: arrivals?.[i] ?? times[i],
-            },
-            routeDirection,
-            boarding: { pickupType, dropOffType },
-            patternPosition: {
-              stopIndex,
-              totalStops,
-              isLastStop: isLastStopPosition,
-              isFirstStop: stopIndex === 0,
-            },
-            serviceDate: prevServiceDay,
-            ...(yesterdayTripInsights !== undefined ? { insights: yesterdayTripInsights } : {}),
-          });
-        }
-      }
+      };
+
+      // Today's services: count every row into the service-day stats and
+      // pick up entries departing at or after the current time.
+      scanServiceDay({
+        serviceIds: todayServiceIds,
+        countFromMinutes: 0,
+        upcomingFromMinutes: nowMinutes,
+        serviceDate: serviceDay,
+        tripInsights: todayTripInsights,
+      });
+      // Yesterday's services: only their overnight tail (>= 24:00 on
+      // yesterday's clock) belongs to today's service day, so count from
+      // 1440 and pick up entries from now expressed on that clock
+      // (now + 1440).
+      scanServiceDay({
+        serviceIds: yesterdayServiceIds,
+        countFromMinutes: 1440,
+        upcomingFromMinutes: overnightTarget,
+        serviceDate: prevServiceDay,
+        tripInsights: yesterdayTripInsights,
+      });
     }
 
     sortTimetableEntriesChronologically(entries);

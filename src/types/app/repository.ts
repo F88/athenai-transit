@@ -37,7 +37,7 @@ export type CollectionResult<T> =
 export interface TimetableOmitted {
   /**
    * Number of non-boardable entries omitted (= entries where
-   * `isDeparture` returns false: `pickup_type === 1` or the
+   * `isBoardableForPassenger` returns false: `pickup_type === 1` or the
    * pattern's last stop).
    */
   nonBoardable: number;
@@ -58,8 +58,9 @@ export interface TimetableQueryMeta {
    * what `data` contains. A stop with `isBoardableOnServiceDay === false`
    * and `totalEntries > 0` is a drop-off-only stop.
    *
-   * Boardable = not terminal AND pickupType !== 1 (pickupType 2/3 are
-   * considered boardable as they require phone/coordination but allow boarding).
+   * Boardability is judged by `isBoardableForPassengerSignal` in
+   * `src/domain/transit/timetable-entry-for-passenger.ts` (the
+   * signal-level form of `isBoardableForPassenger`).
    */
   isBoardableOnServiceDay: boolean;
 

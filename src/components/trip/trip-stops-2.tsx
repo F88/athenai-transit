@@ -85,11 +85,8 @@ function TripStopRow({
   const stopIndex = tripStopTime.timetableEntry.patternPosition.stopIndex;
   const isLastRow = stopIndex === totalStops - 1;
   const isCurrent = stopIndex === currentPatternStopIndex;
-  const isLastStop = tripStopTime.timetableEntry.patternPosition.isLastStop;
-  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isFirstStop;
   const display = deriveStopTimeRoleDisplayProps({
-    isFirstStop,
-    isLastStop,
+    timetableEntry: tripStopTime.timetableEntry,
     infoLevel,
   });
   const inspectTarget: TripInspectionTarget = {

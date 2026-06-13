@@ -38,8 +38,10 @@ export function TripPager({
   onOpenPreviousTrip,
   onOpenNextTrip,
 }: TripPagerProps) {
-  const { isFirstStop, isLastStop } = selectedStop.timetableEntry.patternPosition;
-  const display = deriveStopTimeRoleDisplayProps({ isFirstStop, isLastStop, infoLevel });
+  const display = deriveStopTimeRoleDisplayProps({
+    timetableEntry: selectedStop.timetableEntry,
+    infoLevel,
+  });
 
   const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
   const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;

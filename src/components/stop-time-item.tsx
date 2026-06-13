@@ -72,8 +72,7 @@ export function StopTimeItem({
     'css-hex',
   );
   const display = deriveStopTimeRoleDisplayProps({
-    isFirstStop: entry.patternPosition.isFirstStop,
-    isLastStop: entry.patternPosition.isLastStop,
+    timetableEntry: entry,
     infoLevel,
   });
   const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);

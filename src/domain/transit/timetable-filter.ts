@@ -11,6 +11,7 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { getEffectiveHeadsign } from './get-effective-headsign';
+import { isBoardableForPassenger } from './timetable-entry-for-passenger';
 
 /**
  * Filter and compute omitted stats for a stop timetable.
@@ -33,9 +34,14 @@ export function prepareStopTimetable(
   if (includeNonBoardable) {
     return { entries: allEntries, omitted: { nonBoardable: 0 } };
   }
+  // exclude non-boardable.
   const entries = filterByStopEventAttributes(allEntries, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+    pickUpState: new Set([
+      'regularlyScheduledPickup',
+      'mustPhoneAgency',
+      'mustCoordinateWithDriver',
+    ]),
+    position: new Set(['first', 'middle', 'firstAndLast']),
   });
   return { entries, omitted: { nonBoardable: allEntries.length - entries.length } };
 }
@@ -68,9 +74,14 @@ export function prepareRouteHeadsignTimetable(
   if (includeNonBoardable) {
     return { entries: routeEntries, omitted: { nonBoardable: 0 } };
   }
+  // exclude non-boardable.
   const entries = filterByStopEventAttributes(routeEntries, {
-    pickUpState: new Set(['boardable']),
-    position: new Set(['origin', 'middle']),
+    pickUpState: new Set([
+      'regularlyScheduledPickup',
+      'mustPhoneAgency',
+      'mustCoordinateWithDriver',
+    ]),
+    position: new Set(['first', 'middle', 'firstAndLast']),
   });
   return { entries, omitted: { nonBoardable: routeEntries.length - entries.length } };
 }
@@ -126,22 +137,46 @@ export function filterByRouteType<T extends TimetableEntry>(
 }
 
 // ---------------------------------------------------------------------------
-// filterByStopEventAttributes
+// StopEvent filters
 // ---------------------------------------------------------------------------
 
-/** Pattern position values an entry can match. */
-export type PatternPosition = 'origin' | 'terminal' | 'middle';
+/**
+ * Rider-perspective boardability at a stop event.
+ *
+ * - `'boardable'`    — the rider can board here.
+ * - `'notBoardable'` — the rider cannot board here.
+ */
+type BoardabilityState = 'boardable' | 'notBoardable';
+
+/**
+ * Pattern position values an entry can match.
+ *
+ * Maps to `patternPosition.isFirstStop` / `isLastStop` flags:
+ * - `'first'`        — `isFirstStop && !isLastStop`
+ * - `'last'`         — `!isFirstStop && isLastStop`
+ * - `'middle'`       — `!isFirstStop && !isLastStop`
+ * - `'firstAndLast'` — `isFirstStop && isLastStop` (single-stop pattern)
+ * - `'unknown'`      — reserved; no entry currently produces this value
+ *
+ * Note: `'last'` does NOT imply the trip terminates here — through-services
+ * continue beyond the feed boundary (e.g. TWR Rinkai at Osaki).
+ */
+type PatternPosition = 'first' | 'middle' | 'last' | 'firstAndLast' | 'unknown';
 
 /**
  * Pick-up state values an entry can match. Maps 1:1 to GTFS
- * `pickup_type` values (= boarding side, no `drop_off_type` involvement):
+ * `pickup_type` values (= operator-declared pickup signal):
  *
- * - `'boardable'` — `pickup_type === 0` (regular pickup).
- * - `'nonBoardable'` — `pickup_type === 1` (no pickup available).
- * - `'phoneArrangement'` — `pickup_type === 2` (phone agency to arrange).
- * - `'driverArrangement'` — `pickup_type === 3` (coordinate with driver).
+ * - `'regularlyScheduledPickup'` — `pickup_type === 0` (Regularly scheduled pickup).
+ * - `'noPickupAvailable'`        — `pickup_type === 1` (No pickup available).
+ * - `'mustPhoneAgency'`          — `pickup_type === 2` (Must phone agency to arrange pickup).
+ * - `'mustCoordinateWithDriver'` — `pickup_type === 3` (Must coordinate with driver to arrange pickup).
  */
-export type PickUpState = 'boardable' | 'nonBoardable' | 'phoneArrangement' | 'driverArrangement';
+type PickUpState =
+  | 'regularlyScheduledPickup'
+  | 'noPickupAvailable'
+  | 'mustPhoneAgency'
+  | 'mustCoordinateWithDriver';
 
 /**
  * Schedule range filter for departure / arrival times.
@@ -171,13 +206,11 @@ export interface ScheduleRangeFilter {
  * (AND semantics across axes); an undefined field disables that axis.
  * An empty Set yields no matches (literal interpretation).
  *
-
  * Semantics:
- * - 'origin' / 'terminal' map to `patternPosition.isFirstStop` /
- *   `.isLastStop`; 'middle' = neither. Single-stop trips
- *   (isFirstStop AND isLastStop) match both 'origin' and 'terminal'.
- * - 'boardable' / 'nonBoardable' / 'phoneArrangement' /
- *   'driverArrangement' map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3).
+ * - `PatternPosition` values map to `patternPosition.isFirstStop` /
+ *   `.isLastStop`; see {@link PatternPosition} for the full mapping.
+ * - `PickUpState` values map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3);
+ *   see {@link PickUpState} for the full mapping.
  *   `isLastStop` is NOT mixed in (use the position axis if needed).
  * - Schedule range is inclusive on both ends. `field` selects
  *   `entry.schedule.departureMinutes` (default) or
@@ -192,31 +225,49 @@ export interface StopEventAttributeFilters {
   position?: ReadonlySet<PatternPosition>;
 }
 
+/**
+ * Semantics:
+ * - `boardability` delegates to {@link isBoardableForPassenger} (passenger-perspective
+ *   heuristic). Distinct from the raw `pickUpState` axis.
+ */
+export interface StopEventBoardabilityFilters {
+  /** Boardability states to keep. Omit to disable. */
+  boardability?: ReadonlySet<BoardabilityState>;
+}
+
 function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosition>): boolean {
   const { isFirstStop, isLastStop } = entry.patternPosition;
-  if (isFirstStop && allowed.has('origin')) {
-    return true;
+  if (isFirstStop && isLastStop) {
+    return allowed.has('firstAndLast');
   }
-  if (isLastStop && allowed.has('terminal')) {
-    return true;
+  if (isFirstStop) {
+    return allowed.has('first');
   }
-  if (!isFirstStop && !isLastStop && allowed.has('middle')) {
-    return true;
+  if (isLastStop) {
+    return allowed.has('last');
   }
-  return false;
+  return allowed.has('middle');
 }
 
 function matchesPickUpState(entry: TimetableEntry, allowed: ReadonlySet<PickUpState>): boolean {
   switch (entry.boarding.pickupType) {
     case 0:
-      return allowed.has('boardable');
+      return allowed.has('regularlyScheduledPickup');
     case 1:
-      return allowed.has('nonBoardable');
+      return allowed.has('noPickupAvailable');
     case 2:
-      return allowed.has('phoneArrangement');
+      return allowed.has('mustPhoneAgency');
     case 3:
-      return allowed.has('driverArrangement');
+      return allowed.has('mustCoordinateWithDriver');
   }
+}
+
+export function matchesBoardability(
+  entry: TimetableEntry,
+  allowed: ReadonlySet<BoardabilityState>,
+): boolean {
+  const state: BoardabilityState = isBoardableForPassenger(entry) ? 'boardable' : 'notBoardable';
+  return allowed.has(state);
 }
 
 function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boolean {
@@ -237,6 +288,8 @@ function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boo
  *
  * Trip-level attributes (route, headsign, agency) are NOT considered —
  * use {@link filterByAgency} / {@link filterByRouteType} for those.
+ * For rider-perspective boardability filtering, use
+ * {@link filterByStopEventBoardability}.
  *
  * When all axes are undefined, the input reference is returned
  * unchanged (no allocation), so this is safe to call with an empty
@@ -264,19 +317,42 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
   });
 }
 
-/** Toggle bundle for {@link applyStopEventAttributeToggles}. */
+/**
+ * Filter entries by rider-perspective boardability in a single array pass.
+ *
+ * Boardability is judged by {@link isBoardableForPassenger} (passenger-side heuristic),
+ * not by raw GTFS attributes. For attribute-level filtering (pickup_type,
+ * pattern position, schedule), use {@link filterByStopEventAttributes}.
+ *
+ * When `boardability` is undefined, the input reference is returned
+ * unchanged (no allocation).
+ */
+export function filterByStopEventBoardability<T extends TimetableEntry>(
+  entries: readonly T[],
+  filters: StopEventBoardabilityFilters,
+): T[] {
+  const { boardability } = filters;
+  if (boardability === undefined) {
+    return entries as T[];
+  }
+  return entries.filter((entry) => {
+    if (!matchesBoardability(entry, boardability)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/** Toggle bundle for {@link filterTimetableEntries}. */
 export interface StopEventAttributeToggles {
   /**
-   * When true, narrows to entries where this stop is the trip's origin
-   * (= `entry.patternPosition.isFirstStop === true`). Includes
-   * non-boardable origins; combine with `showBoardableOnly` to
-   * intersect.
+   * When true, narrows to entries where this stop is the first stop of
+   * the trip.
    */
-  showOriginOnly: boolean;
+  showFirstStopOnly: boolean;
   /**
-   * When true, narrows to entries with `pickup_type === 0` whose
-   * `patternPosition` is `'origin'` or `'middle'` (i.e. not a pure
-   * terminal). Composes with `showOriginOnly` (AND) when both are on.
+   * When true, narrows to entries where the passenger can board,
+   * judged by {@link isBoardableForPassenger} (passenger-perspective heuristic).
    */
   showBoardableOnly: boolean;
 }
@@ -287,30 +363,36 @@ interface StopTimesCarrier<T extends TimetableEntry = TimetableEntry> {
 
 /**
  * Apply the user-facing entry-attribute toggles
- * (`showOriginOnly` / `showBoardableOnly`) to a list of entries.
+ * (`showFirstStopOnly` / `showBoardableOnly`) to a list of entries.
  *
- * Each enabled toggle narrows the result via
- * {@link filterByStopEventAttributes} (AND across toggles). When both
+ * Each enabled toggle independently narrows the result (AND across
+ * toggles): `showFirstStopOnly` via {@link filterByStopEventAttributes},
+ * `showBoardableOnly` via {@link filterByStopEventBoardability}. When both
  * toggles are false, the input reference is returned unchanged.
  *
  * Used by both BottomSheet (per-stop entries) and TimetableDialog (the
  * stop's full timetable) so the toggle semantics stay aligned across
  * surfaces.
  */
-export function applyStopEventAttributeToggles<T extends TimetableEntry>(
+export function filterTimetableEntries<T extends TimetableEntry>(
   entries: readonly T[],
   toggles: StopEventAttributeToggles,
 ): T[] {
   let result = entries as T[];
-  if (toggles.showOriginOnly) {
+  if (toggles.showFirstStopOnly) {
+    // First stop of the trip.
     result = filterByStopEventAttributes(result, {
-      position: new Set(['origin']),
+      position: new Set(['first', 'firstAndLast']),
     });
   }
   if (toggles.showBoardableOnly) {
-    result = filterByStopEventAttributes(result, {
-      pickUpState: new Set(['boardable']),
-      position: new Set(['origin', 'middle']),
+    // Entries considered boardable
+    result = filterByStopEventBoardability(result, {
+      // Only Boardable entries are kept; NotBoardable entries are filtered out.
+      boardability: new Set([
+        'boardable',
+        // 'notBoardable',
+      ]),
     });
   }
   return result;
@@ -324,15 +406,15 @@ export function applyStopEventAttributeToggles<T extends TimetableEntry>(
  * can decide in a separate step whether empty stops should remain for
  * placeholder rendering or be omitted from the list entirely.
  */
-export function applyStopEventAttributeTogglesToStops<T extends StopTimesCarrier>(
+export function filterTimetableEntriesToStops<T extends StopTimesCarrier>(
   stops: readonly T[],
   toggles: StopEventAttributeToggles,
 ): T[] {
-  if (!toggles.showOriginOnly && !toggles.showBoardableOnly) {
+  if (!toggles.showFirstStopOnly && !toggles.showBoardableOnly) {
     return stops as T[];
   }
   return stops.map((stop) => {
-    const filtered = applyStopEventAttributeToggles(stop.stopTimes, toggles);
+    const filtered = filterTimetableEntries(stop.stopTimes, toggles);
     return filtered === stop.stopTimes ? stop : { ...stop, stopTimes: filtered };
   });
 }

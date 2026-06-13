@@ -12,7 +12,7 @@ import {
   computeTransitDisplayDatumStats,
   type TransitDisplayDatumStats,
 } from '../compute-transit-display-datum-stats';
-import { isArrival, isDeparture } from '../timetable-entry-for-passenger';
+import { isArrival, isDeparture } from '../timetable-entry-for-transit-display';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the
@@ -182,15 +182,15 @@ export function categoryMinutes(
 
 /**
  * Whether an entry belongs on the given category's board: a departures
- * board lists entries judged boardable here ({@link isDeparture}), an
- * arrivals board entries judged alightable here ({@link isArrival}).
+ * board lists entries judged as departures ({@link isDeparture}), an
+ * arrivals board entries judged as arrivals ({@link isArrival}).
  *
- * This is the Transit Board's selection policy. It currently matches the
- * shared passenger-perspective judgments exactly; if the board ever needs
- * to deviate from them, this function is where that policy difference
- * belongs. Note that other surfaces apply their own filtering too (the
- * timetable dialog's simple/normal prepare step, the boardable-only
- * toggle) -- this board is not the only filter point.
+ * Both judgments live in `timetable-entry-for-transit-display.ts` and
+ * currently delegate to the shared passenger-perspective judgments; if
+ * the board ever needs to deviate from them, that module is where the
+ * policy difference belongs. Note that other surfaces apply their own
+ * filtering too (the timetable dialog's simple/normal prepare step, the
+ * boardable-only toggle) -- this board is not the only filter point.
  *
  * Known limitation (inherited from the interim judgments): through-services
  * at feed boundaries are excluded even when the signals say boardable --
@@ -200,21 +200,13 @@ export function categoryQualifies(
   timetableEntry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): boolean {
-  // [IMPORTANT] Use domain logic to determine boardability / alightability.
+  // [IMPORTANT] Use domain logic to determine whether this entry is a departure or an arrival.
 
   if (category === 'departures') {
     // [IMPORTANT] Use domain logic.
-    // A departures board lists trips you can actually leave on -- see
-    // isDeparture: boardable per the signal and not the pattern's last stop
-    // (the trip ends there; excludes boarding-prohibited stops such as the
-    // drop-off-only stop just before a terminus).
     return isDeparture(timetableEntry);
   }
   // [IMPORTANT] Use domain logic.
-  // An arrivals board lists trips you can alight from here -- see isArrival:
-  // alightable per the signal and not the pattern's first stop (the trip
-  // starts there; excludes pickup-only legs such as the boarding leg of a
-  // turn-around / boarding-swap stop).
   return isArrival(timetableEntry);
 }
 

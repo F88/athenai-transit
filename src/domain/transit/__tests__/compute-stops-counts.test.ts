@@ -67,11 +67,13 @@ describe('computeStopsCounts', () => {
       total: 5,
       nonEmpty: 4,
       originCount: 2,
-      boardableCount: 2,
+      // oneStopTrip is NOT boardable: isBoardableForPassenger treats a last-stop row
+      // as not boardable even when it is also the first stop.
+      boardableCount: 1,
     });
   });
 
-  it('treats boardability according to pickup_type === 0 && (isFirstStop || !isLastStop)', () => {
+  it('judges boardability by isBoardableForPassenger (boardable signal AND not the last stop)', () => {
     const pureTerminal = {
       stopTimes: [makeEntry({ isFirstStop: false, isLastStop: true, pickupType: 0 })],
     };
@@ -81,15 +83,33 @@ describe('computeStopsCounts', () => {
     const middle = {
       stopTimes: [makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 0 })],
     };
+    const noPickupMiddle = {
+      stopTimes: [makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 1 })],
+    };
     const phoneArrangement = {
       stopTimes: [makeEntry({ isFirstStop: true, isLastStop: false, pickupType: 2 })],
     };
+    const driverArrangement = {
+      stopTimes: [makeEntry({ isFirstStop: false, isLastStop: false, pickupType: 3 })],
+    };
 
-    expect(computeStopsCounts([pureTerminal, oneStopTrip, middle, phoneArrangement])).toEqual({
-      total: 4,
-      nonEmpty: 4,
+    // boardable: middle (pt=0), phoneArrangement (pt=2), driverArrangement
+    // (pt=3). Not boardable: pureTerminal / oneStopTrip (last stop),
+    // noPickupMiddle (pt=1).
+    expect(
+      computeStopsCounts([
+        pureTerminal,
+        oneStopTrip,
+        middle,
+        noPickupMiddle,
+        phoneArrangement,
+        driverArrangement,
+      ]),
+    ).toEqual({
+      total: 6,
+      nonEmpty: 6,
       originCount: 2,
-      boardableCount: 2,
+      boardableCount: 3,
     });
   });
 });

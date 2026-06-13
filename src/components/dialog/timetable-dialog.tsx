@@ -28,7 +28,7 @@ import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/g
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
-import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
+import { filterTimetableEntries } from '@/domain/transit/timetable-filter';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -362,8 +362,8 @@ export const TimetableDialog = memo(function TimetableDialog({
 
   const stopEventAttributesFilteredEntries = useMemo(
     () =>
-      applyStopEventAttributeToggles(allTimetableEntries, {
-        showOriginOnly,
+      filterTimetableEntries(allTimetableEntries, {
+        showFirstStopOnly: showOriginOnly,
         showBoardableOnly,
       }),
     [allTimetableEntries, showOriginOnly, showBoardableOnly],

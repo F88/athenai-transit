@@ -1,6 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { canAlight, canBoard, isArrival, isDeparture } from '../timetable-entry-for-passenger';
+import {
+  canAlight,
+  canBoard,
+  canBoardSignal,
+  isAlightableForPassenger,
+  isBoardableForPassenger,
+  isBoardableForPassengerSignal,
+} from '../timetable-entry-for-passenger';
 import { makeEntry } from './make-timetable-entry';
+
+// ---------------------------------------------------------------------------
+// canBoardSignal
+// ---------------------------------------------------------------------------
+
+describe('canBoardSignal', () => {
+  it('interprets each pickup_type value', () => {
+    expect(canBoardSignal(0)).toBe(true); // regularly scheduled pickup
+    expect(canBoardSignal(1)).toBe(false); // no pickup available
+    expect(canBoardSignal(2)).toBe(true); // must phone agency
+    expect(canBoardSignal(3)).toBe(true); // must coordinate with driver
+  });
+});
 
 // ---------------------------------------------------------------------------
 // canBoard
@@ -73,46 +93,46 @@ describe('canAlight', () => {
 });
 
 // ---------------------------------------------------------------------------
-// isDeparture (PROVISIONAL interim rule: canBoard && !isLastStop)
+// isBoardableForPassenger (PROVISIONAL interim rule: canBoard && !isLastStop)
 // ---------------------------------------------------------------------------
 
-describe('isDeparture', () => {
+describe('isBoardableForPassenger', () => {
   it('returns true for a regular mid-route stop (pickupType 0)', () => {
-    expect(isDeparture(makeEntry({ pickupType: 0 }))).toBe(true);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 0 }))).toBe(true);
   });
 
   it('returns true for the first stop (a trip departs from its first stop)', () => {
-    expect(isDeparture(makeEntry({ pickupType: 0, isFirstStop: true }))).toBe(true);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 0, isFirstStop: true }))).toBe(true);
   });
 
   it('returns false when pickupType is 1 (no pickup available)', () => {
-    expect(isDeparture(makeEntry({ pickupType: 1 }))).toBe(false);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 1 }))).toBe(false);
   });
 
   it('returns false for the last stop even when the signal says boardable', () => {
-    expect(isDeparture(makeEntry({ pickupType: 0, isLastStop: true }))).toBe(false);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 0, isLastStop: true }))).toBe(false);
   });
 
   it('returns false for the last stop with pickupType 1 (both reasons)', () => {
-    expect(isDeparture(makeEntry({ pickupType: 1, isLastStop: true }))).toBe(false);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 1, isLastStop: true }))).toBe(false);
   });
 
   it('returns true for arrangement-required boarding (pickupType 2 / 3) mid-route', () => {
-    expect(isDeparture(makeEntry({ pickupType: 2 }))).toBe(true);
-    expect(isDeparture(makeEntry({ pickupType: 3 }))).toBe(true);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 2 }))).toBe(true);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 3 }))).toBe(true);
   });
 
   it('ignores dropOffType', () => {
-    expect(isDeparture(makeEntry({ pickupType: 0, dropOffType: 1 }))).toBe(true);
+    expect(isBoardableForPassenger(makeEntry({ pickupType: 0, dropOffType: 1 }))).toBe(true);
   });
 
   it('returns false for a single-stop pattern (isFirstStop && isLastStop) under the interim rule', () => {
     // Current PROVISIONAL behavior: the last-stop inference wins even on
     // single-stop patterns (e.g. Tokyo Metro through-trips onto JR with one
     // served row at Ayase, pickup 0). Revisiting this is part of Issue #162.
-    expect(isDeparture(makeEntry({ pickupType: 0, isFirstStop: true, isLastStop: true }))).toBe(
-      false,
-    );
+    expect(
+      isBoardableForPassenger(makeEntry({ pickupType: 0, isFirstStop: true, isLastStop: true })),
+    ).toBe(false);
   });
 
   it('matches the interim truth table for every signal/position combination', () => {
@@ -128,7 +148,7 @@ describe('isDeparture', () => {
           const expected = !isLastStop && pickupType !== 1;
           const entry = makeEntry({ pickupType, isFirstStop, isLastStop });
           expect(
-            isDeparture(entry),
+            isBoardableForPassenger(entry),
             `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
           ).toBe(expected);
         }
@@ -138,44 +158,76 @@ describe('isDeparture', () => {
 });
 
 // ---------------------------------------------------------------------------
-// isArrival (PROVISIONAL interim rule: canAlight && !isFirstStop)
+// isBoardableForPassengerSignal
 // ---------------------------------------------------------------------------
 
-describe('isArrival', () => {
+describe('isBoardableForPassengerSignal', () => {
+  it('judges from the raw pickup_type and the last-stop flag', () => {
+    expect(isBoardableForPassengerSignal(0, false)).toBe(true);
+    expect(isBoardableForPassengerSignal(1, false)).toBe(false);
+    expect(isBoardableForPassengerSignal(0, true)).toBe(false);
+    expect(isBoardableForPassengerSignal(2, false)).toBe(true);
+    expect(isBoardableForPassengerSignal(3, false)).toBe(true);
+  });
+
+  it('matches isBoardableForPassenger for every signal/position combination', () => {
+    // The entry-based judgment delegates here; this pins the equivalence
+    // from the other side so the two forms cannot drift apart.
+    const pickupTypes = [0, 1, 2, 3] as const;
+    const flags = [false, true] as const;
+    for (const pickupType of pickupTypes) {
+      for (const isFirstStop of flags) {
+        for (const isLastStop of flags) {
+          const entry = makeEntry({ pickupType, isFirstStop, isLastStop });
+          expect(
+            isBoardableForPassengerSignal(pickupType, isLastStop),
+            `pickup=${pickupType} first=${isFirstStop} last=${isLastStop}`,
+          ).toBe(isBoardableForPassenger(entry));
+        }
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAlightableForPassenger (PROVISIONAL interim rule: canAlight && !isFirstStop)
+// ---------------------------------------------------------------------------
+
+describe('isAlightableForPassenger', () => {
   it('returns true for a regular mid-route stop (dropOffType 0)', () => {
-    expect(isArrival(makeEntry({ dropOffType: 0 }))).toBe(true);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 0 }))).toBe(true);
   });
 
   it('returns true for the last stop (a trip arrives at its last stop)', () => {
-    expect(isArrival(makeEntry({ dropOffType: 0, isLastStop: true }))).toBe(true);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 0, isLastStop: true }))).toBe(true);
   });
 
   it('returns false when dropOffType is 1 (no drop off available)', () => {
-    expect(isArrival(makeEntry({ dropOffType: 1 }))).toBe(false);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 1 }))).toBe(false);
   });
 
   it('returns false for the first stop even when the signal says alightable', () => {
-    expect(isArrival(makeEntry({ dropOffType: 0, isFirstStop: true }))).toBe(false);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 0, isFirstStop: true }))).toBe(false);
   });
 
   it('returns false for the first stop with dropOffType 1 (both reasons)', () => {
-    expect(isArrival(makeEntry({ dropOffType: 1, isFirstStop: true }))).toBe(false);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 1, isFirstStop: true }))).toBe(false);
   });
 
   it('returns true for arrangement-required alighting (dropOffType 2 / 3) mid-route', () => {
-    expect(isArrival(makeEntry({ dropOffType: 2 }))).toBe(true);
-    expect(isArrival(makeEntry({ dropOffType: 3 }))).toBe(true);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 2 }))).toBe(true);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 3 }))).toBe(true);
   });
 
   it('ignores pickupType', () => {
-    expect(isArrival(makeEntry({ dropOffType: 0, pickupType: 1 }))).toBe(true);
+    expect(isAlightableForPassenger(makeEntry({ dropOffType: 0, pickupType: 1 }))).toBe(true);
   });
 
   it('returns false for a single-stop pattern (isFirstStop && isLastStop) under the interim rule', () => {
-    // Mirror of the isDeparture single-stop case; see Issue #162.
-    expect(isArrival(makeEntry({ dropOffType: 0, isFirstStop: true, isLastStop: true }))).toBe(
-      false,
-    );
+    // Mirror of the isBoardableForPassenger single-stop case; see Issue #162.
+    expect(
+      isAlightableForPassenger(makeEntry({ dropOffType: 0, isFirstStop: true, isLastStop: true })),
+    ).toBe(false);
   });
 
   it('matches the interim truth table for every signal/position combination', () => {
@@ -191,7 +243,7 @@ describe('isArrival', () => {
           const expected = !isFirstStop && dropOffType !== 1;
           const entry = makeEntry({ dropOffType, isFirstStop, isLastStop });
           expect(
-            isArrival(entry),
+            isAlightableForPassenger(entry),
             `dropOff=${dropOffType} first=${isFirstStop} last=${isLastStop}`,
           ).toBe(expected);
         }

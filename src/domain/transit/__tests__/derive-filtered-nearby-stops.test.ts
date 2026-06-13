@@ -194,7 +194,7 @@ describe('deriveFilteredNearbyStops', () => {
   });
 
   it('narrows entries to the intersection (origin AND boardable) when both toggles are on', () => {
-    // applyStopEventAttributeToggles applies each toggle as a separate
+    // filterTimetableEntries applies each toggle as a separate
     // narrowing step, so the result is the AND of both. The selector
     // must propagate that intersection through to `filtered` and have
     // `filteredCounts` reflect the post-AND tally.
@@ -268,7 +268,7 @@ describe('deriveFilteredNearbyStops', () => {
   });
 
   it('produces a new stop object when toggles transform its stopTimes (does not mutate input)', () => {
-    // With showOriginOnly on, `applyStopEventAttributeTogglesToStops`
+    // With showOriginOnly on, `filterTimetableEntriesToStops`
     // produces a fresh outer object whose `stopTimes` is the narrowed
     // entry array. The wrapper must NOT be the same reference as the
     // input -- that would mean we mutated input -- but the inner `stop`
@@ -540,7 +540,7 @@ describe('deriveFilteredNearbyStops', () => {
 
   it('returns the same stops list reference when no filter touches it', () => {
     // When all globalFilter toggles are off and omitEmptyStops is false,
-    // applyStopEventAttributeTogglesToStops returns its input unchanged,
+    // filterTimetableEntriesToStops returns its input unchanged,
     // so `filtered` should be the route-type-filtered slice directly.
     // The element references themselves must be preserved.
     const stop = makeStopWithContext('s', [3], [makeEntry()]);

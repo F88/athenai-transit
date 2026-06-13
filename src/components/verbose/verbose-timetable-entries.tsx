@@ -102,8 +102,8 @@ export function VerboseTimetableEntry({
             [pattern] si={timetableEntry.patternPosition.stopIndex} [
             {timetableEntry.patternPosition.stopIndex + 1}/
             {timetableEntry.patternPosition.totalStops}]
-            {timetableEntry.patternPosition.isLastStop && ' TERM'}
-            {timetableEntry.patternPosition.isFirstStop && ' ORIG'}
+            {timetableEntry.patternPosition.isFirstStop && ' FirstStop'}
+            {timetableEntry.patternPosition.isLastStop && ' LastStop'}
           </span>
           <span className="block pl-2 font-mono text-xs">
             {renderPatternBar(

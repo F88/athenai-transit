@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
 import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import {
-  applyStopEventAttributeToggles,
-  applyStopEventAttributeTogglesToStops,
+  filterTimetableEntries,
+  filterTimetableEntriesToStops,
   filterByAgency,
   filterByRouteType,
   filterByStopEventAttributes,
+  matchesBoardability,
   omitStopsWithoutStopTimes,
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -196,21 +197,21 @@ describe('prepareStopTimetable', () => {
       expect(result.entries[1].schedule.departureMinutes).toBe(540);
     });
 
-    it('keeps only pickupType=0 entries (1/2/3 all removed)', () => {
-      // The new caller uses pickUpState: Set(['boardable']) which maps
-      // 1:1 to pickup_type === 0. Entries with pickupType 1/2/3 are all
-      // classified as non-boardable / phoneArrangement / driverArrangement
-      // respectively and excluded.
+    it('keeps pickup_type=0/2/3 entries; removes only pickup_type=1 (noPickupAvailable)', () => {
+      // pickup_type=2 (mustPhoneAgency) and 3 (mustCoordinateWithDriver) are
+      // operator-arranged pickup signals — boarding is still possible, so they
+      // are kept alongside pickup_type=0. Only pickup_type=1 (noPickupAvailable)
+      // is excluded.
       const entries = [
-        makeEntry({ pickupType: 0 }), // kept (boardable)
-        makeEntry({ pickupType: 1 }), // removed (nonBoardable)
-        makeEntry({ pickupType: 2 }), // removed (phoneArrangement)
-        makeEntry({ pickupType: 3 }), // removed (driverArrangement)
+        makeEntry({ pickupType: 0 }), // kept (regularlyScheduledPickup)
+        makeEntry({ pickupType: 1 }), // removed (noPickupAvailable)
+        makeEntry({ pickupType: 2 }), // kept (mustPhoneAgency)
+        makeEntry({ pickupType: 3 }), // kept (mustCoordinateWithDriver)
         makeEntry({ dropOffType: 1 }), // kept (default pickupType=0, drop-off side ignored)
       ];
       const result = prepareStopTimetable(entries, false);
-      expect(result.entries).toHaveLength(2);
-      expect(result.omitted.nonBoardable).toBe(3);
+      expect(result.entries).toHaveLength(4);
+      expect(result.omitted.nonBoardable).toBe(1);
     });
 
     it('isFirstStop alone does not trigger removal (origin remains boardable)', () => {
@@ -242,7 +243,7 @@ describe('prepareStopTimetable', () => {
 
     it('1-stop trip (isFirstStop && isLastStop, pickupType=0) is kept as origin', () => {
       // 1-stop trips have the same stop as both origin and terminal.
-      // The position axis matches via 'origin', and pickUpState='boardable'
+      // The position axis matches via 'origin', and pickUpState='regularlyScheduledPickup'
       // matches pickup_type=0, so the entry is kept (= depot/yard origin).
       const entries = [makeEntry({ isLastStop: true, isFirstStop: true }), makeEntry()];
       const result = prepareStopTimetable(entries, false);
@@ -449,10 +450,8 @@ describe('prepareRouteHeadsignTimetable', () => {
       expect(result.entries[1].schedule.departureMinutes).toBe(540);
     });
 
-    it('keeps only pickupType=0 entries within route+headsign (1/2/3 all removed)', () => {
-      // The new caller uses pickUpState: Set(['boardable']) which maps
-      // 1:1 to pickup_type === 0. Entries with pickupType 1/2/3 are all
-      // excluded.
+    it('keeps pickup_type=0/2/3 entries within route+headsign; removes only pickup_type=1', () => {
+      // Same rule as prepareStopTimetable: pickup_type=2/3 are kept.
       const entries = [
         makeEntry({ route: routeA, headsign: 'North', pickupType: 0 }),
         makeEntry({ route: routeA, headsign: 'North', pickupType: 1 }),
@@ -461,8 +460,8 @@ describe('prepareRouteHeadsignTimetable', () => {
         makeEntry({ route: routeA, headsign: 'North', dropOffType: 1 }),
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
-      expect(result.entries).toHaveLength(2);
-      expect(result.omitted.nonBoardable).toBe(3);
+      expect(result.entries).toHaveLength(4);
+      expect(result.omitted.nonBoardable).toBe(1);
     });
 
     it('1-stop trip (isFirstStop && isLastStop) is kept as origin within route+headsign', () => {
@@ -650,12 +649,12 @@ describe('filterByRouteType', () => {
   });
 });
 
-describe('applyStopEventAttributeTogglesToStops', () => {
+describe('filterTimetableEntriesToStops', () => {
   it('returns the input reference unchanged when both toggles are false', () => {
     const stops = [{ stopTimes: [makeEntry({ isFirstStop: true })] }, { stopTimes: [makeEntry()] }];
 
-    const result = applyStopEventAttributeTogglesToStops(stops, {
-      showOriginOnly: false,
+    const result = filterTimetableEntriesToStops(stops, {
+      showFirstStopOnly: false,
       showBoardableOnly: false,
     });
 
@@ -666,8 +665,8 @@ describe('applyStopEventAttributeTogglesToStops', () => {
     const untouched = { stopTimes: [makeEntry({ isFirstStop: true })] };
     const changed = { stopTimes: [makeEntry({ isFirstStop: false })] };
 
-    const result = applyStopEventAttributeTogglesToStops([untouched, changed], {
-      showOriginOnly: true,
+    const result = filterTimetableEntriesToStops([untouched, changed], {
+      showFirstStopOnly: true,
       showBoardableOnly: false,
     });
 
@@ -681,8 +680,8 @@ describe('applyStopEventAttributeTogglesToStops', () => {
 
   it('handles empty input', () => {
     expect(
-      applyStopEventAttributeTogglesToStops([], {
-        showOriginOnly: true,
+      filterTimetableEntriesToStops([], {
+        showFirstStopOnly: true,
         showBoardableOnly: true,
       }),
     ).toEqual([]);
@@ -731,45 +730,45 @@ describe('filterByStopEventAttributes', () => {
 
     it('returns an empty array when active axes are provided for empty input', () => {
       const result = filterByStopEventAttributes([], {
-        position: new Set(['origin']),
-        pickUpState: new Set(['boardable']),
+        position: new Set(['first']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
       expect(result).toEqual([]);
     });
   });
 
   describe('position axis', () => {
-    const origin = makeEntry({ isFirstStop: true, departureMinutes: 480 });
-    const terminal = makeEntry({ isLastStop: true, departureMinutes: 540 });
+    const first = makeEntry({ isFirstStop: true, departureMinutes: 480 });
+    const last = makeEntry({ isLastStop: true, departureMinutes: 540 });
     const middle = makeEntry({ departureMinutes: 600 });
-    const entries = [origin, terminal, middle];
+    const entries = [first, last, middle];
 
-    it('keeps only origin entries', () => {
+    it('keeps only first entries', () => {
       const result = filterByStopEventAttributes(entries, {
-        position: new Set(['origin']),
+        position: new Set(['first']),
       });
-      expect(result).toEqual([origin]);
+      expect(result).toEqual([first]);
     });
 
-    it('keeps only terminal entries', () => {
+    it('keeps only last entries', () => {
       const result = filterByStopEventAttributes(entries, {
-        position: new Set(['terminal']),
+        position: new Set(['last']),
       });
-      expect(result).toEqual([terminal]);
+      expect(result).toEqual([last]);
     });
 
-    it('keeps only middle entries (= neither origin nor terminal)', () => {
+    it('keeps only middle entries (= neither first nor last)', () => {
       const result = filterByStopEventAttributes(entries, {
         position: new Set(['middle']),
       });
       expect(result).toEqual([middle]);
     });
 
-    it('keeps origin OR terminal when both are listed', () => {
+    it('keeps first OR last when both are listed', () => {
       const result = filterByStopEventAttributes(entries, {
-        position: new Set(['origin', 'terminal']),
+        position: new Set(['first', 'last']),
       });
-      expect(result).toEqual([origin, terminal]);
+      expect(result).toEqual([first, last]);
     });
 
     it('returns empty array for an empty Set (literal "match nothing")', () => {
@@ -782,18 +781,25 @@ describe('filterByStopEventAttributes', () => {
     describe('single-stop trip (isFirstStop AND isLastStop)', () => {
       const oneStop = makeEntry({ isFirstStop: true, isLastStop: true });
 
-      it('matches "origin"', () => {
+      it('matches "firstAndLast"', () => {
         const result = filterByStopEventAttributes([oneStop], {
-          position: new Set(['origin']),
+          position: new Set(['firstAndLast']),
         });
         expect(result).toEqual([oneStop]);
       });
 
-      it('matches "terminal"', () => {
+      it('does NOT match "first" alone', () => {
         const result = filterByStopEventAttributes([oneStop], {
-          position: new Set(['terminal']),
+          position: new Set(['first']),
         });
-        expect(result).toEqual([oneStop]);
+        expect(result).toEqual([]);
+      });
+
+      it('does NOT match "last" alone', () => {
+        const result = filterByStopEventAttributes([oneStop], {
+          position: new Set(['last']),
+        });
+        expect(result).toEqual([]);
       });
 
       it('does NOT match "middle"', () => {
@@ -807,37 +813,37 @@ describe('filterByStopEventAttributes', () => {
 
   describe('pickUpState axis', () => {
     // Maps 1:1 to GTFS pickup_type values; isLastStop is NOT mixed in.
-    const pt0Plain = makeEntry({ pickupType: 0, departureMinutes: 480 }); // boardable
-    const pt1Plain = makeEntry({ pickupType: 1, departureMinutes: 540 }); // nonBoardable
-    const pt0Terminal = makeEntry({ pickupType: 0, isLastStop: true, departureMinutes: 600 }); // still boardable (pt=0)
-    const pt2Plain = makeEntry({ pickupType: 2, departureMinutes: 660 }); // phoneArrangement
-    const pt3Plain = makeEntry({ pickupType: 3, departureMinutes: 720 }); // driverArrangement
+    const pt0Plain = makeEntry({ pickupType: 0, departureMinutes: 480 }); // regularlyScheduledPickup
+    const pt1Plain = makeEntry({ pickupType: 1, departureMinutes: 540 }); // noPickupAvailable
+    const pt0Terminal = makeEntry({ pickupType: 0, isLastStop: true, departureMinutes: 600 }); // regularlyScheduledPickup (pt=0)
+    const pt2Plain = makeEntry({ pickupType: 2, departureMinutes: 660 }); // mustPhoneAgency
+    const pt3Plain = makeEntry({ pickupType: 3, departureMinutes: 720 }); // mustCoordinateWithDriver
     const entries = [pt0Plain, pt1Plain, pt0Terminal, pt2Plain, pt3Plain];
 
-    it('keeps boardable entries (= pickup_type === 0) regardless of isLastStop', () => {
+    it('keeps regularlyScheduledPickup entries (= pickup_type === 0) regardless of isLastStop', () => {
       const result = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['boardable']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
       expect(result).toEqual([pt0Plain, pt0Terminal]);
     });
 
-    it('keeps nonBoardable entries (= pickup_type === 1)', () => {
+    it('keeps noPickupAvailable entries (= pickup_type === 1)', () => {
       const result = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['nonBoardable']),
+        pickUpState: new Set(['noPickupAvailable']),
       });
       expect(result).toEqual([pt1Plain]);
     });
 
-    it('keeps phoneArrangement entries (= pickup_type === 2)', () => {
+    it('keeps mustPhoneAgency entries (= pickup_type === 2)', () => {
       const result = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['phoneArrangement']),
+        pickUpState: new Set(['mustPhoneAgency']),
       });
       expect(result).toEqual([pt2Plain]);
     });
 
-    it('keeps driverArrangement entries (= pickup_type === 3)', () => {
+    it('keeps mustCoordinateWithDriver entries (= pickup_type === 3)', () => {
       const result = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['driverArrangement']),
+        pickUpState: new Set(['mustCoordinateWithDriver']),
       });
       expect(result).toEqual([pt3Plain]);
     });
@@ -845,18 +851,18 @@ describe('filterByStopEventAttributes', () => {
     it('keeps everything when all four states are listed', () => {
       const result = filterByStopEventAttributes(entries, {
         pickUpState: new Set([
-          'boardable',
-          'nonBoardable',
-          'phoneArrangement',
-          'driverArrangement',
+          'regularlyScheduledPickup',
+          'noPickupAvailable',
+          'mustPhoneAgency',
+          'mustCoordinateWithDriver',
         ]),
       });
       expect(result).toEqual(entries);
     });
 
-    it('keeps multiple states as union (boardable OR nonBoardable)', () => {
+    it('keeps multiple states as union (regularlyScheduledPickup OR noPickupAvailable)', () => {
       const result = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['boardable', 'nonBoardable']),
+        pickUpState: new Set(['regularlyScheduledPickup', 'noPickupAvailable']),
       });
       expect(result).toEqual([pt0Plain, pt1Plain, pt0Terminal]);
     });
@@ -868,12 +874,12 @@ describe('filterByStopEventAttributes', () => {
       expect(result).toEqual([]);
     });
 
-    it('classifies a single-stop trip (isFirstStop && isLastStop, pt=0) as boardable', () => {
+    it('classifies a single-stop trip (isFirstStop && isLastStop, pt=0) as regularlyScheduledPickup', () => {
       // pickUpState only looks at pickup_type; isFirstStop / isLastStop
       // do not influence the classification.
       const oneStop = makeEntry({ isFirstStop: true, isLastStop: true, pickupType: 0 });
       const result = filterByStopEventAttributes([oneStop], {
-        pickUpState: new Set(['boardable']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
       expect(result).toEqual([oneStop]);
     });
@@ -960,18 +966,18 @@ describe('filterByStopEventAttributes', () => {
     const terminalDropOff = makeEntry({ isLastStop: true, departureMinutes: 720 });
     const entries = [originBoardable, originDropOff, middleBoardable, terminalDropOff];
 
-    it('combines position and pickUpState (origin AND boardable)', () => {
+    it('combines position and pickUpState (first AND boardable)', () => {
       const result = filterByStopEventAttributes(entries, {
-        position: new Set(['origin']),
-        pickUpState: new Set(['boardable']),
+        position: new Set(['first', 'firstAndLast']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
       expect(result).toEqual([originBoardable]);
     });
 
     it('combines all three axes', () => {
       const result = filterByStopEventAttributes(entries, {
-        position: new Set(['origin', 'middle']),
-        pickUpState: new Set(['boardable']),
+        position: new Set(['first', 'middle', 'firstAndLast']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
         schedule: { fromMinutes: 600, toMinutes: 720 },
       });
       expect(result).toEqual([middleBoardable]);
@@ -989,8 +995,8 @@ describe('filterByStopEventAttributes', () => {
       const result = filterByStopEventAttributes(
         [originEarlyArrival, originLateArrival, middleLateArrival, originLateDropOff],
         {
-          position: new Set(['origin']),
-          pickUpState: new Set(['boardable']),
+          position: new Set(['first', 'firstAndLast']),
+          pickUpState: new Set(['regularlyScheduledPickup']),
           schedule: { field: 'arrival', fromMinutes: 540 },
         },
       );
@@ -998,10 +1004,10 @@ describe('filterByStopEventAttributes', () => {
       expect(result).toEqual([originLateArrival]);
     });
 
-    it('keeps a single-stop trip when origin/terminal and boardable both match', () => {
-      // 1-stop trip (isFirstStop && isLastStop) matches both 'origin' and
-      // 'terminal'. With pickup_type=0 the entry is also classified as
-      // boardable, so all axes match and the entry is kept.
+    it('keeps a single-stop trip when firstAndLast and boardable both match', () => {
+      // 1-stop trip (isFirstStop && isLastStop) matches 'firstAndLast'.
+      // With pickup_type=0 the entry is also classified as boardable,
+      // so all axes match and the entry is kept.
       const oneStop = makeEntry({
         isFirstStop: true,
         isLastStop: true,
@@ -1009,8 +1015,8 @@ describe('filterByStopEventAttributes', () => {
         departureMinutes: 540,
       });
       const result = filterByStopEventAttributes([oneStop], {
-        position: new Set(['origin', 'terminal']),
-        pickUpState: new Set(['boardable']),
+        position: new Set(['firstAndLast']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
       expect(result).toEqual([oneStop]);
     });
@@ -1021,7 +1027,7 @@ describe('filterByStopEventAttributes', () => {
       // Type-level check: `tsc --noEmit` will fail if the function ever
       // narrows the result back to `TimetableEntry[]`. Runtime is just a
       // sanity smoke test that the call works. Both entries have
-      // pickup_type=0 (default), so pickUpState='boardable' keeps both
+      // pickup_type=0 (default), so pickUpState='regularlyScheduledPickup' keeps both
       // regardless of isLastStop.
       const branded: (TimetableEntry & { _brand: 'sample' })[] = [
         Object.assign(makeEntry(), { _brand: 'sample' as const }),
@@ -1029,7 +1035,7 @@ describe('filterByStopEventAttributes', () => {
       ];
       const filtered: (TimetableEntry & { _brand: 'sample' })[] = filterByStopEventAttributes(
         branded,
-        { pickUpState: new Set(['boardable']) },
+        { pickUpState: new Set(['regularlyScheduledPickup']) },
       );
       expect(filtered).toHaveLength(1);
       // Element type is preserved, so accessing the brand compiles.
@@ -1049,7 +1055,7 @@ describe('filterByStopEventAttributes', () => {
       ];
 
       const filtered: ContextualTimetableEntry[] = filterByStopEventAttributes(contextual, {
-        pickUpState: new Set(['boardable']),
+        pickUpState: new Set(['regularlyScheduledPickup']),
       });
 
       expect(filtered).toHaveLength(1);
@@ -1059,10 +1065,10 @@ describe('filterByStopEventAttributes', () => {
 });
 
 // ---------------------------------------------------------------------------
-// applyStopEventAttributeToggles
+// filterTimetableEntries
 // ---------------------------------------------------------------------------
 
-describe('applyStopEventAttributeToggles', () => {
+describe('filterTimetableEntries', () => {
   const originPt0 = makeEntry({ isFirstStop: true, pickupType: 0, departureMinutes: 480 });
   const originPt1 = makeEntry({ isFirstStop: true, pickupType: 1, departureMinutes: 540 });
   const middlePt0 = makeEntry({ pickupType: 0, departureMinutes: 600 });
@@ -1072,8 +1078,8 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('identity / fast-path', () => {
     it('returns the input reference unchanged when both toggles are false', () => {
-      const result = applyStopEventAttributeToggles(entries, {
-        showOriginOnly: false,
+      const result = filterTimetableEntries(entries, {
+        showFirstStopOnly: false,
         showBoardableOnly: false,
       });
       expect(result).toBe(entries);
@@ -1082,8 +1088,8 @@ describe('applyStopEventAttributeToggles', () => {
 
   describe('showOriginOnly only', () => {
     it('keeps origin entries (boardable AND non-boardable origins)', () => {
-      const result = applyStopEventAttributeToggles(entries, {
-        showOriginOnly: true,
+      const result = filterTimetableEntries(entries, {
+        showFirstStopOnly: true,
         showBoardableOnly: false,
       });
       expect(result).toEqual([originPt0, originPt1]);
@@ -1091,24 +1097,24 @@ describe('applyStopEventAttributeToggles', () => {
   });
 
   describe('showBoardableOnly only', () => {
-    it('keeps pickup_type=0 entries at non-pure-terminal positions', () => {
-      const result = applyStopEventAttributeToggles(entries, {
-        showOriginOnly: false,
+    it('keeps pickup_type=0/2/3 entries at non-pure-terminal positions', () => {
+      const result = filterTimetableEntries(entries, {
+        showFirstStopOnly: false,
         showBoardableOnly: true,
       });
       // originPt0 (origin, pt=0): kept
-      // originPt1 (origin, pt=1): excluded by pickUpState
+      // originPt1 (origin, pt=1): excluded by pickUpState (noPickupAvailable)
       // middlePt0 (middle, pt=0): kept
-      // middlePt2 (middle, pt=2): excluded by pickUpState
+      // middlePt2 (middle, pt=2): kept (mustPhoneAgency -- boarding is possible)
       // terminalPt0 (pure terminal, pt=0): excluded by position
-      expect(result).toEqual([originPt0, middlePt0]);
+      expect(result).toEqual([originPt0, middlePt0, middlePt2]);
     });
   });
 
   describe('both toggles on (AND composition)', () => {
     it('keeps only origin AND boardable entries', () => {
-      const result = applyStopEventAttributeToggles(entries, {
-        showOriginOnly: true,
+      const result = filterTimetableEntries(entries, {
+        showFirstStopOnly: true,
         showBoardableOnly: true,
       });
       // originPt0 alone matches: isFirstStop=true AND pickup_type=0
@@ -1122,12 +1128,55 @@ describe('applyStopEventAttributeToggles', () => {
         { ...makeEntry({ isFirstStop: true, pickupType: 0 }), serviceDate: new Date(2026, 3, 30) },
         { ...makeEntry({ pickupType: 1 }), serviceDate: new Date(2026, 3, 30) },
       ];
-      const filtered: ContextualTimetableEntry[] = applyStopEventAttributeToggles(contextual, {
-        showOriginOnly: true,
+      const filtered: ContextualTimetableEntry[] = filterTimetableEntries(contextual, {
+        showFirstStopOnly: true,
         showBoardableOnly: false,
       });
       expect(filtered).toHaveLength(1);
       expect(filtered[0].serviceDate.getTime()).toBe(contextual[0].serviceDate.getTime());
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// matchesBoardability
+// ---------------------------------------------------------------------------
+
+describe('matchesBoardability', () => {
+  // boardable: pickup_type=0, middle stop (isBoardableForPassenger === true)
+  const boardable = makeEntry({ pickupType: 0, isFirstStop: false, isLastStop: false });
+  // not-boardable: last stop (isBoardableForPassenger === false regardless of pickup signal)
+  const notBoardable = makeEntry({ pickupType: 0, isLastStop: true });
+
+  it('empty set -> false for boardable entry', () => {
+    expect(matchesBoardability(boardable, new Set())).toBe(false);
+  });
+
+  it('empty set -> false for not-boardable entry', () => {
+    expect(matchesBoardability(notBoardable, new Set())).toBe(false);
+  });
+
+  it("Set(['boardable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['boardable']))).toBe(true);
+  });
+
+  it("Set(['boardable']) -> false for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['boardable']))).toBe(false);
+  });
+
+  it("Set(['notBoardable']) -> false for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['notBoardable']))).toBe(false);
+  });
+
+  it("Set(['notBoardable']) -> true for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['notBoardable']))).toBe(true);
+  });
+
+  it("Set(['boardable', 'notBoardable']) -> true for boardable entry", () => {
+    expect(matchesBoardability(boardable, new Set(['boardable', 'notBoardable']))).toBe(true);
+  });
+
+  it("Set(['boardable', 'notBoardable']) -> true for not-boardable entry", () => {
+    expect(matchesBoardability(notBoardable, new Set(['boardable', 'notBoardable']))).toBe(true);
   });
 });
