@@ -47,10 +47,10 @@ export function VerboseTimetableSummary({
   }
 
   // Pattern breakdown (stopIndex/totalStops combinations)
-  const patternCounts = new Map<string, number>();
+  const positionPatternCounts = new Map<string, number>();
   for (const e of timetableEntries) {
     const key = `[${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`;
-    patternCounts.set(key, (patternCounts.get(key) ?? 0) + 1);
+    positionPatternCounts.set(key, (positionPatternCounts.get(key) ?? 0) + 1);
   }
 
   // Dwell time stats
@@ -73,50 +73,58 @@ export function VerboseTimetableSummary({
             [timetable] serviceDate={formatDateKey(serviceDate)} type={type}
           </span>
           {headsign != null && <span className="block">[headsign] &quot;{headsign}&quot;</span>}
+
+          {dwellCount > 0 && <span className="block">[dwell] count={dwellCount}</span>}
           <span className="block">
-            [entries] total={stats.totalCount} uniqueTrips={stats.tripLocator.uniqueTripCount}
+            [state] stopServiceState={stopServiceState} omitted.nonBoardable=
+            {omitted.nonBoardable}
           </span>
+
+          {/* TimetableEntryStats  */}
+          <span className="block">[stats.totalCount] total={stats.totalCount}</span>
           <span className="block">
-            [position] origin={stats.position.originCount} terminal={stats.position.terminalCount}{' '}
-            passing={stats.position.passingCount}
+            [stats.position] origin={stats.position.originCount} terminal=
+            {stats.position.terminalCount} passing={stats.position.passingCount}
           </span>
+
           <span className="block">
-            [passenger] boardable={stats.passenger.boardableCount} nonBoardable=
-            {stats.passenger.nonBoardableCount}
-          </span>
-          <span className="block">
-            [boarding] pickupType(0/1/2/3)={stats.boarding.pickupTypeCounts[0]}/
+            [stats.boarding] pickupType(0/1/2/3)={stats.boarding.pickupTypeCounts[0]}/
             {stats.boarding.pickupTypeCounts[1]}/{stats.boarding.pickupTypeCounts[2]}/
             {stats.boarding.pickupTypeCounts[3]} dropOffType(0/1/2/3)=
             {stats.boarding.dropOffTypeCounts[0]}/{stats.boarding.dropOffTypeCounts[1]}/
             {stats.boarding.dropOffTypeCounts[2]}/{stats.boarding.dropOffTypeCounts[3]}
           </span>
+
           <span className="block">
-            [routeDirection] routes={stats.routeDirection.routeCount} directions=
+            [stats.passenger] boardable={stats.passenger.boardableCount} nonBoardable=
+            {stats.passenger.nonBoardableCount} alightable={stats.passenger.alightableCount}{' '}
+            nonAlightable={stats.passenger.nonAlightableCount}
+          </span>
+
+          <span className="block">
+            [stats.routeDirection] routes={stats.routeDirection.routeCount} directions=
             {stats.routeDirection.directionCount} tripHeadsigns=
             {stats.routeDirection.tripHeadsignCount} stopHeadsigns=
             {stats.routeDirection.stopHeadsignCount}
           </span>
+
           <span className="block">
-            [tripLocator] patterns={stats.tripLocator.patternCount} services=
-            {stats.tripLocator.serviceCount}
+            [stats.tripLocator] patterns={stats.tripLocator.patternCount} services=
+            {stats.tripLocator.serviceCount} uniqueTrips={stats.tripLocator.uniqueTripCount}
           </span>
+
           <span className="block">
             [direction]{' '}
             {Array.from(dirCounts.entries())
               .map(([dir, n]) => `${dir}:${n}`)
               .join(' ')}
           </span>
+
           <span className="block">
             [pattern]{' '}
-            {Array.from(patternCounts.entries())
+            {Array.from(positionPatternCounts.entries())
               .map(([pat, n]) => `${pat}:${n}`)
               .join(' ')}
-          </span>
-          {dwellCount > 0 && <span className="block">[dwell] count={dwellCount}</span>}
-          <span className="block">
-            [state] stopServiceState={stopServiceState} omitted.nonBoardable=
-            {omitted.nonBoardable}
           </span>
         </span>
       </div>
