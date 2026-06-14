@@ -1,6 +1,6 @@
 import type { StopServiceType, TimetableEntry } from '@/types/app/transit-composed';
 import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-names';
-import { isBoardableForPassenger } from './timetable-entry-for-passenger';
+import { isAlightableForPassenger, isBoardableForPassenger } from './timetable-entry-for-passenger';
 import type { Agency } from '@/types/app/transit';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 // import { createLogger } from '../../lib/logger';
@@ -30,8 +30,10 @@ import { resolveAgencyLang } from '@/config/transit-defaults';
  *   `boarding.pickupType` / `boarding.dropOffType` values (0/1/2/3). No
  *   interpretation; each value's meaning follows the GTFS spec.
  * - **`passenger`** (interpreted, value for passenger): `boardableCount`
- *   / `nonBoardableCount`, judged by {@link isBoardableForPassenger}.
- *   The pair partitions all entries (sum equals `totalCount`).
+ *   / `nonBoardableCount` (judged by {@link isBoardableForPassenger}) and
+ *   `alightableCount` / `nonAlightableCount` (judged by
+ *   {@link isAlightableForPassenger}). Each pair partitions all entries
+ *   (sum equals `totalCount`).
  * - **`routeDirection`** (identity): unique counts of `route_id`,
  *   observed `direction` values, resolved trip/stop headsigns (the
  *   user-facing strings from {@link getHeadsignDisplayNames}).
@@ -74,6 +76,10 @@ export interface TimetableEntryStats {
     boardableCount: number;
     /** Entries where boarding is NOT available (= `!isBoardableForPassenger`). */
     nonBoardableCount: number;
+    /** Entries where alighting is available (= `isAlightableForPassenger`). */
+    alightableCount: number;
+    /** Entries where alighting is NOT available (= `!isAlightableForPassenger`). */
+    nonAlightableCount: number;
   };
 
   /** Identity: route / direction / headsign uniqueness. */
@@ -137,6 +143,9 @@ export function computeTimetableEntryStats(
   // boardability for passenger is a derived interpretation of the raw GTFS signals,
   let boardableForPassengerCount = 0;
   let nonBoardableForPassengerCount = 0;
+  // alightability for passenger (symmetric to boardability)
+  let alightableForPassengerCount = 0;
+  let nonAlightableForPassengerCount = 0;
 
   const routeIds = new Set<string>();
   const tripsHeadsigns = new Set<string>();
@@ -163,6 +172,11 @@ export function computeTimetableEntryStats(
       boardableForPassengerCount++;
     } else {
       nonBoardableForPassengerCount++;
+    }
+    if (isAlightableForPassenger(entry)) {
+      alightableForPassengerCount++;
+    } else {
+      nonAlightableForPassengerCount++;
     }
     pickupTypeCounts[entry.boarding.pickupType]++;
     dropOffTypeCounts[entry.boarding.dropOffType]++;
@@ -215,6 +229,8 @@ export function computeTimetableEntryStats(
     passenger: {
       boardableCount: boardableForPassengerCount,
       nonBoardableCount: nonBoardableForPassengerCount,
+      alightableCount: alightableForPassengerCount,
+      nonAlightableCount: nonAlightableForPassengerCount,
     },
     routeDirection: {
       routeCount: routeIds.size,

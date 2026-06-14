@@ -77,7 +77,12 @@ describe('computeTimetableEntryStats', () => {
         pickupTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
         dropOffTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
       },
-      passenger: { boardableCount: 0, nonBoardableCount: 0 },
+      passenger: {
+        boardableCount: 0,
+        nonBoardableCount: 0,
+        alightableCount: 0,
+        nonAlightableCount: 0,
+      },
       routeDirection: {
         routeCount: 0,
         directionCount: 0,
@@ -123,6 +128,20 @@ describe('computeTimetableEntryStats', () => {
       expect(stats.passenger.boardableCount).toBe(1);
       expect(stats.passenger.nonBoardableCount).toBe(2);
       expect(stats.passenger.boardableCount + stats.passenger.nonBoardableCount).toBe(
+        stats.totalCount,
+      );
+    });
+
+    it('partitions alightable vs non-alightable', () => {
+      const entries = [
+        makeEntry(),
+        makeEntry({ isFirstStop: true, stopIndex: 0 }),
+        makeEntry({ dropOffType: 1 }),
+      ];
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
+      expect(stats.passenger.alightableCount).toBe(1);
+      expect(stats.passenger.nonAlightableCount).toBe(2);
+      expect(stats.passenger.alightableCount + stats.passenger.nonAlightableCount).toBe(
         stats.totalCount,
       );
     });

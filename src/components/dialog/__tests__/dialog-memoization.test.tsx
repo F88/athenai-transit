@@ -311,7 +311,12 @@ beforeEach(() => {
       pickupTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
       dropOffTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
     },
-    passenger: { boardableCount: 1, nonBoardableCount: 0 },
+    passenger: {
+      boardableCount: 1,
+      nonBoardableCount: 0,
+      alightableCount: 1,
+      nonAlightableCount: 0,
+    },
     routeDirection: {
       routeCount: 1,
       directionCount: 1,
