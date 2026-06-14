@@ -13,6 +13,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Boardability: 他社直通の境界となる last stop (フィード境界) を乗車可として扱う per-source endpoint-signal-trust を導入した。信頼対象は東京メトロ (`tome`) / りんかい線 (`twrr`) / 都営地下鉄 (`toaran`) で、これらでは last stop / first stop の乗降可否を pickup_type / drop_off_type の signal のみで判定する。従来 last stop として発着案内・乗車可フィルタから除外されていた直通便 (例: 千代田線→JR 常磐線の綾瀬、りんかい線→JR 埼京線の大崎) が乗車可として表示されるようになった (東京メトロ 約 3,211 / 都営地下鉄 約 1,339 / りんかい線 大崎 152 行)。横浜市営地下鉄のように真の終点に pickup_type=0 を残す事業者は対象外 (#297, #145)。
 - Boardability: `isBoardableForPassenger` / `isAlightableForPassenger` を「signal のみ」(`...BySignal`) と「signal + 位置」(`...BySignalAndPosition`) の判定に分割し、事業者方針で振り分ける selector に整理した。降車側も対称化し、発着案内の `isDeparture` / `isArrival` を利用者観点判定に一本化した。`canBoardSignal` / `canBoard` / `canAlight` は統合・削除した (#297)。
+- TimetableEntryStats: faithful な集計軸 `signal` を `boarding` にリネームし、pickup_type / drop_off_type を「不可」だけでなく全値 (0/1/2/3) の分布 (`pickupTypeCounts` / `dropOffTypeCounts`) として持つようにした。利用者観点の `passenger` 軸には降車側 (`alightableCount` / `nonAlightableCount`) を対称に追加した (#298, #162)。
+- TimetableMetadata: 時刻表ダイアログの集計バッジで faithful (signal) と interpreted (passenger) の軸が混在していた問題を解消し、position / boarding (faithful) / passenger (interpreted) のバッジに分離した。passenger バッジは verbose 情報レベルでのみ表示し、デバッグ用の集計 span は `VerboseTimetableSummary` に集約した (#298)。
+- i18n: 未使用だった `stop.serviceState.boardable` ("運行中") を `inService` にリネームした (`passenger.boardableCount` ("乗車可") との混同を回避)。`stopTimeView` を `relativeTime` / `absoluteTime` / `passenger` / `endpoint` のサブグループに構造化し、将来の発着可否・端点種別 (現実の起終点 vs 直通境界) 表示用キーを足場として追加した (#162)。
 
 ## [2026.06.11]
 
