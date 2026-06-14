@@ -10,37 +10,14 @@ import { resolveAgencyLang } from '@/config/transit-defaults';
 /**
  * Aggregated statistics computed from a list of {@link TimetableEntry}.
  *
- * Counts are grouped into sub-objects by axis. Each axis answers a
- * single kind of question; counts on different axes are independent, so
- * summing across them is meaningless (e.g. one entry can be counted in
- * both `position.originCount` and `passenger.boardableCount`).
+ * Counts are grouped into sub-objects by axis. Axes are independent, so
+ * summing across them is meaningless (one entry can be counted in both
+ * `position.originCount` and `passenger.boardableCount`).
  *
- * The grouping keeps two semantic layers from being mixed under one
- * heading (Issue #162): faithful counts read straight from the source
- * (`position`, `signal`) vs interpreted counts that combine the signal
- * with the pattern position for the passenger (`passenger`).
- *
- * - **`position`** (faithful, pattern role): `originCount` /
- *   `terminalCount` / `passingCount`. `originCount` and `terminalCount`
- *   are NOT mutually exclusive — a single-stop pattern (= `totalStops
- *   === 1`) increments both. `passingCount` is strictly mid-route
- *   (= `!isFirstStop && !isLastStop`).
- * - **`boarding`** (faithful, `TimetableEntry.boarding`): per-value
- *   distributions `pickupTypeCounts` / `dropOffTypeCounts` over the
- *   `boarding.pickupType` / `boarding.dropOffType` values (0/1/2/3). No
- *   interpretation; each value's meaning follows the GTFS spec.
- * - **`passenger`** (interpreted, value for passenger): `boardableCount`
- *   / `nonBoardableCount` (judged by {@link isBoardableForPassenger}) and
- *   `alightableCount` / `nonAlightableCount` (judged by
- *   {@link isAlightableForPassenger}). Each pair partitions all entries
- *   (sum equals `totalCount`).
- * - **`routeDirection`** (identity): unique counts of `route_id`,
- *   observed `direction` values, resolved trip/stop headsigns (the
- *   user-facing strings from {@link getHeadsignDisplayNames}).
- * - **`tripLocator`** (identity): unique counts of `patternId`,
- *   `serviceId`, and `(patternId, serviceId, tripIndex)` triples.
- *   `uniqueTripCount` can be lower than `totalCount` for 6-shape /
- *   circular patterns where the same trip visits the same stop twice.
+ * Two semantic layers are kept apart (Issue #162): faithful counts read
+ * straight from the source (`position`, `boarding`) vs interpreted
+ * counts that judge the value for the passenger (`passenger`). See each
+ * field for per-axis details.
  *
  * @see computeTimetableEntryStats
  */
@@ -48,7 +25,11 @@ export interface TimetableEntryStats {
   /** Total number of entries (= input length). */
   totalCount: number;
 
-  /** Faithful: pattern role of the stop event. */
+  /**
+   * Faithful: pattern role of the stop event. `originCount` and
+   * `terminalCount` are NOT mutually exclusive -- a single-stop pattern
+   * increments both.
+   */
   position: {
     /** Entries where this stop is the trip's origin (= `isFirstStop === true`). */
     originCount: number;
@@ -70,7 +51,11 @@ export interface TimetableEntryStats {
     dropOffTypeCounts: Record<StopServiceType, number>;
   };
 
-  /** Interpreted: value for the passenger. */
+  /**
+   * Interpreted: value for the passenger. Each pair
+   * (boardable/nonBoardable, alightable/nonAlightable) partitions all
+   * entries, so each sums to `totalCount`.
+   */
   passenger: {
     /** Entries where boarding is available (= `isBoardableForPassenger`). */
     boardableCount: number;
@@ -88,7 +73,9 @@ export interface TimetableEntryStats {
     routeCount: number;
     /** Number of unique `direction` values observed (`undefined` is one value). */
     directionCount: number;
+    /** Number of unique resolved (user-facing) trip headsigns. */
     tripHeadsignCount: number;
+    /** Number of unique resolved (user-facing) stop headsigns. */
     stopHeadsignCount: number;
   };
 
@@ -130,7 +117,7 @@ export function computeTimetableEntryStats(
   agencies: readonly Agency[],
   preferredDisplayLangs: readonly string[],
 ): TimetableEntryStats {
-  // stop position in the trip pattern (origin/terminal/passing) is a fundamental structural
+  // faithful structural axis: stop position (origin/terminal/passing)
   let firstStop = 0;
   let lastStopCount = 0;
   let passingCount = 0;
@@ -140,7 +127,7 @@ export function computeTimetableEntryStats(
   const pickupTypeCounts: Record<StopServiceType, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
   const dropOffTypeCounts: Record<StopServiceType, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
 
-  // boardability for passenger is a derived interpretation of the raw GTFS signals,
+  // interpreted axis: boardability for passenger
   let boardableForPassengerCount = 0;
   let nonBoardableForPassengerCount = 0;
   // alightability for passenger (symmetric to boardability)
@@ -200,8 +187,6 @@ export function computeTimetableEntryStats(
     ).resolved.name;
     stopHeadsigns.add(stopHeadsign);
 
-    // console.debug({ stopHeadsign, tripHeadsign });
-
     directions.add(String(entry.routeDirection.direction));
 
     const tl = entry.tripLocator;
@@ -209,11 +194,6 @@ export function computeTimetableEntryStats(
     serviceIds.add(tl.serviceId);
     trips.add(`${tl.patternId}|${tl.serviceId}|${tl.tripIndex}`);
   }
-
-  // if (logger.isEnabled('debug')) {
-  //   logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
-  //   logger.debug('stopHeadsigns', [...stopHeadsigns]);
-  // }
 
   return {
     totalCount: entries.length,
