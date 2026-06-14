@@ -112,7 +112,7 @@
   },
   "stop": {
     "serviceState": {
-      "boardable": "In service",
+      "inService": "In service",
       "dropOffOnly": "Drop-off only",
       "noService": "No service",
       "serviceEnded": "No more service today"

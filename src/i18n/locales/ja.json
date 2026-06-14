@@ -112,7 +112,7 @@
   },
   "stop": {
     "serviceState": {
-      "boardable": "運行中",
+      "inService": "運行中",
       "dropOffOnly": "降車専用",
       "noService": "運行便なし",
       "serviceEnded": "本日の運行は終了しました"
