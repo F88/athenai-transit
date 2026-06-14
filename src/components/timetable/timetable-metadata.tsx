@@ -6,9 +6,12 @@ import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
 import { RouteCountBadge } from '../badge/route-count-badge';
+import type { InfoLevel } from '@/types/app/settings';
+import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
+  infoLevel: InfoLevel;
   dataLang: readonly string[];
   agencies: Agency[];
   /**
@@ -125,7 +128,6 @@ function PassengerAxisBadges({ stats }: { stats: TimetableEntryStats }) {
   );
 }
 
-
 /**
  * Render timetable statistics and per-route counts above the timetable grid.
  *
@@ -134,10 +136,13 @@ function PassengerAxisBadges({ stats }: { stats: TimetableEntryStats }) {
  */
 export function TimetableMetadata({
   timetableEntries,
+  infoLevel,
   dataLang,
   agencies,
   stats,
 }: TimetableMetadataProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
+
   const { t, i18n } = useTranslation();
   const allMinutes = timetableEntries.map((entry) => getDisplayMinutes(entry));
   const count = allMinutes.length;
@@ -187,7 +192,7 @@ export function TimetableMetadata({
       <div className="flex flex-wrap items-start gap-1">
         <PatternPositionAxisBadges stats={stats} />
         <BoardingAxisBadges stats={stats} />
-        {false && <PassengerAxisBadges stats={stats} />}
+        {infoLevelFlag.isVerboseEnabled && <PassengerAxisBadges stats={stats} />}
       </div>
 
       {/* Routes with their counts.
