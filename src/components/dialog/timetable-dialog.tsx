@@ -63,6 +63,7 @@ interface EntriesPanelProps {
   timetableEntries: TimetableEntry[];
   entryStats: TimetableEntryStats;
   agencies: Agency[];
+  infoLevel: InfoLevel;
   dataLangs: readonly string[];
   filteredCount: number;
 }
@@ -75,8 +76,9 @@ interface EntriesPanelProps {
 function EntriesPanel({
   timetableEntries,
   entryStats,
-  dataLangs,
   agencies,
+  infoLevel,
+  dataLangs,
   filteredCount,
 }: EntriesPanelProps) {
   return (
@@ -84,6 +86,7 @@ function EntriesPanel({
       {filteredCount > 0 && (
         <TimetableMetadata
           timetableEntries={timetableEntries}
+          infoLevel={infoLevel}
           dataLang={dataLangs}
           agencies={agencies}
           stats={entryStats}
@@ -527,6 +530,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                 timetableEntries={allTimetableEntries}
                 entryStats={allEntriesStats}
                 agencies={data.agencies}
+                infoLevel={infoLevel}
                 dataLangs={dataLangs}
                 filteredCount={allTimetableEntries.length}
               />
@@ -538,6 +542,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                 timetableEntries={entriesBeforeRouteHeadsignFilter}
                 entryStats={entriesBeforeRouteHeadsignFilterStats}
                 agencies={data.agencies}
+                infoLevel={infoLevel}
                 dataLangs={dataLangs}
                 filteredCount={entriesBeforeRouteHeadsignFilter.length}
               />
@@ -549,6 +554,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                 timetableEntries={routeHeadsignFilteredEntries}
                 entryStats={routeHeadsignFilteredEntriesStats}
                 agencies={data.agencies}
+                infoLevel={infoLevel}
                 dataLangs={dataLangs}
                 filteredCount={routeHeadsignFilteredEntries.length}
               />

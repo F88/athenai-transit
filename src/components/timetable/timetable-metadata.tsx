@@ -6,9 +6,12 @@ import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
 import { RouteCountBadge } from '../badge/route-count-badge';
+import type { InfoLevel } from '@/types/app/settings';
+import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
+  infoLevel: InfoLevel;
   dataLang: readonly string[];
   agencies: Agency[];
   /**
@@ -32,31 +35,6 @@ function computeAverageInterval(minutes: number[]): number | null {
 
   const totalSpan = minutes[minutes.length - 1] - minutes[0];
   return Math.round(totalSpan / (minutes.length - 1));
-}
-
-/**
- * Render the A-axis (pattern position) stats span:
- * `[origin / terminal / passing]`.
- */
-function PatternPositionAxisStats({ stats }: { stats: TimetableEntryStats }) {
-  const { t, i18n } = useTranslation();
-  return (
-    <span>
-      {'['}
-      {t('timetable.metadata.originCount', {
-        count: stats.position.originCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.terminalCount', {
-        count: stats.position.terminalCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.passingCount', {
-        count: stats.position.passingCount.toLocaleString(i18n.language),
-      })}
-      {']'}
-    </span>
-  );
 }
 
 function PatternPositionAxisBadges({ stats }: { stats: TimetableEntryStats }) {
@@ -88,44 +66,12 @@ function PatternPositionAxisBadges({ stats }: { stats: TimetableEntryStats }) {
   );
 }
 
-/**
- * Render the B-axis (boarding availability) stats span:
- * `[boardable / non-boardable / drop-off-only / no-drop-off]`.
- *
- * Reads only the boarding-related fields of {@link TimetableEntryStats},
- * so callers can pass either the all-entries or filtered-entries stats
- * depending on the metadata block scope.
- */
-function BoardingAxisStats({ stats }: { stats: TimetableEntryStats }) {
-  const { t, i18n } = useTranslation();
-  return (
-    <span>
-      {'['}
-      {t('timetable.metadata.boardableCount', {
-        count: stats.passenger.boardableCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.nonBoardableCount', {
-        count: stats.passenger.nonBoardableCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.dropOffOnlyCount', {
-        count: stats.signal.noPickupCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.noDropOffCount', {
-        count: stats.signal.noDropOffCount.toLocaleString(i18n.language),
-      })}
-      {']'}
-    </span>
-  );
-}
-
 function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
   const { t } = useTranslation();
   const noPickupLabelBadgeClassName =
     'border-yellow-600 bg-yellow-100 text-yellow-900 dark:border-yellow-600 dark:bg-yellow-950 dark:text-yellow-200';
   const noPickupCountBadgeClassName = 'border-l border-yellow-600 bg-background text-foreground';
+
   const noDropOffLabelBadgeClassName =
     'bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200';
   const noDropOffCountBadgeClassName =
@@ -134,71 +80,51 @@ function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
   return (
     <div className="flex flex-wrap gap-1">
       <LabelCountBadge
-        label={t('stop.serviceState.boardable')}
-        count={stats.passenger.boardableCount}
-        size="sm"
-      />
-      {/* <LabelCountBadge label={t('timetable.entry.noPickup')} count={stats.passenger.nonBoardableCount} /> */}
-      <LabelCountBadge
         label={t('timetable.entry.noPickup')}
-        count={stats.passenger.nonBoardableCount}
+        count={stats.boarding.pickupTypeCounts[1]}
         size="sm"
         frameClassName="border-yellow-600"
         labelClassName={noPickupLabelBadgeClassName}
         countClassName={noPickupCountBadgeClassName}
       />
-      {/* <LabelCountBadge label={t('timetable.entry.noDropOff')} count={stats.signal.noDropOffCount} /> */}
       <LabelCountBadge
         label={t('timetable.entry.noDropOff')}
-        count={stats.signal.noDropOffCount}
+        count={stats.boarding.dropOffTypeCounts[1]}
         size="sm"
         frameClassName="border-dashed border-yellow-600"
         labelClassName={noDropOffLabelBadgeClassName}
         countClassName={noDropOffCountBadgeClassName}
       />
-      <LabelCountBadge
-        label={t('stop.serviceState.dropOffOnly')}
-        count={stats.signal.noPickupCount}
-        size="sm"
-      />
     </div>
   );
 }
 
-/**
- * Render the C-axis (route direction) stats span. Split into two
- * bracket groups: `[route / headsign]` for unique-name signals and
- * `[routeHeadsign / stopHeadsignOverride / direction]` for combined /
- * override / direction signals.
- *
- * `headsignCount` is currently aggregated from `tripHeadsign.name`;
- * sources that publish trip_headsign as empty (= rely on stop_headsign,
- * e.g. kobus) will report `headsignCount === 1`.
- */
-function RouteDirectionAxisStats({ stats }: { stats: TimetableEntryStats }) {
-  const { t, i18n } = useTranslation();
+function PassengerAxisBadges({ stats }: { stats: TimetableEntryStats }) {
+  const { t } = useTranslation();
+
   return (
-    <>
-      <span>
-        {'['}
-        {t('timetable.metadata.routeCount', {
-          count: stats.routeDirection.routeCount.toLocaleString(i18n.language),
-        })}
-        {' / '}
-        {t('timetable.metadata.headsignCount', {
-          count: stats.routeDirection.stopHeadsignCount.toLocaleString(i18n.language),
-        })}
-        {'] / ['}
-        {t('timetable.metadata.routeHeadsignCount', {
-          count: stats.routeDirection.tripHeadsignCount.toLocaleString(i18n.language),
-        })}
-        {' / '}
-        {t('timetable.metadata.directionCount', {
-          count: stats.routeDirection.directionCount.toLocaleString(i18n.language),
-        })}
-        {']'}
-      </span>
-    </>
+    <div className="flex flex-wrap gap-1">
+      <LabelCountBadge
+        label={t('stopTimeView.passenger.boardable')}
+        count={stats.passenger.boardableCount}
+        size="sm"
+      />
+      <LabelCountBadge
+        label={t('stopTimeView.passenger.nonBoardable')}
+        count={stats.passenger.nonBoardableCount}
+        size="sm"
+      />
+      <LabelCountBadge
+        label={t('stopTimeView.passenger.alightable')}
+        count={stats.passenger.alightableCount}
+        size="sm"
+      />
+      <LabelCountBadge
+        label={t('stopTimeView.passenger.nonAlightable')}
+        count={stats.passenger.nonAlightableCount}
+        size="sm"
+      />
+    </div>
   );
 }
 
@@ -210,10 +136,13 @@ function RouteDirectionAxisStats({ stats }: { stats: TimetableEntryStats }) {
  */
 export function TimetableMetadata({
   timetableEntries,
+  infoLevel,
   dataLang,
   agencies,
   stats,
 }: TimetableMetadataProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
+
   const { t, i18n } = useTranslation();
   const allMinutes = timetableEntries.map((entry) => getDisplayMinutes(entry));
   const count = allMinutes.length;
@@ -258,29 +187,12 @@ export function TimetableMetadata({
             })}
           </span>
         )}
-        {false && (
-          <>
-            {' / '}
-            <PatternPositionAxisStats stats={stats} />
-          </>
-        )}
-        {false && (
-          <>
-            {' / '}
-            <BoardingAxisStats stats={stats} />
-          </>
-        )}
-        {false && (
-          <>
-            {' / '}
-            <RouteDirectionAxisStats stats={stats} />
-          </>
-        )}
       </p>
 
       <div className="flex flex-wrap items-start gap-1">
         <PatternPositionAxisBadges stats={stats} />
         <BoardingAxisBadges stats={stats} />
+        {infoLevelFlag.isVerboseEnabled && <PassengerAxisBadges stats={stats} />}
       </div>
 
       {/* Routes with their counts.

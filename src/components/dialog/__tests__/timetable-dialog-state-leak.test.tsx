@@ -58,8 +58,16 @@ vi.mock('@/domain/transit/timetable-stats', () => ({
   computeTimetableEntryStats: () => ({
     totalCount: 0,
     position: { originCount: 0, terminalCount: 0, passingCount: 0 },
-    signal: { noPickupCount: 0, noDropOffCount: 0 },
-    passenger: { boardableCount: 0, nonBoardableCount: 0 },
+    boarding: {
+      pickupTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+      dropOffTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    },
+    passenger: {
+      boardableCount: 0,
+      nonBoardableCount: 0,
+      alightableCount: 0,
+      nonAlightableCount: 0,
+    },
     routeDirection: {
       routeCount: 0,
       directionCount: 0,

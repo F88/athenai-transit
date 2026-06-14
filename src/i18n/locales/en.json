@@ -112,7 +112,7 @@
   },
   "stop": {
     "serviceState": {
-      "boardable": "In service",
+      "inService": "In service",
       "dropOffOnly": "Drop-off only",
       "noService": "No service",
       "serviceEnded": "No more service today"
@@ -141,14 +141,27 @@
     "set": "🧙 Time, freeze!"
   },
   "stopTimeView": {
-    "soon": "Soon",
-    "in": "",
-    "minutes": "min",
-    "arriving": "",
-    "arrivingAbsolute": "Arr",
-    "departingAbsolute": "Dep",
-    "terminal": "Terminal",
-    "noBoarding": "No boarding"
+    "relativeTime": {
+      "soon": "Soon",
+      "in": "",
+      "minutes": "min"
+    },
+    "absoluteTime": {
+      "arrivingMarker": "Arr",
+      "departingMarker": "Dep"
+    },
+    "passenger": {
+      "boardable": "Boardable",
+      "nonBoardable": "Not boardable",
+      "alightable": "Alightable",
+      "nonAlightable": "Not alightable"
+    },
+    "endpoint": {
+      "realOrigin": "Origin",
+      "realTerminus": "Terminal",
+      "throughOrigin": "Through Origin",
+      "throughTerminus": "Through Terminal"
+    }
   },
   "transitDisplay": {
     "recentCount": "Latest {{count}} ({{radius}}m)",

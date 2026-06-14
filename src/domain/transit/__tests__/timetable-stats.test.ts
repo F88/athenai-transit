@@ -73,8 +73,16 @@ describe('computeTimetableEntryStats', () => {
     expect(stats).toEqual({
       totalCount: 0,
       position: { originCount: 0, terminalCount: 0, passingCount: 0 },
-      signal: { noPickupCount: 0, noDropOffCount: 0 },
-      passenger: { boardableCount: 0, nonBoardableCount: 0 },
+      boarding: {
+        pickupTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+        dropOffTypeCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+      },
+      passenger: {
+        boardableCount: 0,
+        nonBoardableCount: 0,
+        alightableCount: 0,
+        nonAlightableCount: 0,
+      },
       routeDirection: {
         routeCount: 0,
         directionCount: 0,
@@ -124,7 +132,21 @@ describe('computeTimetableEntryStats', () => {
       );
     });
 
-    it('counts no-pickup entries (= explicit pickup_type === 1)', () => {
+    it('partitions alightable vs non-alightable', () => {
+      const entries = [
+        makeEntry(),
+        makeEntry({ isFirstStop: true, stopIndex: 0 }),
+        makeEntry({ dropOffType: 1 }),
+      ];
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
+      expect(stats.passenger.alightableCount).toBe(1);
+      expect(stats.passenger.nonAlightableCount).toBe(2);
+      expect(stats.passenger.alightableCount + stats.passenger.nonAlightableCount).toBe(
+        stats.totalCount,
+      );
+    });
+
+    it('counts the faithful pickupType distribution (here: two type 1, two type 0)', () => {
       const entries = [
         makeEntry({ pickupType: 1 }),
         makeEntry({ pickupType: 1 }),
@@ -132,18 +154,30 @@ describe('computeTimetableEntryStats', () => {
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.signal.noPickupCount).toBe(2);
+      expect(stats.boarding.pickupTypeCounts).toEqual({ 0: 2, 1: 2, 2: 0, 3: 0 });
       expect(stats.passenger.nonBoardableCount).toBe(3);
     });
 
-    it('counts noDropOff entries (= explicit drop_off_type === 1)', () => {
+    it('counts the faithful dropOffType distribution (here: two type 1, one type 0)', () => {
       const entries = [
         makeEntry({ dropOffType: 1, isFirstStop: true, stopIndex: 0 }),
         makeEntry({ dropOffType: 1 }),
         makeEntry(),
       ];
       const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
-      expect(stats.signal.noDropOffCount).toBe(2);
+      expect(stats.boarding.dropOffTypeCounts).toEqual({ 0: 1, 1: 2, 2: 0, 3: 0 });
+    });
+
+    it('counts arrangement-required values 2 / 3 in the distribution', () => {
+      const entries = [
+        makeEntry({ pickupType: 0, dropOffType: 0 }),
+        makeEntry({ pickupType: 1, dropOffType: 2 }),
+        makeEntry({ pickupType: 2, dropOffType: 3 }),
+        makeEntry({ pickupType: 3, dropOffType: 1 }),
+      ];
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
+      expect(stats.boarding.pickupTypeCounts).toEqual({ 0: 1, 1: 1, 2: 1, 3: 1 });
+      expect(stats.boarding.dropOffTypeCounts).toEqual({ 0: 1, 1: 1, 2: 1, 3: 1 });
     });
   });
 
@@ -277,8 +311,8 @@ describe('computeTimetableEntryStats', () => {
     // B axis
     expect(stats.passenger.boardableCount).toBe(2);
     expect(stats.passenger.nonBoardableCount).toBe(2);
-    expect(stats.signal.noPickupCount).toBe(1);
-    expect(stats.signal.noDropOffCount).toBe(0);
+    expect(stats.boarding.pickupTypeCounts[1]).toBe(1);
+    expect(stats.boarding.dropOffTypeCounts[1]).toBe(0);
 
     // C axis: resolver picks stopHeadsign when present (entry 2 -> 'X-via'),
     // so headsign and routeHeadsign uniqueness reflects that override.

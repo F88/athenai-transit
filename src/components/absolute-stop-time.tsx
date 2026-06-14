@@ -52,12 +52,12 @@ export function AbsoluteStopTime({
       {timeText}
       {showArrivalMarker && (
         <span className={cn('font-normal opacity-70', variant.marker)}>
-          {t('stopTimeView.arrivingAbsolute')}
+          {t('stopTimeView.absoluteTime.arrivingMarker')}
         </span>
       )}
       {showDepartureMarker && (
         <span className={cn('font-normal opacity-70', variant.marker)}>
-          {t('stopTimeView.departingAbsolute')}
+          {t('stopTimeView.absoluteTime.departingMarker')}
         </span>
       )}
     </div>
