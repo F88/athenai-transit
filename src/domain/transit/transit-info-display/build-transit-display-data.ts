@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../../types/app/settings';
-import type { AppRouteTypeValue } from '../../../types/app/transit';
+import type { AppRouteTypeValue, Route } from '../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
@@ -55,6 +55,12 @@ export interface TransitDisplayMeta {
    */
   routeTypes: readonly AppRouteTypeValue[];
   /**
+   * Route(s) this board covers. One element when split by route; several (the
+   * routes actually present in the board's entries) when not. Mirrors how
+   * `directions` is structured.
+   */
+  routes: readonly Route[];
+  /**
    * Direction(s) of travel this board covers. `0` / `1` are GTFS `direction_id`
    * (where the source provides it) and `'none'` is "no direction_id". One element
    * when split by direction; several (the directions actually present) when not.
@@ -75,6 +81,8 @@ export interface TransitDisplayMeta {
  */
 export interface TransitDisplayData {
   routeTypes: readonly AppRouteTypeValue[];
+  /** Route(s) this board covers (see {@link TransitDisplayMeta.routes}). */
+  routes: readonly Route[];
   /** Direction(s) this board covers (see {@link TransitDisplayMeta.directions}). */
   directions: readonly (0 | 1 | 'none')[];
   category: TransitDisplayCategory;
@@ -132,16 +140,20 @@ export interface TransitDisplayCandidate {
 export type TransitDisplayDatum = TransitDisplayCandidate;
 
 /**
- * How route types are grouped into boards:
+ * How route types are grouped into boards. Note: this controls clustering by
+ * `route_type` (the mode, e.g. bus / subway / train), NOT by individual routes
+ * (e.g. 銀座線 / 半蔵門線). For per-route splitting within a route-type cluster
+ * see {@link TransitDisplayCondition.splitByRoute}.
+ *
  * - `none`: all route types combined into one board (per category)
- * - `route`: one board per route type
+ * - `routeType`: one board per route type
  * - `custom`: one board per caller-supplied group (each group = the route types
  *   on that board); e.g. pass the values of `ROUTE_TYPE_CATEGORY_GROUPS` to group
  *   by bus / subway / train / others.
  */
-export type TransitDisplayRouteGrouping =
+export type TransitDisplayRouteTypeGrouping =
   | { kind: 'none' }
-  | { kind: 'route' }
+  | { kind: 'routeType' }
   | { kind: 'custom'; groups: readonly (readonly AppRouteTypeValue[])[] };
 
 /**
@@ -152,8 +164,18 @@ export type TransitDisplayRouteGrouping =
 export interface TransitDisplayCondition {
   /** Per-display (per-board) row cap. */
   maxEntries: number;
-  /** How route types are grouped into boards. */
-  routeGrouping: TransitDisplayRouteGrouping;
+  /** How route types (modes) are grouped into boards. */
+  routeTypeGrouping: TransitDisplayRouteTypeGrouping;
+  /**
+   * Whether to also split each board by individual route (e.g. 銀座線 vs
+   * 半蔵門線 within the subway cluster). Applied AFTER {@link routeTypeGrouping}:
+   * each route-type cluster is further divided so that one board carries trips
+   * of exactly one route. When `false`, all routes within a cluster share one
+   * board (the legacy behaviour). Useful for rail at multi-line stations, where
+   * `direction_id` alone reads poorly because it is route-local / arbitrary
+   * across routes -- see Issue #296.
+   */
+  splitByRoute: boolean;
   /**
    * Whether to also split each board by direction of travel. When true, every
    * route type is split by each trip's `routeDirection.direction` (`0` | `1` |
@@ -279,6 +301,25 @@ function presentDirections(
 }
 
 /**
+ * Routes actually present among the candidates, in first-appearance order
+ * (no explicit display order exists for individual routes), deduped by
+ * `route_id`. Used to enumerate route buckets when {@link
+ * TransitDisplayCondition.splitByRoute} is on.
+ */
+function presentRoutesInOrder(candidates: readonly TransitDisplayCandidate[]): Route[] {
+  const seen = new Set<string>();
+  const routes: Route[] = [];
+  for (const c of candidates) {
+    const route = c.timetableEntry.routeDirection.route;
+    if (!seen.has(route.route_id)) {
+      seen.add(route.route_id);
+      routes.push(route);
+    }
+  }
+  return routes;
+}
+
+/**
  * One direction bucket for {@link groupCandidatesIntoBoards}: which candidates
  * belong to it (`matches`) and how to label the resulting board's `directions`
  * (`directionsOf`). Not split = a single bucket spanning all present directions;
@@ -291,13 +332,26 @@ interface DirectionGroup {
 }
 
 /**
- * Clusters candidates by route type, per the grouping strategy. `effectiveRouteTypes`
- * is the set of route types eligible to appear -- typically the route types served
- * by the nearby stops -- so a board's `routeTypes` reflect what the stops offer. It
- * is intersected with `ROUTE_TYPE_DISPLAY_ORDER` for ordering and dedup.
+ * One route bucket for {@link groupCandidatesIntoBoards}: which candidates
+ * belong to it (`matches`) and how to label the resulting board's `routes`
+ * (`routesOf`). Not split = a single bucket spanning all routes in the
+ * cluster; split = one bucket per `route_id` present in the cluster. Mirrors
+ * {@link DirectionGroup} so the per-cell loop can fold both axes the same way.
+ */
+interface RouteGroup {
+  matches: (candidate: TransitDisplayCandidate) => boolean;
+  routesOf: (selected: readonly TransitDisplayCandidate[]) => readonly Route[];
+}
+
+/**
+ * Clusters candidates by route type (mode), per the grouping strategy.
+ * `effectiveRouteTypes` is the set of route types eligible to appear -- typically
+ * the route types served by the nearby stops -- so a board's `routeTypes` reflect
+ * what the stops offer. It is intersected with `ROUTE_TYPE_DISPLAY_ORDER` for
+ * ordering and dedup.
  *
- * - `route`: one cluster per eligible route type (display order); an eligible type
- *   with no candidates yields an empty cluster.
+ * - `routeType`: one cluster per eligible route type (display order); an eligible
+ *   type with no candidates yields an empty cluster.
  * - `none`: a single cluster of all candidates; its `routeTypes` are the eligible
  *   types in display order.
  * - `custom`: one cluster per caller-supplied group, in the given order. Each
@@ -314,7 +368,7 @@ interface DirectionGroup {
  */
 export function clusterCandidatesByRouteType(
   candidates: readonly TransitDisplayCandidate[],
-  grouping: TransitDisplayRouteGrouping,
+  groupingByRouteType: TransitDisplayRouteTypeGrouping,
   effectiveRouteTypes: readonly AppRouteTypeValue[],
 ): RouteTypeCluster[] {
   // Eligible route types in display order (those served by the stops).
@@ -322,21 +376,21 @@ export function clusterCandidatesByRouteType(
     effectiveRouteTypes.includes(rt),
   );
 
-  if (grouping.kind === 'route') {
+  if (groupingByRouteType.kind === 'routeType') {
     return eligibleRouteTypes.map((routeType) => ({
       routeTypes: [routeType],
       candidates: selectByRouteType(candidates, routeType),
     }));
   }
 
-  if (grouping.kind === 'none') {
+  if (groupingByRouteType.kind === 'none') {
     return [{ routeTypes: eligibleRouteTypes, candidates: [...candidates] }];
   }
 
   // 'custom': one cluster per group (groups may overlap). Keep each group's own
   // order for routeTypes (eligible types only), so the caller's order is honored.
   const eligibleSet = new Set<number>(eligibleRouteTypes);
-  return grouping.groups
+  return groupingByRouteType.groups
     .map((group) => {
       const groupSet = new Set<number>(group);
       return {
@@ -352,9 +406,10 @@ export function clusterCandidatesByRouteType(
 /**
  * Groups candidates into boards: derives the eligible route types from `stops`
  * (each stop's `routeTypes`, independent of whether trips remain), clusters
- * candidates by route type (per `routeGrouping`), optionally by direction of
- * travel (when `splitByDirection`), then by category, yielding one board per
- * non-empty cell.
+ * candidates by route type (per `routeTypeGrouping`), optionally subdivides each
+ * cluster by individual route (when `splitByRoute`) and by direction of travel
+ * (when `splitByDirection`), then by category, yielding one board per non-empty
+ * cell.
  *
  * `stops` are the (already distance-filtered) nearby stops. As a guard it returns
  * no boards when there are no stops, or none are in service today -- the same
@@ -363,9 +418,9 @@ export function clusterCandidatesByRouteType(
  * A trip's `routeDirection.direction` (which mirrors GTFS `direction_id` where
  * the source provides it) is route-local and arbitrary across routes, so a
  * caller that wants direction split for some modes but not others (e.g. trains
- * yes, buses no) composes it by calling with different `routeGrouping` /
- * `splitByDirection` and merging the results, rather than having a per-mode rule
- * baked in here.
+ * yes, buses no) composes it by calling with different `routeTypeGrouping` /
+ * `splitByRoute` / `splitByDirection` and merging the results, rather than
+ * having a per-mode rule baked in here.
  *
  * Grouping only: it does not sort / cap ({@link sortAndCapTransitDisplayData}) or resolve
  * display names ({@link buildTransitDisplayDatumForUi}). Empty cells are dropped, so the
@@ -390,7 +445,7 @@ export function groupCandidatesIntoBoards(
 
   const clusters = clusterCandidatesByRouteType(
     candidates,
-    condition.routeGrouping,
+    condition.routeTypeGrouping,
     effectiveRouteTypes,
   );
 
@@ -409,22 +464,39 @@ export function groupCandidatesIntoBoards(
     : [{ matches: () => true, directionsOf: presentDirections }];
 
   for (const cluster of clusters) {
+    // Route buckets are cluster-scoped (the present routes depend on which
+    // candidates fell into this cluster), so they are built inside the loop.
+    // Not split = a single bucket spanning all routes in the cluster; split =
+    // one bucket per `route_id`, in first-appearance order.
+    const routeGroups: readonly RouteGroup[] = condition.splitByRoute
+      ? presentRoutesInOrder(cluster.candidates).map((route) => ({
+          matches: (c) => c.timetableEntry.routeDirection.route.route_id === route.route_id,
+          routesOf: () => [route],
+        }))
+      : [{ matches: () => true, routesOf: presentRoutesInOrder }];
+
     for (const category of CATEGORIES) {
-      for (const group of directionGroups) {
-        const boardCandidates = cluster.candidates.filter(
-          (c) => group.matches(c) && categoryQualifies(c.timetableEntry, category),
-        );
+      for (const routeGroup of routeGroups) {
+        for (const directionGroup of directionGroups) {
+          const boardCandidates = cluster.candidates.filter(
+            (c) =>
+              routeGroup.matches(c) &&
+              directionGroup.matches(c) &&
+              categoryQualifies(c.timetableEntry, category),
+          );
 
-        if (boardCandidates.length === 0) {
-          continue;
+          if (boardCandidates.length === 0) {
+            continue;
+          }
+
+          boards.push({
+            routeTypes: cluster.routeTypes,
+            routes: routeGroup.routesOf(boardCandidates),
+            directions: directionGroup.directionsOf(boardCandidates),
+            category,
+            data: boardCandidates,
+          });
         }
-
-        boards.push({
-          routeTypes: cluster.routeTypes,
-          directions: group.directionsOf(boardCandidates),
-          category,
-          data: boardCandidates,
-        });
       }
     }
   }
@@ -503,6 +575,7 @@ export function buildTransitDisplayDataSet(
     meta: {
       category: data.category,
       routeTypes: data.routeTypes,
+      routes: data.routes,
       directions: data.directions,
       max: condition.maxEntries,
       radius: radiusMeters,
@@ -519,29 +592,43 @@ export function buildTransitDisplayDataSet(
 /**
  * UI ordering for the raw displays (sorted on `meta`, before rows are resolved),
  * independent of how they were built or merged (the container concatenates a
- * no-split and a split call, so the raw order is not canonical). Three levels:
+ * no-split and a split call, so the raw order is not canonical). Four levels:
  *   1. route type, by `ROUTE_TYPE_DISPLAY_ORDER`
- *   2. within a route type: category, departures before arrivals
- *   3. within a category: direction, in `DIRECTIONS` order (none, 0, 1)
+ *   2. within a route type: route, by `meta.routes[0].route_id` alphabetical.
+ *      Boards spanning multiple routes are evaluated by `routes[0]`. The id is
+ *      agency-prefixed in v2 sources (e.g. `kobus:9`), so this naturally keeps
+ *      every route under the same agency adjacent. This groups boards of the
+ *      same route together -- its departures / arrivals and both directions
+ *      stay adjacent rather than getting interleaved with other routes' boards
+ *      at multi-route stops (Issue #296). Alphabetical sort is independent of
+ *      builder input order so the final ordering is fully derivable from meta.
+ *   3. within a route: category, departures before arrivals
+ *   4. within a category: direction, in `DIRECTIONS` order (none, 0, 1)
  *
  * A full comparator (not a stable sort on one key), so reordering by route type
- * can never disturb the departures/arrivals or direction order set up earlier.
+ * can never disturb the route/category/direction order set up earlier.
  */
 export function sortTransitDisplayDataWithMetaData(
   rawDisplays: readonly TransitDisplayDataWithMetaData[],
 ): TransitDisplayDataWithMetaData[] {
-  const orderKey = (d: TransitDisplayDataWithMetaData): [number, number, number] => {
+  const orderKey = (d: TransitDisplayDataWithMetaData) => {
     const direction = d.meta.directions[0];
-    return [
-      ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
-      CATEGORIES.indexOf(d.meta.category),
-      DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
-    ];
+    return {
+      routeType: ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
+      routeId: d.meta.routes[0]?.route_id ?? '',
+      category: CATEGORIES.indexOf(d.meta.category),
+      direction: DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
+    };
   };
   return [...rawDisplays].sort((a, b) => {
     const ka = orderKey(a);
     const kb = orderKey(b);
-    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+    return (
+      ka.routeType - kb.routeType ||
+      ka.routeId.localeCompare(kb.routeId) ||
+      ka.category - kb.category ||
+      ka.direction - kb.direction
+    );
   });
 }
 

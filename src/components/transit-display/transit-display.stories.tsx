@@ -94,6 +94,7 @@ function makeDisplay(
     meta: {
       category: 'departures',
       routeTypes: [3],
+      routes: [],
       directions: ['none'],
       max: 12,
       radius: 100,

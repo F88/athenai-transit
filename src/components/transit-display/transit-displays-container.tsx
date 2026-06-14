@@ -125,12 +125,15 @@ export function TransitDisplaysContainer({
 
     const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
-      routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      routeTypeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByRoute: false,
       splitByDirection: false,
     });
     const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
       maxEntries,
-      routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      routeTypeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByRoute: false,
+      // splitByRoute: true,
       splitByDirection: true,
     });
 
