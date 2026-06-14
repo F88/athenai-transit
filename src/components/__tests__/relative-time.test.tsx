@@ -7,9 +7,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const labels: Record<string, string> = {
-        'stopTimeView.soon': 'まもなく',
-        'stopTimeView.in': 'あと',
-        'stopTimeView.minutes': '分',
+        'stopTimeView.relativeTime.soon': 'まもなく',
+        'stopTimeView.relativeTime.in': 'あと',
+        'stopTimeView.relativeTime.minutes': '分',
       };
       return labels[key] ?? key;
     },

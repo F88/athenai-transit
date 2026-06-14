@@ -83,20 +83,22 @@ export function RelativeTime({
       style={{ color: style.color, opacity: style.opacity }}
     >
       {parts.kind === 'futureWithinMinute' ? (
-        <span className={v.imminent}>{t('stopTimeView.soon')}</span>
+        <span className={v.imminent}>{t('stopTimeView.relativeTime.soon')}</span>
       ) : parts.tense === 'past' ? (
         <span>
           <span className={v.number}>-{parts.minutes}</span>
-          <span className={`${v.label} font-normal`}>{t('stopTimeView.minutes')}</span>
+          <span className={`${v.label} font-normal`}>{t('stopTimeView.relativeTime.minutes')}</span>
         </span>
       ) : (
         <>
           {parts.showPrefix && (
-            <span className={`${v.label} font-normal`}>{t('stopTimeView.in')}</span>
+            <span className={`${v.label} font-normal`}>{t('stopTimeView.relativeTime.in')}</span>
           )}
           <span>
             <span className={v.number}>{parts.minutes}</span>
-            <span className={`${v.label} font-normal`}>{t('stopTimeView.minutes')}</span>
+            <span className={`${v.label} font-normal`}>
+              {t('stopTimeView.relativeTime.minutes')}
+            </span>
           </span>
         </>
       )}

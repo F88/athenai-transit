@@ -283,7 +283,7 @@ export const InfoLevelComparison: Story = {
  * position (so the terminal marker and `RelativeTime` interact) and
  * one further down (so the terminal marker sits next to an
  * absolute-only time). Terminal rows exercise the
- * `stopTimeView.arrivingAbsolute` i18n key and are the easiest way to
+ * `stopTimeView.absoluteTime.arrivingMarker` i18n key and are the easiest way to
  * eyeball the "着" / "Arr" opt-out behaviour from Storybook.
  */
 export const MultipleItems: Story = {
@@ -328,7 +328,7 @@ export const MultipleItems: Story = {
 
 /**
  * Multi-item list stacked across every supported language so the
- * `stopTimeView.arrivingAbsolute` marker can be verified per locale:
+ * `stopTimeView.absoluteTime.arrivingMarker` marker can be verified per locale:
  * ja shows "着" next to terminal absolute times, en shows "Arr",
  * and other locales follow their own key value or fall through the
  * locale chain. Locale owners can still opt out for any language by

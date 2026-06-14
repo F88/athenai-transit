@@ -141,14 +141,27 @@
     "set": "🧙 とまれ!"
   },
   "stopTimeView": {
-    "soon": "まもなく",
-    "in": "あと",
-    "minutes": "分",
-    "arriving": "",
-    "arrivingAbsolute": "着",
-    "departingAbsolute": "発",
-    "terminal": "終点",
-    "noBoarding": "乗車不可"
+    "relativeTime": {
+      "soon": "まもなく",
+      "in": "あと",
+      "minutes": "分"
+    },
+    "absoluteTime": {
+      "arrivingMarker": "着",
+      "departingMarker": "発"
+    },
+    "passenger": {
+      "boardable": "乗車可",
+      "nonBoardable": "乗車不可",
+      "alightable": "降車可",
+      "nonAlightable": "降車不可"
+    },
+    "endpoint": {
+      "realOrigin": "始発",
+      "realTerminus": "終点",
+      "throughOrigin": "経由始発(直通)",
+      "throughTerminus": "経由終点(直通)"
+    }
   },
   "transitDisplay": {
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
