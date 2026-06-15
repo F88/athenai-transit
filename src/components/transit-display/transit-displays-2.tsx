@@ -371,10 +371,10 @@ export interface TransitDisplay2Props {
 }
 
 /**
- * Verbose-only badge row that renders a stats scope as icon badges. Icon choices
- * follow the data-source group summary convention: Signpost = stops, Route =
- * routes, Building2 = agencies, Shapes = route types, Clock = entries.
- * `entryCount` is omitted for the stop-set scope (which has no entry count).
+ * Badge row that renders a stats scope as icon badges. Icon choices follow the
+ * data-source group summary convention: Signpost = stops, Route = routes,
+ * Building2 = agencies, Shapes = route types, Clock = entries. `entryCount` is
+ * omitted for the stop-set scope (which has no entry count).
  */
 function StatsBadges({
   size,
@@ -507,20 +507,10 @@ export function TransitDisplay2({
       {infoLevelFlag.isVerboseEnabled && (
         <div className="flex flex-col items-end gap-0.5 text-[8px]">
           <p className="m-0 w-full min-w-0 text-right">
-            [{meta.category} / rt {meta.routeTypes.join(',')} / r{' '}
-            {meta.routes.map((e) => e.route_id).length} / dir {meta.directions.join(',')} / (max:
+            [{meta.category} / rt {meta.routeTypes.join(',')} / r {meta.routes.length} / dir{' '}
+            {meta.directions.join(',')} / (max:
             {meta.max}/{meta.radius}m)]
           </p>
-          {/* <p className="m-0 w-full min-w-0 text-right">
-            [withinRadius: {stats.stopsInRadius.stopCount} stops / {stats.stopsInRadius.routeCount}{' '}
-            routes / {stats.stopsInRadius.agencyCount} agencies /{' '}
-            {stats.stopsInRadius.routeTypeCount} types]
-          </p> */}
-          {/* <p className="m-0 w-full min-w-0 text-right">
-            [qualifying: {stats.qualifying.entryCount} entries / {stats.qualifying.stopCount} stops
-            / {stats.qualifying.routeCount} routes / {stats.qualifying.agencyCount} agencies /{' '}
-            {stats.qualifying.routeTypeCount} types]
-          </p> */}
           <p className="m-0 w-full min-w-0 text-right">
             [shown:
             {displayedStats.entryCount} entries / {displayedStats.routeTypeCount} types /{' '}

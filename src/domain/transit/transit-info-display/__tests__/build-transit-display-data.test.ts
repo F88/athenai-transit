@@ -219,7 +219,7 @@ describe('categoryQualifies', () => {
 });
 
 describe('clusterCandidatesByRouteType', () => {
-  it("'route': one cluster per eligible route type in display order, candidates placed by type", () => {
+  it("'routeType': one cluster per eligible route type in display order, candidates placed by type", () => {
     const subway = candidateOf(subwayRoute); // route_type 1
     const bus = candidateOf(busRoute); // route_type 3
 
@@ -236,7 +236,7 @@ describe('clusterCandidatesByRouteType', () => {
     ]);
   });
 
-  it("'route': an eligible route type with no candidates yields an empty cluster", () => {
+  it("'routeType': an eligible route type with no candidates yields an empty cluster", () => {
     const bus = candidateOf(busRoute); // 3; route_type 2 is eligible but has no candidate
 
     const clusters = clusterCandidatesByRouteType([bus], { kind: 'routeType' }, [2, 3]);
@@ -245,7 +245,7 @@ describe('clusterCandidatesByRouteType', () => {
     expect(railCluster?.candidates).toEqual([]);
   });
 
-  it("'route': ignores route types not in effectiveRouteTypes", () => {
+  it("'routeType': ignores route types not in effectiveRouteTypes", () => {
     const bus = candidateOf(busRoute); // 3
 
     const clusters = clusterCandidatesByRouteType([bus], { kind: 'routeType' }, [3]);
@@ -311,7 +311,7 @@ describe('clusterCandidatesByRouteType', () => {
     expect(dropped).toEqual([]); // whole group ineligible -> no cluster
   });
 
-  it("'route': keeps the input order of candidates within a single type's cluster", () => {
+  it("'routeType': keeps the input order of candidates within a single type's cluster", () => {
     const bus1 = candidateOf(busRoute); // 3
     const bus2 = candidateOf(busRoute); // 3
 
@@ -321,7 +321,7 @@ describe('clusterCandidatesByRouteType', () => {
     expect(busCluster?.candidates).toEqual([bus1, bus2]);
   });
 
-  it("'route': returns a cluster per eligible type even with no candidates (all empty)", () => {
+  it("'routeType': returns a cluster per eligible type even with no candidates (all empty)", () => {
     const clusters = clusterCandidatesByRouteType([], { kind: 'routeType' }, [1, 2, 3]);
 
     const eligible = ROUTE_TYPE_DISPLAY_ORDER.filter((t) => t === 1 || t === 2 || t === 3);
