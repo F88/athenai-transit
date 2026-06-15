@@ -2,10 +2,10 @@
   "sourceName": "yurikamome-station-timetable",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-06-14T05:47:49.789Z",
+  "downloadedAt": "2026-06-15T06:02:36.546Z",
   "url": "https://api.odpt.org/api/v4/odpt:StationTimetable?odpt:operator=odpt.Operator:Yurikamome",
   "size": 2247973,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 1364,
-  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_StationTimetable_20260614-054751.json"
+  "durationMs": 1099,
+  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_StationTimetable_20260615-060237.json"
 }

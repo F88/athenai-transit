@@ -2,12 +2,12 @@
   "sourceName": "vag-freiburg",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-14T05:46:22.335Z",
+  "downloadedAt": "2026-06-15T06:01:10.547Z",
   "url": "https://www.vag-freiburg.de/fileadmin/gtfs/VAGFR.zip",
   "size": 7202605,
   "contentType": "application/zip",
-  "durationMs": 2361,
-  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260614-054624.zip",
+  "durationMs": 3892,
+  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260615-060114.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
