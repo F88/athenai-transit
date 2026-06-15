@@ -117,7 +117,7 @@ describe('sortTransitDisplayDataWithMetaData', () => {
     ).toEqual(['none', 0, 1]);
   });
 
-  it('applies the three levels together: route type -> category -> direction', () => {
+  it('applies the three levels together: route type -> direction -> category', () => {
     const railArr0 = display(2, 'arrivals', [0]);
     const busDep = display(3, 'departures', ['none']);
     const railDep1 = display(2, 'departures', [1]);
@@ -132,6 +132,9 @@ describe('sortTransitDisplayDataWithMetaData', () => {
       busArr,
     ]);
 
+    // routeType 3 (bus) before 2 (rail) per ROUTE_TYPE_DISPLAY_ORDER; within
+    // a route type, direction (none -> 0 -> 1) groups dep / arr pairs together,
+    // then category (dep -> arr) decides inside one direction.
     expect(
       sorted.map((d) => ({
         rt: d.meta.routeTypes[0],
@@ -142,8 +145,8 @@ describe('sortTransitDisplayDataWithMetaData', () => {
       { rt: 3, category: 'departures', dir: 'none' },
       { rt: 3, category: 'arrivals', dir: 'none' },
       { rt: 2, category: 'departures', dir: 0 },
-      { rt: 2, category: 'departures', dir: 1 },
       { rt: 2, category: 'arrivals', dir: 0 },
+      { rt: 2, category: 'departures', dir: 1 },
     ]);
   });
 
@@ -171,12 +174,13 @@ describe('sortTransitDisplayDataWithMetaData', () => {
     ]);
   });
 
-  it('applies all four levels: route type -> route -> category -> direction', () => {
+  it('applies all four levels: route type -> route -> direction -> category', () => {
     const ginza = makeRoute('eidan:ginza', 1);
     const hanzomon = makeRoute('eidan:hanzomon', 1);
 
-    // Two routes within one route type, each with both directions and both
-    // categories. Sorted result keeps every board of the same route adjacent.
+    // Two single-route boards (one per route) for each (direction, category)
+    // combination. Sort groups by route first, then by direction with dep / arr
+    // paired inside each direction.
     const sorted = sortTransitDisplayDataWithMetaData([
       display(1, 'arrivals', [1], [hanzomon]),
       display(1, 'departures', [0], [hanzomon]),
@@ -196,14 +200,73 @@ describe('sortTransitDisplayDataWithMetaData', () => {
       })),
     ).toEqual([
       { routeId: 'eidan:ginza', category: 'departures', dir: 0 },
-      { routeId: 'eidan:ginza', category: 'departures', dir: 1 },
       { routeId: 'eidan:ginza', category: 'arrivals', dir: 0 },
+      { routeId: 'eidan:ginza', category: 'departures', dir: 1 },
       { routeId: 'eidan:ginza', category: 'arrivals', dir: 1 },
       { routeId: 'eidan:hanzomon', category: 'departures', dir: 0 },
-      { routeId: 'eidan:hanzomon', category: 'departures', dir: 1 },
       { routeId: 'eidan:hanzomon', category: 'arrivals', dir: 0 },
+      { routeId: 'eidan:hanzomon', category: 'departures', dir: 1 },
       { routeId: 'eidan:hanzomon', category: 'arrivals', dir: 1 },
     ]);
+  });
+
+  // Multi-route boards (routes.length > 1) have `meta.routes` derived from
+  // filtered boardCandidates, so the cluster's dep board and arr board can
+  // land on different routes[0]. Sort skips the route axis for those, letting
+  // direction / category decide -- so dep stays before arr.
+  it('skips route axis for boards with multiple routes (multi-route bus cluster keeps dep before arr)', () => {
+    const route76 = makeRoute('iyotetsu:76', 3);
+    const routeExpress = makeRoute('iyotetsu:express', 3);
+    // dep board only sees route76 first; arr board only sees express first
+    // (the opposite picks would otherwise win on alphabetical route_id).
+    const dep = display(3, 'departures', ['none'], [route76, routeExpress]);
+    const arr = display(3, 'arrivals', ['none'], [routeExpress, route76]);
+
+    // Even if `routes[0]` differs between dep and arr (express < 76 in route_id
+    // alphabetical), the multi-route detection skips the route axis so
+    // category decides: dep before arr.
+    expect(sortTransitDisplayDataWithMetaData([arr, dep]).map((d) => d.meta.category)).toEqual([
+      'departures',
+      'arrivals',
+    ]);
+  });
+
+  // Direction axis is skipped independently (per-axis), with the same reasoning
+  // as the route axis. Real-world trigger: a bus cluster where one route has
+  // no direction_id (e.g. long-distance express) only appears as an arrival --
+  // arr board's directions[0] = 'none', dep board's directions[0] = 0. Without
+  // skipping, direction would mis-order arr before dep.
+  it('skips direction axis for boards with multiple directions (multi-direction bus cluster keeps dep before arr)', () => {
+    const route76 = makeRoute('iyotetsu:76', 3);
+    const routeExpress = makeRoute('iyotetsu:express', 3);
+    // Multi-route AND multi-direction. dep has directions [0, 1], arr has
+    // ['none', 0, 1] (because the express route only appears in arrivals and
+    // has no direction_id). DIRECTIONS index of 'none' (0) < 0 (1), so
+    // without the direction-axis skip, arr would sort before dep.
+    const dep = display(3, 'departures', [0, 1], [route76, routeExpress]);
+    const arr = display(3, 'arrivals', ['none', 0, 1], [route76, routeExpress]);
+
+    expect(sortTransitDisplayDataWithMetaData([arr, dep]).map((d) => d.meta.category)).toEqual([
+      'departures',
+      'arrivals',
+    ]);
+  });
+
+  // Composition: `splitByDirection: true` + `splitByRoute: false` is a possible
+  // future call shape (multi-route boards split by direction). For those, the
+  // route axis is skipped but the direction axis remains usable because
+  // `directions.length === 1` (each board carries a single split direction).
+  it('keeps direction axis usable when routes are multiple but directions are split (single-direction multi-route boards)', () => {
+    const route76 = makeRoute('iyotetsu:76', 3);
+    const routeA = makeRoute('iyotetsu:a', 3);
+    // Two boards, both multi-route, both single-direction. dep / arr aside;
+    // dir 0 < dir 1 must hold.
+    const dep0 = display(3, 'departures', [0], [route76, routeA]);
+    const dep1 = display(3, 'departures', [1], [route76, routeA]);
+
+    expect(
+      sortTransitDisplayDataWithMetaData([dep1, dep0]).map((d) => d.meta.directions[0]),
+    ).toEqual([0, 1]);
   });
 
   it('falls back to no route comparison when meta.routes is empty (boards with same routeType/category/direction keep stable order)', () => {

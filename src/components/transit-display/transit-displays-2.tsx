@@ -486,6 +486,7 @@ export function TransitDisplay2({
     () => [...meta.routes].sort((a, b) => a.route_id.localeCompare(b.route_id)),
     [meta.routes],
   );
+  // const sortedRoutes = meta.routes; // Keep original order.
 
   const hasMultiRoutes = meta.routes.length >= 2;
 

@@ -46,21 +46,32 @@ export function transitDisplayMaxEntriesPerRouteFor(infoLevel: InfoLevel): numbe
 /**
  * UI ordering for the raw displays (sorted on `meta`, before rows are resolved),
  * independent of how they were built or merged (the container concatenates a
- * no-split and a split call, so the raw order is not canonical). Four levels:
+ * no-split and a split call, so the raw order is not canonical). Axes:
  *   1. route type, by `ROUTE_TYPE_DISPLAY_ORDER`
- *   2. within a route type: route, by `meta.routes[0].route_id` alphabetical.
- *      Boards spanning multiple routes are evaluated by `routes[0]`. The id is
- *      agency-prefixed in v2 sources (e.g. `kobus:9`), so this naturally keeps
- *      every route under the same agency adjacent. This groups boards of the
- *      same route together -- its departures / arrivals and both directions
- *      stay adjacent rather than getting interleaved with other routes' boards
- *      at multi-route stops (Issue #296). Alphabetical sort is independent of
- *      builder input order so the final ordering is fully derivable from meta.
- *   3. within a route: category, departures before arrivals
- *   4. within a category: direction, in `DIRECTIONS` order (none, 0, 1)
+ *   2. route, by `meta.routes[0].route_id` alphabetical -- ONLY when both
+ *      boards have a single route (`routes.length === 1`). Single-route boards
+ *      have a stable `routes[0]` shared across the cluster's dep / arr, so
+ *      comparing by route keeps every board of the same route adjacent (Issue
+ *      #296). The id is agency-prefixed in v2 sources (e.g. `kobus:9`), so
+ *      agency clustering falls out naturally. For multi-route boards
+ *      (`routes.length > 1`) the route axis is skipped: `meta.routes` is
+ *      derived from filtered boardCandidates, so dep / arr from the same
+ *      cluster can land on different `routes[0]`; using it as a sort key
+ *      would mis-order arrivals before departures.
+ *   3. direction, in `DIRECTIONS` order (none, 0, 1) -- ONLY when both boards
+ *      have a single direction (`directions.length === 1`). Same reasoning as
+ *      the route axis: a single direction means split-by-direction was applied
+ *      and dep / arr share `directions[0]`; multi-direction boards have a
+ *      shifted `directions[0]` between dep and arr (whether a no-direction
+ *      route appears in only one category etc.), so the axis is skipped.
+ *      Skipping route and direction is decided per axis (not jointly), so a
+ *      future "splitByDirection: true + splitByRoute: false" composition
+ *      keeps the direction axis usable while route is skipped.
+ *   4. category, departures before arrivals -- the final tiebreaker, and the
+ *      only inner axis when both route and direction are skipped.
  *
- * A full comparator (not a stable sort on one key), so reordering by route type
- * can never disturb the route/category/direction order set up earlier.
+ * A full comparator (not a stable sort on one key), so reordering by route
+ * type can never disturb the inner-axis order set up earlier.
  */
 export function sortTransitDisplayDataWithMetaData(
   rawDisplays: readonly TransitDisplayDataWithMetaData[],
@@ -69,19 +80,29 @@ export function sortTransitDisplayDataWithMetaData(
     const direction = d.meta.directions[0];
     return {
       routeType: ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
+      // Per-axis skip flags. When the board carries multiple values on an
+      // axis (routes or directions), `meta` is derived from filtered
+      // boardCandidates, so dep / arr from the same cluster can land on
+      // different head values for that axis; comparing by it would mis-order
+      // arrivals before departures. Evaluated independently so each axis can
+      // remain usable on its own merit.
+      hasMultipleRoutes: d.meta.routes.length > 1,
+      hasMultipleDirections: d.meta.directions.length > 1,
       routeId: d.meta.routes[0]?.route_id ?? '',
-      category: CATEGORIES.indexOf(d.meta.category),
       direction: DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
+      category: CATEGORIES.indexOf(d.meta.category),
     };
   };
   return [...rawDisplays].sort((a, b) => {
     const ka = orderKey(a);
     const kb = orderKey(b);
+    const skipRouteAxis = ka.hasMultipleRoutes || kb.hasMultipleRoutes;
+    const skipDirectionAxis = ka.hasMultipleDirections || kb.hasMultipleDirections;
     return (
       ka.routeType - kb.routeType ||
-      ka.routeId.localeCompare(kb.routeId) ||
-      ka.category - kb.category ||
-      ka.direction - kb.direction
+      (skipRouteAxis ? 0 : ka.routeId.localeCompare(kb.routeId)) ||
+      (skipDirectionAxis ? 0 : ka.direction - kb.direction) ||
+      ka.category - kb.category
     );
   });
 }
