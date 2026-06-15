@@ -148,6 +148,17 @@ export function TransitDisplaysContainer({
       ...directionUnsplitRaw,
       ...directionSplitRaw,
     ]);
+
+    // data.forEach((e) => {
+    //   console.info(
+    //     'debug-x',
+    //     `e.meta.category: ${e.meta.category}`,
+    //     `e.meta.routeTypes.length: ${e.meta.routeTypes.length}`,
+    //     `e.meta.routes.length: ${e.meta.routes.length}`,
+    //     `e.meta.directions.length: ${e.meta.directions.length}`,
+    //   );
+    // });
+    // return data;
   }, [infoLevel, nearbyStops, transitDisplayStatus.state]);
 
   return (

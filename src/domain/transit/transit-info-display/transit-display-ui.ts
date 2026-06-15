@@ -58,15 +58,13 @@ export function transitDisplayMaxEntriesPerRouteFor(infoLevel: InfoLevel): numbe
  *      derived from filtered boardCandidates, so dep / arr from the same
  *      cluster can land on different `routes[0]`; using it as a sort key
  *      would mis-order arrivals before departures.
- *   3. direction, in `DIRECTIONS` order (none, 0, 1) -- ONLY when both boards
- *      have a single direction (`directions.length === 1`). Same reasoning as
- *      the route axis: a single direction means split-by-direction was applied
- *      and dep / arr share `directions[0]`; multi-direction boards have a
- *      shifted `directions[0]` between dep and arr (whether a no-direction
- *      route appears in only one category etc.), so the axis is skipped.
- *      Skipping route and direction is decided per axis (not jointly), so a
- *      future "splitByDirection: true + splitByRoute: false" composition
- *      keeps the direction axis usable while route is skipped.
+ *   3. direction, in `DIRECTIONS` order (none, 0, 1) -- ONLY when the route
+ *      axis is also being used (both boards single-route) AND both boards
+ *      have a single direction. Reasoning: a single direction value can still
+ *      differ between dep and arr inside a multi-route cluster (a route
+ *      present only in one category can shift `directions[0]`), so the
+ *      direction axis is trusted only alongside single-route, where `routes`
+ *      and `directions` are both stable across the cluster's dep / arr.
  *   4. category, departures before arrivals -- the final tiebreaker, and the
  *      only inner axis when both route and direction are skipped.
  *
@@ -97,7 +95,14 @@ export function sortTransitDisplayDataWithMetaData(
     const ka = orderKey(a);
     const kb = orderKey(b);
     const skipRouteAxis = ka.hasMultipleRoutes || kb.hasMultipleRoutes;
-    const skipDirectionAxis = ka.hasMultipleDirections || kb.hasMultipleDirections;
+    // Direction axis is also skipped whenever the route axis is skipped:
+    // multi-route boards may have a single direction value that still differs
+    // between dep and arr (a route present only in one category can shift
+    // `directions[0]`), so trusting it would mis-order arrivals before
+    // departures. `hasMultipleDirections` covers the case where `splitByRoute`
+    // is true but `splitByDirection` is false (rare but possible).
+    const skipDirectionAxis =
+      skipRouteAxis || ka.hasMultipleDirections || kb.hasMultipleDirections;
     return (
       ka.routeType - kb.routeType ||
       (skipRouteAxis ? 0 : ka.routeId.localeCompare(kb.routeId)) ||

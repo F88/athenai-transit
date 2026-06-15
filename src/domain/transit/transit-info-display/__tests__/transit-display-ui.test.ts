@@ -252,21 +252,45 @@ describe('sortTransitDisplayDataWithMetaData', () => {
     ]);
   });
 
-  // Composition: `splitByDirection: true` + `splitByRoute: false` is a possible
-  // future call shape (multi-route boards split by direction). For those, the
-  // route axis is skipped but the direction axis remains usable because
-  // `directions.length === 1` (each board carries a single split direction).
-  it('keeps direction axis usable when routes are multiple but directions are split (single-direction multi-route boards)', () => {
+  // Multi-route boards skip the direction axis as well (skipDirectionAxis is
+  // OR-ed with skipRouteAxis). Reason: even a "single-direction multi-route"
+  // board can have a direction value that differs between dep and arr inside
+  // the cluster (the offending case is multi-route + single-direction with
+  // a per-category direction shift). Trusting direction here would mis-order
+  // arrivals before departures, so we skip it whenever the route axis is.
+  // Same-category multi-route boards that share routeType keep their input
+  // order via stable sort.
+  it('skips direction axis when multi-route (single-direction multi-route boards keep input order via stable sort)', () => {
     const route76 = makeRoute('iyotetsu:76', 3);
     const routeA = makeRoute('iyotetsu:a', 3);
-    // Two boards, both multi-route, both single-direction. dep / arr aside;
-    // dir 0 < dir 1 must hold.
     const dep0 = display(3, 'departures', [0], [route76, routeA]);
     const dep1 = display(3, 'departures', [1], [route76, routeA]);
 
-    expect(
-      sortTransitDisplayDataWithMetaData([dep1, dep0]).map((d) => d.meta.directions[0]),
-    ).toEqual([0, 1]);
+    // Direction is no longer a sort key for multi-route boards, so the two
+    // are equal under (routeType, category) and stable sort preserves input
+    // order regardless of direction values.
+    expect(sortTransitDisplayDataWithMetaData([dep1, dep0])).toEqual([dep1, dep0]);
+    expect(sortTransitDisplayDataWithMetaData([dep0, dep1])).toEqual([dep0, dep1]);
+  });
+
+  // The minkuru:0636-06 (Tokyo bus stop) regression: multi-route + single-
+  // direction where dep's directions[0] differs from arr's directions[0]
+  // (because the present-direction set diverges across categories). Without
+  // OR-ing skipDirectionAxis with skipRouteAxis, this case would mis-order
+  // arrivals before departures.
+  it('skips direction axis for multi-route single-direction with category-shifted directions[0] (minkuru regression)', () => {
+    const routeT01 = makeRoute('toei:t01', 3);
+    const routeMt87 = makeRoute('toei:t87', 3);
+    // dep has directions [1] only, arr has ['none'] only -- both length 1
+    // but different values. DIRECTIONS.indexOf('none') = 0 < indexOf(1) = 2,
+    // so without the OR skip, arr would sort before dep.
+    const dep = display(3, 'departures', [1], [routeT01, routeMt87]);
+    const arr = display(3, 'arrivals', ['none'], [routeT01, routeMt87]);
+
+    expect(sortTransitDisplayDataWithMetaData([arr, dep]).map((d) => d.meta.category)).toEqual([
+      'departures',
+      'arrivals',
+    ]);
   });
 
   it('falls back to no route comparison when meta.routes is empty (boards with same routeType/category/direction keep stable order)', () => {
