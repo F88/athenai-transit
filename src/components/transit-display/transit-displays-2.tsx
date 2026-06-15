@@ -16,8 +16,8 @@ import {
   type TransitDisplayDataWithMetaData,
   type TransitDisplayDatum,
   type TransitDisplayMeta,
-  type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
 import { computeTransitDisplayDatumStats } from '@/domain/transit/compute-transit-display-datum-stats';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
@@ -487,6 +487,8 @@ export function TransitDisplay2({
     [meta.routes],
   );
 
+  const hasMultiRoutes = meta.routes.length >= 2;
+
   // A board that mixes route types: rows then show their own trip route-type emoji.
   // const hasMultiRoutes = meta.routeTypes.length >= 2;
   return (
@@ -563,6 +565,31 @@ export function TransitDisplay2({
             )}
             {routeTypeIcon}
             <span className="truncate">{title}</span>
+
+            {/* Routes (show when only a single route) */}
+            {/* {!hasMultiRoutes && (
+              <div className="flex flex-wrap items-center gap-1">
+                {sortedRoutes.map((route) => {
+                  // Find the agency that runs this route. board scope may span multiple
+                  // stops, so flatten all agencies present and match by agency_id.
+                  const agency = transitDisplayData.data
+                    .flatMap((c) => c.stop.agencies)
+                    .find((a) => a.agency_id === route.agency_id);
+                  const agencyLangs = agency ? [agency.agency_lang] : undefined;
+                  return (
+                    <RouteBadge
+                      route={route}
+                      dataLang={dataLangs}
+                      agencyLangs={agencyLangs}
+                      infoLevel={infoLevel}
+                      size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+                      // size={HEADER_STATS_ICONS_BY_SIZE[size].large.size}
+                      showBorder={true}
+                    />
+                  );
+                })}
+              </div>
+            )} */}
           </h3>
 
           {/* Right side: stats badges + radius, grouped and right-aligned. */}
@@ -588,8 +615,8 @@ export function TransitDisplay2({
           </div>
         </div>
 
-        {/* Routes  */}
-        {infoLevelFlag.isDetailedEnabled && (
+        {/* Routes (show only multiple routes) */}
+        {hasMultiRoutes && infoLevelFlag.isDetailedEnabled && (
           <div className="flex flex-wrap items-center gap-1">
             {sortedRoutes.map((route) => {
               // Find the agency that runs this route. board scope may span multiple

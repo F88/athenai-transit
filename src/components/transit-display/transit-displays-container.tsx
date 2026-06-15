@@ -14,13 +14,13 @@ import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
+import { buildTransitDisplayDataSet } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
-  buildTransitDisplayDataSet,
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
   transitDisplayMaxEntriesPerRouteFor,
-} from '@/domain/transit/transit-info-display/build-transit-display-data';
+} from '@/domain/transit/transit-info-display/transit-display-ui';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
