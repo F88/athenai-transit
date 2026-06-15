@@ -101,8 +101,7 @@ export function sortTransitDisplayDataWithMetaData(
     // `directions[0]`), so trusting it would mis-order arrivals before
     // departures. `hasMultipleDirections` covers the case where `splitByRoute`
     // is true but `splitByDirection` is false (rare but possible).
-    const skipDirectionAxis =
-      skipRouteAxis || ka.hasMultipleDirections || kb.hasMultipleDirections;
+    const skipDirectionAxis = skipRouteAxis || ka.hasMultipleDirections || kb.hasMultipleDirections;
     return (
       ka.routeType - kb.routeType ||
       (skipRouteAxis ? 0 : ka.routeId.localeCompare(kb.routeId)) ||

@@ -9,6 +9,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- TransitDisplay (rail / subway / tram / monorail): per-route board (1 board = 1 route) を導入した。渋谷 subway 等の多 line 駅で銀座線 / 半蔵門線 / 副都心線が個別 board として並ぶようになった (#296, #300)。
+- TransitDisplay: per-route 用の row cap (`transitDisplayMaxEntriesPerRouteFor`) を追加した (simple: 3 / normal: 5 / detailed: 10 / verbose: 10、1 route board が冗長にならないように multi-route 用より少なく) (#296, #300)。
+- TransitDisplay2: Header band を 2 columns 構成 (Title + Routes / stats badges) に再構成し、`RouteBadge` を Title 行に表示するようにした (#296, #300)。
+
 ### Changed
 
 - Boardability: 他社直通の境界となる last stop (フィード境界) を乗車可として扱う per-source endpoint-signal-trust を導入した。信頼対象は東京メトロ (`tome`) / りんかい線 (`twrr`) / 都営地下鉄 (`toaran`) で、これらでは last stop / first stop の乗降可否を pickup_type / drop_off_type の signal のみで判定する。従来 last stop として発着案内・乗車可フィルタから除外されていた直通便 (例: 千代田線→JR 常磐線の綾瀬、りんかい線→JR 埼京線の大崎) が乗車可として表示されるようになった (東京メトロ 約 3,211 / 都営地下鉄 約 1,339 / りんかい線 大崎 152 行)。横浜市営地下鉄のように真の終点に pickup_type=0 を残す事業者は対象外 (#297, #145)。
@@ -16,6 +22,13 @@ and this project adheres to [CalVer](https://calver.org/).
 - TimetableEntryStats: faithful な集計軸 `signal` を `boarding` にリネームし、pickup_type / drop_off_type を「不可」だけでなく全値 (0/1/2/3) の分布 (`pickupTypeCounts` / `dropOffTypeCounts`) として持つようにした。利用者観点の `passenger` 軸には降車側 (`alightableCount` / `nonAlightableCount`) を対称に追加した (#298, #162)。
 - TimetableMetadata: 時刻表ダイアログの集計バッジで faithful (signal) と interpreted (passenger) の軸が混在していた問題を解消し、position / boarding (faithful) / passenger (interpreted) のバッジに分離した。passenger バッジは verbose 情報レベルでのみ表示し、デバッグ用の集計 span は `VerboseTimetableSummary` に集約した (#298)。
 - i18n: 未使用だった `stop.serviceState.boardable` ("運行中") を `inService` にリネームした (`passenger.boardableCount` ("乗車可") との混同を回避)。`stopTimeView` を `relativeTime` / `absoluteTime` / `passenger` / `endpoint` のサブグループに構造化し、将来の発着可否・端点種別 (現実の起終点 vs 直通境界) 表示用キーを足場として追加した (#162)。
+- transit-display: UI 表示用のヘルパー (`sortTransitDisplayDataWithMetaData` / `resolveTransitDisplayState` / `transitDisplayMaxEntriesFor` ほか) を `transit-display-ui.ts` に分離した。builder (`build-transit-display-data.ts`) は board データ生成のみ、UI 配慮 (並び順 / row 上限 / empty-state) は専用 module に集約 (#296, #300)。
+- TransitDisplaysContainer: 鉄道系 (`DIRECTION_SPLIT_ROUTE_TYPES`) は per-route board (`splitByRoute: true`) で構築し、bus / trolleybus / ferry (`NO_SPLIT_ROUTE_TYPES`) は multi-route のまま維持する per-mode policy を採用した。group-by の runtime toggle は意図的に追加しない (#296, #300)。
+- TransitDisplay: multi-route board の row cap (`simple` / `normal`) を 10 に下げた (per-route と数を揃え、過剰な行数を抑制) (#296, #300)。
+
+### Fixed
+
+- TransitDisplay: 多 route 停留所 (都営バス渋谷駅前 / 伊予鉄バス大街道等) で「到着」 board が「出発」 board より先に並んでしまうバグを修正した。multi-route 板の `meta.routes` / `meta.directions` は boardCandidates ベースで計算されるため dep / arr 間で `routes[0]` / `directions[0]` がズレることがあり、sort key として信頼できない。sort 関数で multi-value のときは route 軸 / direction 軸を skip し、category 軸で確実に departures → arrivals 順になるようにした (#296, #300)。
 
 ## [2026.06.11]
 
