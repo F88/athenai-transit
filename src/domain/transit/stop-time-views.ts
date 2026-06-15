@@ -96,7 +96,7 @@ export const STOP_TIMES_VIEWS = [
     labelKey: 'view.route.label',
     titleKey: 'view.route.title',
     descriptionKey: 'view.route.description',
-    enabled: false,
+    enabled: true,
     visible: true,
   },
   /**

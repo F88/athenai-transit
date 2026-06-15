@@ -4,48 +4,31 @@ import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
-import type { AppRouteTypeValue } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { createLogger } from '@/lib/logger';
 
 import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
-import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
-import { buildTransitDisplayDataSet } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import {
-  resolveTransitDisplayState,
-  sortTransitDisplayDataWithMetaData,
-  transitDisplayMaxEntriesFor,
-  transitDisplayMaxEntriesPerRouteFor,
-} from '@/domain/transit/transit-info-display/transit-display-ui';
+import { resolveTransitDisplayState } from '@/domain/transit/transit-info-display/transit-display-ui';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
+import {
+  buildBoardsForPolicy,
+  ROUTE_VIEW_POLICY,
+  TRANSIT_DISPLAY_POLICY,
+  VIEW_POLICY,
+} from '@/components/transit-display/transit-display-view-policy';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import { TransitDisplays2 } from '@/components/transit-display/transit-displays-2';
 
 const logger = createLogger('TransitDisplaysContainer');
 
 export const NEARBY_RADIUS_M = 100;
-
-/**
- * Route types whose boards are NOT split by direction: bus, trolleybus, and
- * ferry. Their `direction_id` is route-local / arbitrary, and at a shared stop
- * many routes converge (ferries especially fan out hub-and-spoke across several
- * pontoons), so a per-direction split would mix unrelated routes; the headsign
- * carries the destination instead. Everything else (rail / subway / tram /
- * monorail / ...) is split, where a line's direction is the meaningful axis.
- */
-const NO_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = [3, 11, 4];
-
-/** Every other route type is split by direction, kept in display order. */
-const DIRECTION_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
-  (routeType) => !NO_SPLIT_ROUTE_TYPES.includes(routeType),
-);
 
 export interface TransitDisplaysContainerProps {
   /**
@@ -104,62 +87,38 @@ export function TransitDisplaysContainer({
     );
   }, [transitDisplayStatus.radius, transitDisplayStatus.state]);
 
+  // Per-policy memos: data depends only on (nearbyStops, infoLevel, ready
+  // state), so switching the view does not invalidate either one. Both are
+  // computed eagerly because the per-stop dataset is small (NEARBY_RADIUS_M)
+  // and the cost is dominated by the active view's render anyway.
+  const memoizedTransitDisplayBoards = useMemo(
+    () =>
+      transitDisplayStatus.state === 'ready'
+        ? buildBoardsForPolicy(nearbyStops, NEARBY_RADIUS_M, TRANSIT_DISPLAY_POLICY, infoLevel)
+        : [],
+    [nearbyStops, infoLevel, transitDisplayStatus.state],
+  );
+  const memoizedRouteViewBoards = useMemo(
+    () =>
+      transitDisplayStatus.state === 'ready'
+        ? buildBoardsForPolicy(nearbyStops, NEARBY_RADIUS_M, ROUTE_VIEW_POLICY, infoLevel)
+        : [],
+    [nearbyStops, infoLevel, transitDisplayStatus.state],
+  );
+
+  // Select the memo for the active view via VIEW_POLICY lookup (identity
+  // compare on the policy reference -- adding a new view = new memo + new
+  // VIEW_POLICY entry + a new branch here, all explicit).
   const transitDisplayData = useMemo(() => {
-    // Build boards only when there is something to show; `no-stops` / `no-service`
-    // produce no boards, so skip the work and let TransitDisplays2 render the
-    // reason from `transitDisplayStatus`.
-    if (transitDisplayStatus.state !== 'ready') {
-      return [];
+    const policy = VIEW_POLICY[viewId];
+    if (policy === ROUTE_VIEW_POLICY) {
+      return memoizedRouteViewBoards;
     }
-
-    // const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
-    const maxEntriesMultiRoute = transitDisplayMaxEntriesFor(infoLevel);
-    const maxEntriesPerRoute = transitDisplayMaxEntriesPerRouteFor(infoLevel);
-
-    // Per-mode direction policy is composed here rather than inside the builder:
-    // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
-    // splits by direction. The builder takes a single splitByDirection flag, so
-    // this is two calls (each scoped to its route types via a custom grouping).
-    // buildTransitDisplayDataSet attaches each display's meta but leaves rows raw.
-    // The concatenated result is re-ordered into the canonical UI order by
-    // sortTransitDisplayDataWithMetaData (so the order is correct
-    // regardless of which modes share a stop -- the raw concat is not in display
-    // order). Rows stay raw here; TransitDisplays resolves them into UI data.
-
-    const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries: maxEntriesMultiRoute,
-      routeTypeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
-      splitByRoute: false,
-      // splitByRoute: true,
-      splitByDirection: false,
-      // splitByDirection: true,
-    });
-    const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries: maxEntriesPerRoute,
-      routeTypeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
-      // splitByRoute: false,
-      splitByRoute: true,
-      // splitByDirection: false,
-      splitByDirection: true,
-    });
-
-    return sortTransitDisplayDataWithMetaData([
-      //
-      ...directionUnsplitRaw,
-      ...directionSplitRaw,
-    ]);
-
-    // data.forEach((e) => {
-    //   console.info(
-    //     'debug-x',
-    //     `e.meta.category: ${e.meta.category}`,
-    //     `e.meta.routeTypes.length: ${e.meta.routeTypes.length}`,
-    //     `e.meta.routes.length: ${e.meta.routes.length}`,
-    //     `e.meta.directions.length: ${e.meta.directions.length}`,
-    //   );
-    // });
-    // return data;
-  }, [infoLevel, nearbyStops, transitDisplayStatus.state]);
+    if (policy === TRANSIT_DISPLAY_POLICY) {
+      return memoizedTransitDisplayBoards;
+    }
+    return [];
+  }, [viewId, memoizedTransitDisplayBoards, memoizedRouteViewBoards]);
 
   return (
     <div
@@ -168,34 +127,63 @@ export function TransitDisplaysContainer({
       onScroll={scrollOverflow.update}
     >
       {scrollOverflow.hasContentAbove && <ScrollFadeEdge position="top" />}
-      {/* transit-display: the classic split-flap board. */}
-      {/* transit-display-2: the modern design board. */}
-      {viewId === 'transit-display' ? (
-        <TransitDisplays
-          dataWithMeta={transitDisplayData}
-          status={transitDisplayStatus}
-          dataLangs={dataLangs}
-          emptyMessage={t('stop.timetable.allFilteredOut')}
-          now={now}
-          mapCenter={mapCenter}
-          infoLevel={infoLevel}
-          size={size}
-          onStopSelected={onStopSelected}
-          onInspectTrip={onInspectTrip}
-        />
-      ) : (
-        <TransitDisplays2
-          dataWithMeta={transitDisplayData}
-          status={transitDisplayStatus}
-          dataLangs={dataLangs}
-          now={now}
-          mapCenter={mapCenter}
-          infoLevel={infoLevel}
-          size={size}
-          onStopSelected={onStopSelected}
-          onInspectTrip={onInspectTrip}
-        />
-      )}
+      {/*
+        Each viewId is listed explicitly so new views render through a fresh
+        branch instead of falling through a catch-all. Currently:
+        - 'transit-display'    -> classic split-flap board
+        - 'transit-display-2'  -> modern design board
+        - 'route'              -> uses the modern design board for now (will
+                                  switch to a dedicated component if needed)
+      */}
+      {(() => {
+        switch (viewId) {
+          case 'transit-display':
+            return (
+              <TransitDisplays
+                dataWithMeta={transitDisplayData}
+                status={transitDisplayStatus}
+                dataLangs={dataLangs}
+                emptyMessage={t('stop.timetable.allFilteredOut')}
+                now={now}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                size={size}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            );
+          case 'transit-display-2':
+            return (
+              <TransitDisplays2
+                dataWithMeta={transitDisplayData}
+                status={transitDisplayStatus}
+                dataLangs={dataLangs}
+                now={now}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                size={size}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            );
+          case 'route':
+            return (
+              <TransitDisplays2
+                dataWithMeta={transitDisplayData}
+                status={transitDisplayStatus}
+                dataLangs={dataLangs}
+                now={now}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                size={size}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            );
+          default:
+            return null;
+        }
+      })()}
       {scrollOverflow.hasContentBelow && <ScrollFadeEdge position="bottom" />}
       <ScrollToTopButton
         visible={scrollOverflow.hasContentAbove}
