@@ -20,8 +20,8 @@ import { isArrival, isDeparture } from '../timetable-entry-for-transit-display';
  * {@link buildTransitDisplayDataSet}.
  */
 const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
-  simple: 20,
-  normal: 20,
+  simple: 10,
+  normal: 10,
   detailed: 20,
   verbose: 20,
   // verbose: 10,
@@ -30,6 +30,18 @@ const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
 /** Resolves the per-board row cap for the given info level. */
 export function transitDisplayMaxEntriesFor(infoLevel: InfoLevel): number {
   return MAX_ENTRIES_BY_INFO_LEVEL[infoLevel];
+}
+
+const MAX_ENTRIES_PER_ROUTE_BY_INFO_LEVEL: Record<InfoLevel, number> = {
+  simple: 3,
+  normal: 5,
+  detailed: 10,
+  verbose: 10,
+  // verbose: 10,
+};
+
+export function transitDisplayMaxEntriesPerRouteFor(infoLevel: InfoLevel): number {
+  return MAX_ENTRIES_PER_ROUTE_BY_INFO_LEVEL[infoLevel];
 }
 
 /**

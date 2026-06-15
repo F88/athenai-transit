@@ -480,6 +480,13 @@ export function TransitDisplay2({
     [transitDisplayData.data],
   );
 
+  // Routes shown in the header band, ordered by route_id alphabetical so the
+  // badge order is stable across renders and matches sortTransitDisplayDataWithMetaData.
+  const sortedRoutes = useMemo(
+    () => [...meta.routes].sort((a, b) => a.route_id.localeCompare(b.route_id)),
+    [meta.routes],
+  );
+
   // A board that mixes route types: rows then show their own trip route-type emoji.
   // const hasMultiRoutes = meta.routeTypes.length >= 2;
   return (
@@ -533,7 +540,7 @@ export function TransitDisplay2({
         )}
       >
         <div className="flex items-center justify-between gap-3 border-0">
-          {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
+          {/* Left side:  Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
               The arrow is decorative; the phrase already states departures/arrivals. */}
           <h3
             className={cn(
@@ -558,21 +565,6 @@ export function TransitDisplay2({
             <span className="truncate">{title}</span>
           </h3>
 
-          {/* Routes  */}
-          {/* {meta.routes.map((route) => {
-            return (
-              <RouteBadge
-                route={route}
-                dataLang={dataLangs}
-                // agencyLangs={stopAgencyLangs}
-                // agencyLangs={route.agency_id}
-                infoLevel={infoLevel}
-                size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
-                showBorder={true}
-              />
-            );
-          })} */}
-
           {/* Right side: stats badges + radius, grouped and right-aligned. */}
           <div className="flex shrink-0 items-center gap-1">
             <IconTextBadge
@@ -584,7 +576,7 @@ export function TransitDisplay2({
               frameClassName="p-1 border-none"
               aria-label="radius"
             />
-            {infoLevelFlag.isDetailedEnabled && (
+            {infoLevelFlag.isNormalEnabled && (
               <StatsBadges
                 size={size}
                 entryCount={stats.qualifying.entryCount}
@@ -595,6 +587,31 @@ export function TransitDisplay2({
             )}
           </div>
         </div>
+
+        {/* Routes  */}
+        {infoLevelFlag.isDetailedEnabled && (
+          <div className="flex flex-wrap items-center gap-1">
+            {sortedRoutes.map((route) => {
+              // Find the agency that runs this route. board scope may span multiple
+              // stops, so flatten all agencies present and match by agency_id.
+              const agency = transitDisplayData.data
+                .flatMap((c) => c.stop.agencies)
+                .find((a) => a.agency_id === route.agency_id);
+              const agencyLangs = agency ? [agency.agency_lang] : undefined;
+              return (
+                <RouteBadge
+                  route={route}
+                  dataLang={dataLangs}
+                  agencyLangs={agencyLangs}
+                  infoLevel={infoLevel}
+                  // size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+                  size={HEADER_STATS_ICONS_BY_SIZE[size].large.size}
+                  showBorder={true}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
       {/* Body: the rows (or the empty fallback). */}
       <div
@@ -706,9 +723,10 @@ export function TransitDisplayEntry2({
     const inspectTarget = buildTripInspectionTarget(entry, entry.serviceDate);
     return {
       routeAgency,
+      routeAgencyLangs,
       routeColor,
       headsign,
-      stopAgencyLangs,
+      // stopAgencyLangs,
       stopName,
       distanceRounded,
       inspectTarget,
@@ -716,9 +734,10 @@ export function TransitDisplayEntry2({
   }, [data, dataLangs]);
   const {
     routeAgency,
+    routeAgencyLangs,
     routeColor,
     headsign,
-    stopAgencyLangs,
+    // stopAgencyLangs,
     stopName,
     distanceRounded,
     inspectTarget,
@@ -787,7 +806,7 @@ export function TransitDisplayEntry2({
           <RouteBadge
             route={timetableEntry.routeDirection.route}
             dataLang={dataLangs}
-            agencyLangs={stopAgencyLangs}
+            agencyLangs={routeAgencyLangs}
             infoLevel={infoLevel}
             size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
             showBorder={true}

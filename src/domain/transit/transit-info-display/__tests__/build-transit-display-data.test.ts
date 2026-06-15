@@ -25,6 +25,7 @@ import {
   sortTransitDisplayDataWithMetaData,
   toTransitDisplayCandidates,
   transitDisplayMaxEntriesFor,
+  transitDisplayMaxEntriesPerRouteFor,
   type TransitDisplayData,
   type TransitDisplayCandidate,
   type TransitDisplayCategory,
@@ -34,8 +35,8 @@ import {
 
 describe('transitDisplayMaxEntriesFor', () => {
   it('returns the configured row cap for each info level', () => {
-    expect(transitDisplayMaxEntriesFor('simple')).toBe(20);
-    expect(transitDisplayMaxEntriesFor('normal')).toBe(20);
+    expect(transitDisplayMaxEntriesFor('simple')).toBe(10);
+    expect(transitDisplayMaxEntriesFor('normal')).toBe(10);
     expect(transitDisplayMaxEntriesFor('detailed')).toBe(20);
     expect(transitDisplayMaxEntriesFor('verbose')).toBe(20);
   });
@@ -44,6 +45,22 @@ describe('transitDisplayMaxEntriesFor', () => {
     const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
     for (const level of levels) {
       expect(transitDisplayMaxEntriesFor(level)).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('transitDisplayMaxEntriesPerRouteFor', () => {
+  it('returns the configured per-route row cap for each info level', () => {
+    expect(transitDisplayMaxEntriesPerRouteFor('simple')).toBe(3);
+    expect(transitDisplayMaxEntriesPerRouteFor('normal')).toBe(5);
+    expect(transitDisplayMaxEntriesPerRouteFor('detailed')).toBe(10);
+    expect(transitDisplayMaxEntriesPerRouteFor('verbose')).toBe(10);
+  });
+
+  it('returns a positive cap for every info level', () => {
+    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
+    for (const level of levels) {
+      expect(transitDisplayMaxEntriesPerRouteFor(level)).toBeGreaterThan(0);
     }
   });
 });

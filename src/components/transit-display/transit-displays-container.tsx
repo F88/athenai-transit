@@ -19,6 +19,7 @@ import {
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
+  transitDisplayMaxEntriesPerRouteFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
@@ -111,7 +112,9 @@ export function TransitDisplaysContainer({
       return [];
     }
 
-    const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
+    // const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
+    const maxEntriesMultiRoute = transitDisplayMaxEntriesFor(infoLevel);
+    const maxEntriesPerRoute = transitDisplayMaxEntriesPerRouteFor(infoLevel);
 
     // Per-mode direction policy is composed here rather than inside the builder:
     // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
@@ -124,16 +127,19 @@ export function TransitDisplaysContainer({
     // order). Rows stay raw here; TransitDisplays resolves them into UI data.
 
     const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries,
+      maxEntries: maxEntriesMultiRoute,
       routeTypeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByRoute: false,
+      // splitByRoute: true,
       splitByDirection: false,
+      // splitByDirection: true,
     });
     const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries,
+      maxEntries: maxEntriesPerRoute,
       routeTypeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
-      splitByRoute: false,
-      // splitByRoute: true,
+      // splitByRoute: false,
+      splitByRoute: true,
+      // splitByDirection: false,
       splitByDirection: true,
     });
 
