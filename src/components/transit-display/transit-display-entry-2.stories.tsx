@@ -88,6 +88,7 @@ function makeMeta(overrides: Partial<TransitDisplayMeta> = {}): TransitDisplayMe
   return {
     category: 'departures',
     routeTypes: [3],
+    routes: [],
     directions: [0],
     max: 20,
     radius: 100,

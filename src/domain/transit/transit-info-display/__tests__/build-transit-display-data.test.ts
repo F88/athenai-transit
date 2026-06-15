@@ -7,8 +7,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeContextualEntry, makeRoute, makeStop } from '../../../../__tests__/helpers';
-import type { InfoLevel } from '../../../../types/app/settings';
-import type { AppRouteTypeValue, Route } from '../../../../types/app/transit';
+import type { Route } from '../../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
@@ -22,31 +21,12 @@ import {
   groupCandidatesIntoBoards,
   sortAndCapTransitDisplayData,
   sortByCategory,
-  sortTransitDisplayDataWithMetaData,
   toTransitDisplayCandidates,
-  transitDisplayMaxEntriesFor,
   type TransitDisplayData,
   type TransitDisplayCandidate,
   type TransitDisplayCategory,
   type TransitDisplayCondition,
-  type TransitDisplayDataWithMetaData,
 } from '../build-transit-display-data';
-
-describe('transitDisplayMaxEntriesFor', () => {
-  it('returns the configured row cap for each info level', () => {
-    expect(transitDisplayMaxEntriesFor('simple')).toBe(20);
-    expect(transitDisplayMaxEntriesFor('normal')).toBe(20);
-    expect(transitDisplayMaxEntriesFor('detailed')).toBe(20);
-    expect(transitDisplayMaxEntriesFor('verbose')).toBe(20);
-  });
-
-  it('returns a positive cap for every info level', () => {
-    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
-    for (const level of levels) {
-      expect(transitDisplayMaxEntriesFor(level)).toBeGreaterThan(0);
-    }
-  });
-});
 
 const busRoute = makeRoute('bus', 3); // route_type 3
 const railRoute = makeRoute('rail', 2); // route_type 2
@@ -239,11 +219,11 @@ describe('categoryQualifies', () => {
 });
 
 describe('clusterCandidatesByRouteType', () => {
-  it("'route': one cluster per eligible route type in display order, candidates placed by type", () => {
+  it("'routeType': one cluster per eligible route type in display order, candidates placed by type", () => {
     const subway = candidateOf(subwayRoute); // route_type 1
     const bus = candidateOf(busRoute); // route_type 3
 
-    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'route' }, [1, 3]);
+    const clusters = clusterCandidatesByRouteType([subway, bus], { kind: 'routeType' }, [1, 3]);
 
     // One single-type cluster per eligible type, in display order.
     const eligible = ROUTE_TYPE_DISPLAY_ORDER.filter((t) => t === 1 || t === 3);
@@ -256,19 +236,19 @@ describe('clusterCandidatesByRouteType', () => {
     ]);
   });
 
-  it("'route': an eligible route type with no candidates yields an empty cluster", () => {
+  it("'routeType': an eligible route type with no candidates yields an empty cluster", () => {
     const bus = candidateOf(busRoute); // 3; route_type 2 is eligible but has no candidate
 
-    const clusters = clusterCandidatesByRouteType([bus], { kind: 'route' }, [2, 3]);
+    const clusters = clusterCandidatesByRouteType([bus], { kind: 'routeType' }, [2, 3]);
 
     const railCluster = clusters.find((c) => c.routeTypes[0] === railRoute.route_type);
     expect(railCluster?.candidates).toEqual([]);
   });
 
-  it("'route': ignores route types not in effectiveRouteTypes", () => {
+  it("'routeType': ignores route types not in effectiveRouteTypes", () => {
     const bus = candidateOf(busRoute); // 3
 
-    const clusters = clusterCandidatesByRouteType([bus], { kind: 'route' }, [3]);
+    const clusters = clusterCandidatesByRouteType([bus], { kind: 'routeType' }, [3]);
 
     expect(clusters.map((c) => c.routeTypes)).toEqual([[3]]);
   });
@@ -331,18 +311,18 @@ describe('clusterCandidatesByRouteType', () => {
     expect(dropped).toEqual([]); // whole group ineligible -> no cluster
   });
 
-  it("'route': keeps the input order of candidates within a single type's cluster", () => {
+  it("'routeType': keeps the input order of candidates within a single type's cluster", () => {
     const bus1 = candidateOf(busRoute); // 3
     const bus2 = candidateOf(busRoute); // 3
 
-    const clusters = clusterCandidatesByRouteType([bus1, bus2], { kind: 'route' }, [3]);
+    const clusters = clusterCandidatesByRouteType([bus1, bus2], { kind: 'routeType' }, [3]);
 
     const busCluster = clusters.find((c) => c.routeTypes[0] === busRoute.route_type);
     expect(busCluster?.candidates).toEqual([bus1, bus2]);
   });
 
-  it("'route': returns a cluster per eligible type even with no candidates (all empty)", () => {
-    const clusters = clusterCandidatesByRouteType([], { kind: 'route' }, [1, 2, 3]);
+  it("'routeType': returns a cluster per eligible type even with no candidates (all empty)", () => {
+    const clusters = clusterCandidatesByRouteType([], { kind: 'routeType' }, [1, 2, 3]);
 
     const eligible = ROUTE_TYPE_DISPLAY_ORDER.filter((t) => t === 1 || t === 2 || t === 3);
     expect(clusters.map((c) => c.routeTypes)).toEqual(eligible.map((t) => [t]));
@@ -350,7 +330,7 @@ describe('clusterCandidatesByRouteType', () => {
   });
 
   it('returns no eligible clusters when effectiveRouteTypes is empty', () => {
-    expect(clusterCandidatesByRouteType([], { kind: 'route' }, [])).toEqual([]);
+    expect(clusterCandidatesByRouteType([], { kind: 'routeType' }, [])).toEqual([]);
     // 'none' still returns its single cluster, but with no route types.
     expect(clusterCandidatesByRouteType([], { kind: 'none' }, [])).toEqual([
       { routeTypes: [], candidates: [] },
@@ -388,7 +368,8 @@ describe('groupCandidatesIntoBoards', () => {
 
   const notSplit: TransitDisplayCondition = {
     maxEntries: 100,
-    routeGrouping: { kind: 'none' },
+    routeTypeGrouping: { kind: 'none' },
+    splitByRoute: false,
     splitByDirection: false,
   };
   const split: TransitDisplayCondition = { ...notSplit, splitByDirection: true };
@@ -479,13 +460,18 @@ describe('groupCandidatesIntoBoards', () => {
     );
   });
 
-  it("respects the route grouping: 'route' yields per-route-type boards in display order", () => {
+  it("respects the route-type grouping: 'routeType' yields per-route-type boards in display order", () => {
     const bus = cand({ route: busRoute }); // 3
     const subway = cand({ route: subwayRoute }); // 1
 
     const boards = groupCandidatesIntoBoards(
       [bus, subway],
-      { maxEntries: 100, routeGrouping: { kind: 'route' }, splitByDirection: false },
+      {
+        maxEntries: 100,
+        routeTypeGrouping: { kind: 'routeType' },
+        splitByRoute: false,
+        splitByDirection: false,
+      },
       busAndSubwayStops,
     );
 
@@ -497,6 +483,110 @@ describe('groupCandidatesIntoBoards', () => {
       { routeTypes: [1], category: 'departures' },
       { routeTypes: [1], category: 'arrivals' },
     ]);
+  });
+
+  // splitByRoute: subdivides each route-type cluster so that one board carries
+  // trips of exactly one route. Models the Shibuya subway case (Issue #296):
+  // route_type 1 contains multiple lines (e.g. Ginza / Hanzomon), and folding
+  // them into one direction bucket reads poorly because `direction_id` is
+  // route-local.
+  const ginzaLine = makeRoute('ginza', 1);
+  const hanzomonLine = makeRoute('hanzomon', 1);
+  const subwayStops: readonly StopWithContext[] = [{ ...STUB_STOP, routeTypes: [1] }];
+
+  it('splitByRoute: subdivides a single route-type cluster into one board per route, in first-appearance order', () => {
+    const ginza = cand({ route: ginzaLine });
+    const hanzomon = cand({ route: hanzomonLine });
+
+    const boards = groupCandidatesIntoBoards(
+      [ginza, hanzomon],
+      {
+        maxEntries: 100,
+        routeTypeGrouping: { kind: 'none' }, // one cluster covering route_type 1
+        splitByRoute: true,
+        splitByDirection: false,
+      },
+      subwayStops,
+    );
+
+    // Two routes -> two route-buckets per category; first-appearance order is
+    // ginza, then hanzomon. Category-major: all departures before all arrivals.
+    expect(
+      boards.map((bd) => ({
+        category: bd.category,
+        routeIds: bd.data.map((c) => c.timetableEntry.routeDirection.route.route_id),
+      })),
+    ).toEqual([
+      { category: 'departures', routeIds: ['ginza'] },
+      { category: 'departures', routeIds: ['hanzomon'] },
+      { category: 'arrivals', routeIds: ['ginza'] },
+      { category: 'arrivals', routeIds: ['hanzomon'] },
+    ]);
+    // routeTypes stays at the cluster level (the route_type is still 1 on every board).
+    for (const bd of boards) {
+      expect(bd.routeTypes).toEqual([1]);
+    }
+  });
+
+  it('splitByRoute + splitByDirection: cross-product of route x direction within a cluster', () => {
+    // Each route runs both directions; route-local direction_id 0/1 has no
+    // shared meaning across routes, but per-route boards keep each direction
+    // self-consistent.
+    const ginza0 = cand({ route: ginzaLine, direction: 0 });
+    const ginza1 = cand({ route: ginzaLine, direction: 1 });
+    const hanzomon0 = cand({ route: hanzomonLine, direction: 0 });
+    const hanzomon1 = cand({ route: hanzomonLine, direction: 1 });
+
+    const boards = groupCandidatesIntoBoards(
+      [ginza0, ginza1, hanzomon0, hanzomon1],
+      {
+        maxEntries: 100,
+        routeTypeGrouping: { kind: 'none' },
+        splitByRoute: true,
+        splitByDirection: true,
+      },
+      subwayStops,
+    );
+
+    // route-major within category: ginza (dir 0, dir 1), then hanzomon (dir 0, dir 1).
+    expect(
+      boards
+        .filter((bd) => bd.category === 'departures')
+        .map((bd) => ({
+          routeId: bd.data[0]?.timetableEntry.routeDirection.route.route_id,
+          directions: bd.directions,
+        })),
+    ).toEqual([
+      { routeId: 'ginza', directions: [0] },
+      { routeId: 'ginza', directions: [1] },
+      { routeId: 'hanzomon', directions: [0] },
+      { routeId: 'hanzomon', directions: [1] },
+    ]);
+  });
+
+  it('splitByRoute: false keeps routes folded into one cluster board (current behaviour)', () => {
+    const ginza = cand({ route: ginzaLine });
+    const hanzomon = cand({ route: hanzomonLine });
+
+    const boards = groupCandidatesIntoBoards(
+      [ginza, hanzomon],
+      {
+        maxEntries: 100,
+        routeTypeGrouping: { kind: 'none' },
+        splitByRoute: false,
+        splitByDirection: false,
+      },
+      subwayStops,
+    );
+
+    // One departures + one arrivals board, each carrying both routes mixed.
+    expect(boards).toHaveLength(2);
+    for (const bd of boards) {
+      expect(bd.data.map((c) => c.timetableEntry.routeDirection.route.route_id)).toEqual([
+        'ginza',
+        'hanzomon',
+      ]);
+    }
   });
 });
 
@@ -518,7 +608,7 @@ describe('sortAndCapTransitDisplayData', () => {
     category: TransitDisplayCategory,
     candidates: TransitDisplayCandidate[],
   ): TransitDisplayData {
-    return { routeTypes: [3], directions: ['none'], category, data: candidates };
+    return { routeTypes: [3], routes: [], directions: ['none'], category, data: candidates };
   }
 
   it("sorts each board's candidates by its own category's time", () => {
@@ -550,6 +640,7 @@ describe('sortAndCapTransitDisplayData', () => {
   it('preserves board metadata (routeTypes, directions, category)', () => {
     const board: TransitDisplayData = {
       routeTypes: [2, 1],
+      routes: [],
       directions: [0, 'none'],
       category: 'departures',
       data: [candWithTimes(800)],
@@ -629,119 +720,14 @@ describe('toTransitDisplayCandidates', () => {
   });
 });
 
-describe('sortTransitDisplayDataWithMetaData', () => {
-  /** A display whose only meaningful fields for ordering are route type, category, direction. */
-  function display(
-    routeType: AppRouteTypeValue,
-    category: TransitDisplayCategory,
-    directions: readonly (0 | 1 | 'none')[] = ['none'],
-  ): TransitDisplayDataWithMetaData {
-    return {
-      meta: {
-        category,
-        routeTypes: [routeType],
-        directions,
-        max: 10,
-        radius: 100,
-      },
-      data: { routeTypes: [routeType], directions, category, data: [] },
-      stats: {
-        stopsInRadius: { stopCount: 0, agencyCount: 0, routeCount: 0, routeTypeCount: 0 },
-        qualifying: {
-          entryCount: 0,
-          stopCount: 0,
-          agencyCount: 0,
-          routeCount: 0,
-          routeTypeCount: 0,
-        },
-      },
-    };
-  }
-
-  it('orders by route type in ROUTE_TYPE_DISPLAY_ORDER (ferry not hoisted)', () => {
-    // display order is [3, 11, 0, 2, 1, 12, 4, ...]: bus(3) < rail(2) < subway(1) < ferry(4)
-    const bus = display(3, 'departures');
-    const rail = display(2, 'departures');
-    const subway = display(1, 'departures');
-    const ferry = display(4, 'departures');
-
-    const sorted = sortTransitDisplayDataWithMetaData([subway, ferry, rail, bus]);
-
-    expect(sorted.map((d) => d.meta.routeTypes[0])).toEqual([3, 2, 1, 4]);
-  });
-
-  it('within a route type, departures come before arrivals', () => {
-    const arr = display(2, 'arrivals');
-    const dep = display(2, 'departures');
-
-    expect(sortTransitDisplayDataWithMetaData([arr, dep]).map((d) => d.meta.category)).toEqual([
-      'departures',
-      'arrivals',
-    ]);
-  });
-
-  it('within a category, orders by direction (none, 0, 1)', () => {
-    const d1 = display(2, 'departures', [1]);
-    const d0 = display(2, 'departures', [0]);
-    const dn = display(2, 'departures', ['none']);
-
-    expect(
-      sortTransitDisplayDataWithMetaData([d1, d0, dn]).map((d) => d.meta.directions[0]),
-    ).toEqual(['none', 0, 1]);
-  });
-
-  it('applies the three levels together: route type -> category -> direction', () => {
-    const railArr0 = display(2, 'arrivals', [0]);
-    const busDep = display(3, 'departures', ['none']);
-    const railDep1 = display(2, 'departures', [1]);
-    const railDep0 = display(2, 'departures', [0]);
-    const busArr = display(3, 'arrivals', ['none']);
-
-    const sorted = sortTransitDisplayDataWithMetaData([
-      railArr0,
-      busDep,
-      railDep1,
-      railDep0,
-      busArr,
-    ]);
-
-    expect(
-      sorted.map((d) => ({
-        rt: d.meta.routeTypes[0],
-        category: d.meta.category,
-        dir: d.meta.directions[0],
-      })),
-    ).toEqual([
-      { rt: 3, category: 'departures', dir: 'none' },
-      { rt: 3, category: 'arrivals', dir: 'none' },
-      { rt: 2, category: 'departures', dir: 0 },
-      { rt: 2, category: 'departures', dir: 1 },
-      { rt: 2, category: 'arrivals', dir: 0 },
-    ]);
-  });
-
-  it('does not mutate the input array', () => {
-    const a = display(2, 'departures');
-    const b = display(3, 'departures');
-    const input = [a, b];
-
-    sortTransitDisplayDataWithMetaData(input);
-
-    expect(input).toEqual([a, b]);
-  });
-
-  it('returns an empty array for empty input', () => {
-    expect(sortTransitDisplayDataWithMetaData([])).toEqual([]);
-  });
-});
-
 describe('buildTransitDisplayDataSet', () => {
   // The board-building steps are covered individually above; this guards the
   // orchestrator's empty case: no stops -> no displays.
   it('returns no displays for an empty stop set', () => {
     const result = buildTransitDisplayDataSet([], 100, {
       maxEntries: 20,
-      routeGrouping: { kind: 'none' },
+      routeTypeGrouping: { kind: 'none' },
+      splitByRoute: false,
       splitByDirection: false,
     });
     expect(result).toEqual([]);

@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
-  type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
 import {
   buildTransitDisplayDatumForUi,
   type TransitDisplayDataWithMetaDataForUi,

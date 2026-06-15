@@ -88,6 +88,7 @@ function makeDisplay(
   const meta: TransitDisplayMeta = {
     category: 'departures',
     routeTypes: [3],
+    routes: [],
     directions: [0],
     max: 20,
     radius: 100,
@@ -97,6 +98,7 @@ function makeDisplay(
     meta,
     data: {
       routeTypes: meta.routeTypes,
+      routes: meta.routes,
       directions: meta.directions,
       category: meta.category,
       data: [...rows],

@@ -14,12 +14,13 @@ import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
+import { buildTransitDisplayDataSet } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
-  buildTransitDisplayDataSet,
   resolveTransitDisplayState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
-} from '@/domain/transit/transit-info-display/build-transit-display-data';
+  transitDisplayMaxEntriesPerRouteFor,
+} from '@/domain/transit/transit-info-display/transit-display-ui';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
@@ -111,7 +112,9 @@ export function TransitDisplaysContainer({
       return [];
     }
 
-    const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
+    // const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
+    const maxEntriesMultiRoute = transitDisplayMaxEntriesFor(infoLevel);
+    const maxEntriesPerRoute = transitDisplayMaxEntriesPerRouteFor(infoLevel);
 
     // Per-mode direction policy is composed here rather than inside the builder:
     // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
@@ -124,13 +127,19 @@ export function TransitDisplaysContainer({
     // order). Rows stay raw here; TransitDisplays resolves them into UI data.
 
     const directionUnsplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries,
-      routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      maxEntries: maxEntriesMultiRoute,
+      routeTypeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByRoute: false,
+      // splitByRoute: true,
       splitByDirection: false,
+      // splitByDirection: true,
     });
     const directionSplitRaw = buildTransitDisplayDataSet(nearbyStops, NEARBY_RADIUS_M, {
-      maxEntries,
-      routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      maxEntries: maxEntriesPerRoute,
+      routeTypeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      // splitByRoute: false,
+      splitByRoute: true,
+      // splitByDirection: false,
       splitByDirection: true,
     });
 
@@ -139,6 +148,17 @@ export function TransitDisplaysContainer({
       ...directionUnsplitRaw,
       ...directionSplitRaw,
     ]);
+
+    // data.forEach((e) => {
+    //   console.info(
+    //     'debug-x',
+    //     `e.meta.category: ${e.meta.category}`,
+    //     `e.meta.routeTypes.length: ${e.meta.routeTypes.length}`,
+    //     `e.meta.routes.length: ${e.meta.routes.length}`,
+    //     `e.meta.directions.length: ${e.meta.directions.length}`,
+    //   );
+    // });
+    // return data;
   }, [infoLevel, nearbyStops, transitDisplayStatus.state]);
 
   return (
