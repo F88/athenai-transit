@@ -1,9 +1,18 @@
 import { Fragment, useMemo, useState } from 'react';
 
-import { ArrowRight, ArrowUp, Building2, Clock, Radio, Route, Signpost } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowUp,
+  Building2,
+  Clock,
+  Radio,
+  Route as RouteIcon,
+  Signpost,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
+import type { Agency, Route } from '@/types/app/transit';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { DistanceBadge } from '@/components/badge/distance-badge';
@@ -34,12 +43,10 @@ import { buildTripInspectionTarget } from '@/domain/transit/trip-inspection-targ
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { RouteBadge } from '../badge/route-badge';
+import { RouteFilter } from '@/components/filter/route-filter';
 import { AgencyBadge } from '../badge/agency-badge';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
-import {
-  TransitDisplayPerRoute,
-  type TransitDisplayRouteGroup,
-} from './transit-display-per-route';
+import { TransitDisplayPerRoute, type TransitDisplayRouteGroup } from './transit-display-per-route';
 import { Separator } from '../ui/separator';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
@@ -197,6 +204,70 @@ export function TransitDisplays2({
   const { t } = useTranslation();
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
+  const [activeRouteFilters, setActiveRouteFilters] = useState<Set<string>>(new Set());
+
+  const toggleRouteFilter = (routeId: string) => {
+    setActiveRouteFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(routeId)) {
+        next.delete(routeId);
+      } else {
+        next.add(routeId);
+      }
+      return next;
+    });
+  };
+
+  // Boards passing the category filter.
+  const categoryFilteredData = useMemo(
+    () => dataWithMeta.filter((display) => shownCategories[display.meta.category]),
+    [dataWithMeta, shownCategories],
+  );
+
+  // Routes present in `categoryFilteredData` (after the category filter), deduped by
+  // route_id and sorted by route_id ascending. Used both for the route filter
+  // toggle row and as the source for `routeFilteredData`.
+  const visibleRoutes = useMemo<Route[]>(() => {
+    const byId = new Map<string, Route>();
+    for (const display of categoryFilteredData) {
+      for (const route of display.meta.routes) {
+        if (!byId.has(route.route_id)) {
+          byId.set(route.route_id, route);
+        }
+      }
+    }
+    return Array.from(byId.values()).sort((a, b) => a.route_id.localeCompare(b.route_id));
+  }, [categoryFilteredData]);
+
+  // All agencies referenced by `dataWithMeta`, deduped by `agency_id`. Source
+  // for `RouteFilter`'s display name resolution -- collected from the full
+  // dataset (not the filtered view) so the agency lookup never breaks when a
+  // category / route filter narrows the visible boards.
+  const allAgencies = useMemo<Agency[]>(() => {
+    const byId = new Map<string, Agency>();
+    for (const display of dataWithMeta) {
+      for (const candidate of display.data.data) {
+        for (const agency of candidate.stop.agencies) {
+          if (!byId.has(agency.agency_id)) {
+            byId.set(agency.agency_id, agency);
+          }
+        }
+      }
+    }
+    return Array.from(byId.values());
+  }, [dataWithMeta]);
+
+  // Apply the route filter on top of `categoryFilteredData`. When no route is active,
+  // the filter is considered "off" and every board passes through (matches the
+  // TimetableHeadsignFilter convention).
+  const routeFilteredData = useMemo(() => {
+    if (activeRouteFilters.size === 0) {
+      return categoryFilteredData;
+    }
+    return categoryFilteredData.filter((display) =>
+      display.meta.routes.some((r) => activeRouteFilters.has(r.route_id)),
+    );
+  }, [categoryFilteredData, activeRouteFilters]);
 
   // No boards to show because the dataset itself is empty: either no stops within
   // the radius (`no-stops`) or stops exist but none have service today
@@ -215,8 +286,6 @@ export function TransitDisplays2({
     dataWithMeta.some((display) => display.meta.category === category),
   );
 
-  const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
-
   // Group single-route boards by their route (collapses the cluster's dep / arr
   // boards for one route into a single TransitDisplayPerRoute card) and keep
   // multi-route boards as standalone TransitDisplay2 renders. Map-based
@@ -226,7 +295,7 @@ export function TransitDisplays2({
     | { kind: 'multi'; board: TransitDisplayDataWithMetaData };
   const singleBoardsByRouteId = new Map<string, TransitDisplayDataWithMetaData[]>();
   const groupedDisplays: GroupedItem[] = [];
-  for (const d of visibleData) {
+  for (const d of routeFilteredData) {
     if (hasMultipleRoutes(d)) {
       groupedDisplays.push({ kind: 'multi', board: d });
       continue;
@@ -272,6 +341,16 @@ export function TransitDisplays2({
             shownCategories={shownCategories}
             size={size}
             onToggleCategory={toggleCategory}
+          />
+        )}
+        {visibleRoutes.length > 0 && (
+          <RouteFilter
+            routes={visibleRoutes}
+            activeFilters={activeRouteFilters}
+            onToggleFilter={toggleRouteFilter}
+            dataLangs={dataLangs}
+            agencies={allAgencies}
+            size={size}
           />
         )}
       </div>
@@ -497,7 +576,7 @@ function StatsBadges({
       <div className="flex flex-wrap items-center justify-end gap-1">
         <IconTextBadge
           size={badgeSize}
-          icon={<Route />}
+          icon={<RouteIcon />}
           text={`${routeCount.toLocaleString(i18n.language)}`}
           textClassName={textClass}
           iconClassName={iconClass}
