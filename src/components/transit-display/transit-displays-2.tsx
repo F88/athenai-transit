@@ -254,7 +254,8 @@ export function TransitDisplays2({
 
   return (
     // <div className="font-dotgothic16 px-4 pb-0">
-    <div className="px-4 pb-0">
+    <div className="px-4">
+      {/* Filter */}
       {presentCategories.length > 0 && (
         <TransitDisplayCategoryFilter
           categories={presentCategories}
@@ -263,6 +264,7 @@ export function TransitDisplays2({
           onToggleCategory={toggleCategory}
         />
       )}
+      {/* Panels */}
       {groupedDisplays.map((item, index) => {
         if (item.kind === 'single') {
           return (
@@ -553,7 +555,7 @@ export function TransitDisplay2({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
-        'mb-4 overflow-hidden',
+        'overfl0w-hidden mb-0',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
         // BOARD_FRAME_COLOR,
