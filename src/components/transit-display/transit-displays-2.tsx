@@ -576,7 +576,7 @@ export function TransitDisplay2({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
-        'overfl0w-hidden',
+        'overflow-hidden',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
         // BOARD_FRAME_COLOR,
