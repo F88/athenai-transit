@@ -3,11 +3,13 @@ import { useMemo } from 'react';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import type { TransitDisplayDataWithMetaData } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import type { Route } from '@/types/app/transit';
+import type { Agency, Route } from '@/types/app/transit';
 
 import { RouteBadge } from '../badge/route-badge';
 import { TransitDisplay2, type TransitDisplay2Props } from './transit-displays-2';
 import { AgencyBadge } from '../badge/agency-badge';
+import { cn } from '@/lib/utils';
+import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
 
 /**
  * A group of boards that belong to the same route, paired with the route
@@ -55,7 +57,7 @@ export function TransitDisplayPerRoute({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayPerRouteProps) {
-  const routeAgency = useMemo(() => {
+  const routeAgency: Agency | undefined = useMemo(() => {
     for (const board of group.data) {
       for (const candidate of board.data.data) {
         const found = candidate.stop.agencies.find((a) => a.agency_id === group.route.agency_id);
@@ -71,17 +73,51 @@ export function TransitDisplayPerRoute({
     return null;
   }
 
+  const { agencyColor } =
+    routeAgency !== undefined
+      ? resolveAgencyColors(routeAgency, 'css-hex')
+      : { agencyColor: undefined };
+
   const route = group.route;
   const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
   const { routeColor } = resolveRouteColors(route, 'css-hex');
 
   return (
     <section
-      className="my-2 overflow-hidden rounded border-2"
-      style={{ borderColor: routeColor ?? undefined }}
+      className={cn(
+        //
+        'overflow-hidden',
+        // 'rounded border-2',
+      )}
+      style={
+        //
+        {
+          // borderColor: routeColor ?? undefined,
+          borderColor: agencyColor ?? undefined,
+        }
+      }
     >
-      <div className="flex items-center gap-2 p-2">
-        <span className="truncate">{route.route_long_name}</span>
+      {/* Route info */}
+      <div
+        className={cn(
+          //
+          'my-0 overflow-hidden p-2',
+          'rounded border-2',
+        )}
+        style={
+          //
+          {
+            borderColor: routeColor ?? undefined,
+            // borderColor: agencyColor ?? undefined,
+          }
+        }
+      >
+        <span
+          className="truncate"
+          // style={{ color: routeTextColor ?? undefined }}
+        >
+          {route.route_long_name}
+        </span>
         <RouteBadge
           route={route}
           dataLang={dataLangs}
@@ -100,19 +136,22 @@ export function TransitDisplayPerRoute({
           />
         )}
       </div>
+
+      {/* Panels  */}
       <div>
         {group.data.map((d, i) => (
-          <TransitDisplay2
-            key={i}
-            transitDisplayDataWithMetaData={d}
-            dataLangs={dataLangs}
-            now={now}
-            mapCenter={mapCenter}
-            infoLevel={infoLevel}
-            size={size}
-            onStopSelected={onStopSelected}
-            onInspectTrip={onInspectTrip}
-          />
+          <div key={i} className="mt-4">
+            <TransitDisplay2
+              transitDisplayDataWithMetaData={d}
+              dataLangs={dataLangs}
+              now={now}
+              mapCenter={mapCenter}
+              infoLevel={infoLevel}
+              size={size}
+              onStopSelected={onStopSelected}
+              onInspectTrip={onInspectTrip}
+            />
+          </div>
         ))}
       </div>
     </section>

@@ -42,6 +42,7 @@ export function AbsoluteStopTime({
   return (
     <div
       className={cn(
+        // 'font-dotgothic16',
         weight === 'bold' ? 'font-bold' : 'font-normal',
         'text-[#333] dark:text-gray-100',
         variant.time,

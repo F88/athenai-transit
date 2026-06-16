@@ -253,24 +253,63 @@ export function TransitDisplays2({
   };
 
   return (
-    // <div className="font-dotgothic16 px-4 pb-0">
-    <div className="px-4">
-      {/* Filter */}
-      {presentCategories.length > 0 && (
-        <TransitDisplayCategoryFilter
-          categories={presentCategories}
-          shownCategories={shownCategories}
-          size={size}
-          onToggleCategory={toggleCategory}
-        />
+    <div
+      className={cn(
+        // 'font-dotgothic16',
+        'px-4',
       )}
+    >
+      {/* Filter */}
+      <div
+        className={cn(
+          //
+          'px-0',
+        )}
+      >
+        {presentCategories.length > 0 && (
+          <TransitDisplayCategoryFilter
+            categories={presentCategories}
+            shownCategories={shownCategories}
+            size={size}
+            onToggleCategory={toggleCategory}
+          />
+        )}
+      </div>
+
       {/* Panels */}
-      {groupedDisplays.map((item, index) => {
-        if (item.kind === 'single') {
+      <div
+        className={cn(
+          //
+          // 'font-dotgothic16',
+          'space-y-4',
+          // 'px-0',
+        )}
+      >
+        {groupedDisplays.map((item, index) => {
+          if (item.kind === 'single') {
+            return (
+              <TransitDisplayPerRoute
+                key={`single__${item.group.route.route_id}__${index}`}
+                group={item.group}
+                dataLangs={dataLangs}
+                now={now}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                size={size}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            );
+          }
+          // Multi-route board: rendered standalone with the existing TransitDisplay2.
+          // Key combines board identity (category + route types) with the map
+          // index, since a `custom` route grouping can collapse two groups to
+          // the same present route types.
+          const board = item.board;
           return (
-            <TransitDisplayPerRoute
-              key={`single__${item.group.route.route_id}__${index}`}
-              group={item.group}
+            <TransitDisplay2
+              key={`multi__${board.meta.category}__${board.meta.routeTypes.join('-')}__${index}`}
+              transitDisplayDataWithMetaData={board}
               dataLangs={dataLangs}
               now={now}
               mapCenter={mapCenter}
@@ -280,26 +319,8 @@ export function TransitDisplays2({
               onInspectTrip={onInspectTrip}
             />
           );
-        }
-        // Multi-route board: rendered standalone with the existing TransitDisplay2.
-        // Key combines board identity (category + route types) with the map
-        // index, since a `custom` route grouping can collapse two groups to
-        // the same present route types.
-        const board = item.board;
-        return (
-          <TransitDisplay2
-            key={`multi__${board.meta.category}__${board.meta.routeTypes.join('-')}__${index}`}
-            transitDisplayDataWithMetaData={board}
-            dataLangs={dataLangs}
-            now={now}
-            mapCenter={mapCenter}
-            infoLevel={infoLevel}
-            size={size}
-            onStopSelected={onStopSelected}
-            onInspectTrip={onInspectTrip}
-          />
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }
@@ -555,7 +576,7 @@ export function TransitDisplay2({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
-        'overfl0w-hidden mb-0',
+        'overfl0w-hidden',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
         // BOARD_FRAME_COLOR,
