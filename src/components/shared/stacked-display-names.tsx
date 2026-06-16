@@ -1,6 +1,22 @@
 import type { ResolvedDisplayNames } from '@/domain/transit/name-resolver/get-display-names';
 import { cn } from '@/lib/utils';
-import type { InfoLevelFlags } from '@/utils/create-info-level';
+import type { ExtendedDisplaySize } from './display-size';
+
+const NAME_TEXT_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-xs',
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg',
+  xl: 'text-xl',
+};
+
+const SUB_TEXT_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-[8px]',
+  sm: 'text-[10px]',
+  md: 'text-xs',
+  lg: 'text-sm',
+  xl: 'text-base',
+};
 
 /**
  * Props for {@link StackedDisplayNames}.
@@ -8,47 +24,90 @@ import type { InfoLevelFlags } from '@/utils/create-info-level';
 export interface StackedDisplayNamesProps {
   /** Names to render. */
   names: ResolvedDisplayNames;
-  /** Controls whether sub-names are shown (only shown when normal info is enabled). */
-  infoLevel: InfoLevelFlags;
-  /** Class names applied to the primary-name span. */
-  nameClass: string;
-  /** Class names applied to the sub-names span. */
-  subNameClass: string;
+
+  /**
+   * Base text size for the primary name. The sub-names get one step smaller.
+   * Caller-provided `nameClassName` / `subNamesClassName` win over this
+   * baseline (twMerge resolves `text-*` collisions with the later argument).
+   */
+  size: ExtendedDisplaySize;
+
   /** When `true`, each span is allowed to truncate with an ellipsis. */
   ellipsis: boolean;
+
+  /** When `true`, the sub-names are rendered. */
+  showSubNames: boolean;
+
+  /** Where the sub-names sit relative to the primary name. */
+  subNamesPosition: 'top' | 'bottom';
+
+  /** Extra class names applied to the primary-name span. */
+  nameClassName?: string | undefined;
+
+  /** Extra class names applied to the sub-names span. */
+  subNamesClassName?: string | undefined;
 }
 
 /**
- * Render a {@link ResolvedDisplayNames} as a vertical stack: sub-names on
- * top (when `infoLevel` allows), primary name on the bottom.
+ * Render a {@link ResolvedDisplayNames} as a vertical stack of the primary
+ * name and sub-names. The order is controlled by `subNamesPosition`:
+ * `'top'` puts sub-names above the name, `'bottom'` puts them below.
  *
  * The wrapper is an `inline-flex` column so the block participates in
  * surrounding inline layout while keeping its children stacked.
  */
 export function StackedDisplayNames({
   names,
-  infoLevel,
-  nameClass,
-  subNameClass,
+  size,
   ellipsis,
+  showSubNames,
+  subNamesPosition,
+  nameClassName,
+  subNamesClassName,
 }: StackedDisplayNamesProps) {
   const { name, subNames } = names;
+  const hasSubNames = subNames.some((s) => s !== '');
+  const subElement =
+    showSubNames && hasSubNames ? (
+      <span
+        className={cn(
+          //
+          SUB_TEXT_BY_SIZE[size],
+          'text-[#888] dark:text-gray-400',
+          subNamesClassName,
+          ellipsis && 'truncate',
+          'inline-block',
+          'leading-tight',
+        )}
+      >
+        {subNames.join(' / ')}
+      </span>
+    ) : null;
+  const nameElement = (
+    <span
+      className={cn(
+        NAME_TEXT_BY_SIZE[size],
+        'text-[#333] dark:text-gray-200',
+        nameClassName,
+        ellipsis && 'truncate',
+      )}
+    >
+      {name}
+    </span>
+  );
   return (
     <span className="inline-flex min-w-0 flex-col">
-      {infoLevel.isNormalEnabled && (
-        <span
-          className={cn(
-            //
-            subNameClass,
-            ellipsis && 'truncate',
-            'inline-block',
-            'leading-tight',
-          )}
-        >
-          {subNames.join(' / ')}
-        </span>
+      {subNamesPosition === 'top' ? (
+        <>
+          {subElement}
+          {nameElement}
+        </>
+      ) : (
+        <>
+          {nameElement}
+          {subElement}
+        </>
       )}
-      <span className={cn(nameClass, ellipsis && 'truncate')}>{name}</span>
     </span>
   );
 }

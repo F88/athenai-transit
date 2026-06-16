@@ -10,6 +10,13 @@ import { TransitDisplay2, type TransitDisplay2Props } from './transit-displays-2
 import { AgencyBadge } from '../badge/agency-badge';
 import { cn } from '@/lib/utils';
 import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
+import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
+import { VerboseRoutes } from '../verbose/verbose-routes';
+import { hasDisplayContent } from '@/domain/transit/name-resolver/get-display-names';
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { InlineDisplayNames } from '../shared/inline-display-names';
+import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import { StackedDisplayNames } from '../shared/stacked-display-names';
 
 /**
  * A group of boards that belong to the same route, paired with the route
@@ -24,6 +31,8 @@ export interface TransitDisplayRouteGroup {
   /** Boards for this route (typically the cluster's dep / arr boards across both directions). */
   data: readonly TransitDisplayDataWithMetaData[];
 }
+
+
 
 /**
  * Props for {@link TransitDisplayPerRoute}.
@@ -57,6 +66,7 @@ export function TransitDisplayPerRoute({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayPerRouteProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const routeAgency: Agency | undefined = useMemo(() => {
     for (const board of group.data) {
       for (const candidate of board.data.data) {
@@ -79,8 +89,15 @@ export function TransitDisplayPerRoute({
       : { agencyColor: undefined };
 
   const route = group.route;
-  const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
   const { routeColor } = resolveRouteColors(route, 'css-hex');
+
+  // Route name
+  const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : DEFAULT_AGENCY_LANG;
+  const routeNames = getRouteDisplayNames(route, dataLangs, routeAgencyLangs, 'short');
+  const resolvedRouteNames = routeNames.resolved;
+  const otherRouteNames =
+    routeNames.resolvedSource === 'short' ? routeNames.longName : routeNames.shortName;
+  const hasOtherNames = hasDisplayContent(otherRouteNames);
 
   return (
     <section
@@ -97,43 +114,88 @@ export function TransitDisplayPerRoute({
         }
       }
     >
+      {infoLevelFlag.isVerboseEnabled && (
+        <VerboseRoutes
+          routes={[route]}
+          infoLevel={infoLevel}
+          dataLang={dataLangs}
+          agencies={routeAgency ? [routeAgency] : []}
+        />
+      )}
+
       {/* Route info */}
       <div
-        className={cn(
-          //
-          'my-0 overflow-hidden p-2',
-          'rounded border-2',
-        )}
-        style={
-          //
-          {
-            borderColor: routeColor ?? undefined,
-            // borderColor: agencyColor ?? undefined,
-          }
-        }
+        className={cn('flex items-center gap-2', 'my-0 overflow-hidden p-2', 'rounded border-2')}
+        style={{ borderColor: routeColor ?? undefined }}
       >
-        <span
-          className="truncate"
-          // style={{ color: routeTextColor ?? undefined }}
-        >
-          {route.route_long_name}
-        </span>
-        <RouteBadge
-          route={route}
-          dataLang={dataLangs}
-          agencyLangs={routeAgencyLangs}
-          infoLevel={infoLevel}
-          size="sm"
-          showBorder={true}
-        />
-        {routeAgency && (
-          <AgencyBadge
-            agency={routeAgency}
-            size="sm"
-            infoLevel={infoLevel}
+        {/* Left: route info */}
+        <div className="flex min-w-0 items-center gap-2">
+          {routeTypesEmoji([route.route_type])}
+          <RouteBadge
+            route={route}
             dataLang={dataLangs}
+            agencyLangs={routeAgencyLangs}
+            infoLevel={infoLevel}
+            size="sm"
             showBorder={true}
           />
+          {/* Route names */}
+          <div className="flex min-w-0 flex-col">
+            <div>
+              {/* <RouteBadge
+                route={route}
+                dataLang={dataLangs}
+                agencyLangs={routeAgencyLangs}
+                infoLevel={infoLevel}
+                size="sm"
+                showBorder={true}
+              /> */}
+              <InlineDisplayNames
+                names={resolvedRouteNames}
+                size="md"
+                ellipsis={false}
+                showSubNames={infoLevelFlag.isNormalEnabled}
+              />
+              <StackedDisplayNames
+                names={resolvedRouteNames}
+                size="md"
+                ellipsis={false}
+                showSubNames={infoLevelFlag.isNormalEnabled}
+                subNamesPosition="top"
+              />
+            </div>
+            {hasOtherNames && (
+              <div>
+                <hr />
+                <InlineDisplayNames
+                  names={otherRouteNames}
+                  size="xs"
+                  ellipsis={false}
+                  showSubNames={infoLevelFlag.isNormalEnabled}
+                />
+                <hr />
+                <StackedDisplayNames
+                  names={otherRouteNames}
+                  size="xs"
+                  ellipsis={false}
+                  showSubNames={infoLevelFlag.isNormalEnabled}
+                  subNamesPosition="top"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Right: agency */}
+        {routeAgency && (
+          <div className="ml-auto flex items-center">
+            <AgencyBadge
+              agency={routeAgency}
+              size="sm"
+              infoLevel={infoLevel}
+              dataLang={dataLangs}
+              showBorder={true}
+            />
+          </div>
         )}
       </div>
 
