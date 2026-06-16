@@ -31,6 +31,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - TripInfo: ヘッドサインのレンダーをローカル `HeadsignInfo` から shared `StackedDisplayNames` に置き換えた (#302)。
 - TransitDisplayPerRoute: route info row に `flex-wrap` を入れ、RouteBadge が長文のとき Route names を次の行へ折り返して表示するようにした (#302)。
 - `hasDisplayContent`: truthy/falsy collapse を strict empty-string check (`!== ''`) に書き換えた (テスト追加、挙動は不変) (#302)。
+- TransitDisplay: classic split-flap signage board の components / Props / ファイル名を `SplitFlap*` prefix に rename した (新方式 `TransitDisplay2` 系との視覚的区別を明確化、メタファー prefix で時期非依存)。`TransitDisplays` -> `SplitFlapTransitDisplays`、`TransitDisplay` -> `SplitFlapTransitDisplay`、`TransitDisplayEntry` -> `SplitFlapTransitDisplayEntry` および各 Props 型。ファイル: `transit-displays.tsx` -> `split-flap-transit-display.tsx`、stories 2 ファイルも `split-flap-` prefix。Storybook category (`TransitDisplay/`) はそのままで component 名のみ更新。
 
 ### Fixed
 
