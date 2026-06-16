@@ -65,6 +65,23 @@ export const STOP_TIMES_VIEWS = [
   },
 
   /**
+   * Route grouped view.
+   *
+   * Display unit: multiple stops.
+   *
+   * Shows service events in timeline order across a route cluster.
+   */
+  {
+    id: 'route',
+    icon: '🚏',
+    labelKey: 'view.route.label',
+    titleKey: 'view.route.title',
+    descriptionKey: 'view.route.description',
+    enabled: true,
+    visible: true,
+  },
+
+  /**
    * Transit display view -- classic design.
    *
    * Display unit: multiple stops.
@@ -83,22 +100,6 @@ export const STOP_TIMES_VIEWS = [
     visible: true,
   },
 
-  /**
-   * Route grouped view.
-   *
-   * Display unit: multiple stops.
-   *
-   * Shows service events in timeline order across a route cluster.
-   */
-  {
-    id: 'route',
-    icon: '🚏',
-    labelKey: 'view.route.label',
-    titleKey: 'view.route.title',
-    descriptionKey: 'view.route.description',
-    enabled: true,
-    visible: true,
-  },
   /**
    * Headsign grouped view.
    *
