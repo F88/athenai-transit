@@ -86,9 +86,9 @@ export const STOP_TIMES_VIEWS = [
   /**
    * Route grouped view.
    *
-   * Display unit: stop.
+   * Display unit: multiple stops.
    *
-   * Groups upcoming service events within a stop by route.
+   * Shows service events in timeline order across a route cluster.
    */
   {
     id: 'route',
