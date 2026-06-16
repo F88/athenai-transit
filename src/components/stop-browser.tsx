@@ -25,6 +25,7 @@ import type { StopWithContext, TripInspectionTarget } from '../types/app/transit
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
+import { TRANSIT_DISPLAY_VIEW_IDS } from './transit-display/transit-display-view-policy';
 import { TransitDisplaysContainer } from './transit-display/transit-displays-container';
 
 export interface StopBrowserProps {
@@ -239,7 +240,7 @@ export function StopBrowser({
       return;
     }
 
-    if (viewId === 'transit-display' || viewId === 'transit-display-2') {
+    if (TRANSIT_DISPLAY_VIEW_IDS.includes(viewId)) {
       // The transit-display (board) view is not stop-oriented: the same stop id can
       // appear in multiple rows (one stop shows up across several boards), so a stop
       // cannot be targeted for scrolling. Leave its scroll position alone -- do not
@@ -287,7 +288,7 @@ export function StopBrowser({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      {viewId === 'transit-display' || viewId === 'transit-display-2' ? (
+      {TRANSIT_DISPLAY_VIEW_IDS.includes(viewId) ? (
         <TransitDisplaysContainer
           stopTimes={trimmedStopTimes}
           viewId={viewId}

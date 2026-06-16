@@ -17,7 +17,10 @@ import {
   type TransitDisplayDatum,
   type TransitDisplayMeta,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
+import {
+  hasMultipleRoutes,
+  type TransitDisplayStatus,
+} from '@/domain/transit/transit-info-display/transit-display-ui';
 import { computeTransitDisplayDatumStats } from '@/domain/transit/compute-transit-display-datum-stats';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
@@ -33,6 +36,10 @@ import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-dis
 import { RouteBadge } from '../badge/route-badge';
 import { AgencyBadge } from '../badge/agency-badge';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import {
+  TransitDisplayPerRoute,
+  type TransitDisplayRouteGroup,
+} from './transit-display-per-route';
 import { Separator } from '../ui/separator';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
@@ -210,38 +217,110 @@ export function TransitDisplays2({
 
   const visibleData = dataWithMeta.filter((display) => shownCategories[display.meta.category]);
 
+  // Group single-route boards by their route (collapses the cluster's dep / arr
+  // boards for one route into a single TransitDisplayPerRoute card) and keep
+  // multi-route boards as standalone TransitDisplay2 renders. Map-based
+  // aggregation so we do not rely on sort-order continuity of same-route boards.
+  type GroupedItem =
+    | { kind: 'single'; group: TransitDisplayRouteGroup }
+    | { kind: 'multi'; board: TransitDisplayDataWithMetaData };
+  const singleBoardsByRouteId = new Map<string, TransitDisplayDataWithMetaData[]>();
+  const groupedDisplays: GroupedItem[] = [];
+  for (const d of visibleData) {
+    if (hasMultipleRoutes(d)) {
+      groupedDisplays.push({ kind: 'multi', board: d });
+      continue;
+    }
+    const route = d.meta.routes[0];
+    if (!route) {
+      // No route metadata to group by; render as a standalone board.
+      groupedDisplays.push({ kind: 'multi', board: d });
+      continue;
+    }
+    let boards = singleBoardsByRouteId.get(route.route_id);
+    if (!boards) {
+      boards = [];
+      singleBoardsByRouteId.set(route.route_id, boards);
+      // Push once with the live boards reference; subsequent boards.push(d)
+      // is visible through groupedDisplays as well.
+      groupedDisplays.push({ kind: 'single', group: { route, data: boards } });
+    }
+    boards.push(d);
+  }
+
   const toggleCategory = (category: TransitDisplayCategory) => {
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   };
 
   return (
-    // <div className="font-dotgothic16 px-4 pb-0">
-    <div className="px-4 pb-0">
-      {presentCategories.length > 0 && (
-        <TransitDisplayCategoryFilter
-          categories={presentCategories}
-          shownCategories={shownCategories}
-          size={size}
-          onToggleCategory={toggleCategory}
-        />
+    <div
+      className={cn(
+        // 'font-dotgothic16',
+        'px-4',
       )}
-      {visibleData.map((dataWithMeta, index) => (
-        // Key from the board's identity (category + its route types), with the
-        // map index as a disambiguator: a `custom` route grouping can collapse
-        // two groups to the same present route types, so identity alone is not
-        // guaranteed unique.
-        <TransitDisplay2
-          key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
-          transitDisplayDataWithMetaData={dataWithMeta}
-          dataLangs={dataLangs}
-          now={now}
-          mapCenter={mapCenter}
-          infoLevel={infoLevel}
-          size={size}
-          onStopSelected={onStopSelected}
-          onInspectTrip={onInspectTrip}
-        />
-      ))}
+    >
+      {/* Filter */}
+      <div
+        className={cn(
+          //
+          'px-0',
+        )}
+      >
+        {presentCategories.length > 0 && (
+          <TransitDisplayCategoryFilter
+            categories={presentCategories}
+            shownCategories={shownCategories}
+            size={size}
+            onToggleCategory={toggleCategory}
+          />
+        )}
+      </div>
+
+      {/* Panels */}
+      <div
+        className={cn(
+          //
+          // 'font-dotgothic16',
+          'space-y-4',
+          // 'px-0',
+        )}
+      >
+        {groupedDisplays.map((item, index) => {
+          if (item.kind === 'single') {
+            return (
+              <TransitDisplayPerRoute
+                key={`single__${item.group.route.route_id}__${index}`}
+                group={item.group}
+                dataLangs={dataLangs}
+                now={now}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                size={size}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            );
+          }
+          // Multi-route board: rendered standalone with the existing TransitDisplay2.
+          // Key combines board identity (category + route types) with the map
+          // index, since a `custom` route grouping can collapse two groups to
+          // the same present route types.
+          const board = item.board;
+          return (
+            <TransitDisplay2
+              key={`multi__${board.meta.category}__${board.meta.routeTypes.join('-')}__${index}`}
+              transitDisplayDataWithMetaData={board}
+              dataLangs={dataLangs}
+              now={now}
+              mapCenter={mapCenter}
+              infoLevel={infoLevel}
+              size={size}
+              onStopSelected={onStopSelected}
+              onInspectTrip={onInspectTrip}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -497,7 +576,7 @@ export function TransitDisplay2({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
-        'mb-4 overflow-hidden',
+        'overflow-hidden',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
         // BOARD_FRAME_COLOR,

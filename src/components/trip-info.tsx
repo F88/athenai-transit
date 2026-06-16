@@ -1,43 +1,36 @@
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
-import { getHeadsignDisplayNames } from '../domain/transit/name-resolver/get-headsign-display-names';
 import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
-import {
-  type ResolvedDisplayNames,
-  hasDisplayContent,
-} from '../domain/transit/name-resolver/get-display-names';
+import { hasDisplayContent } from '../domain/transit/name-resolver/get-display-names';
+import { getHeadsignDisplayNames } from '../domain/transit/name-resolver/get-headsign-display-names';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { cn } from '../lib/utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
-import type { InfoLevelFlags } from '../utils/create-info-level';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 import type { BaseLabelSize } from './label/base-label';
 import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
+import { StackedDisplayNames } from './shared/stacked-display-names';
 
 const sizeVariants = {
   // Standard variant for StopTimeItem / StopTimesItem.
   md: {
     emoji: 'text-[1.2rem]',
-    headsign: 'text-[1.0rem]',
-    headsignSub: 'text-[0.7rem]',
     label: 'text-[0.7rem]',
+    sizeForNames: 'md',
   },
   // Compact variant for StopSummary tooltips. Small text sizes are
   // intentional — secondary info must stay subordinate in limited space.
   sm: {
     emoji: 'text-[1.0rem]',
-    headsign: 'text-[0.8rem]',
-    headsignSub: 'text-[0.6rem]',
     label: 'text-[0.6rem]',
+    sizeForNames: 'sm',
   },
   xs: {
     emoji: 'text-[1.0rem]',
-    headsign: 'text-[0.7rem]',
-    headsignSub: 'text-[0.5rem]',
     label: 'text-[0.5rem]',
+    sizeForNames: 'xs',
   },
 } as const;
 
@@ -50,36 +43,6 @@ const ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<keyof typeof sizeVariants, BaseLabe
   sm: 'sm',
   md: 'sm',
 };
-
-/**
- * Headsign display within TripInfo.
- *
- * - simple: resolved name only
- * - normal+: resolved subNames + resolved name
- */
-function HeadsignInfo({
-  names,
-  info,
-  headsignClass,
-  subClass,
-  ellipsis,
-}: {
-  names: ResolvedDisplayNames;
-  info: InfoLevelFlags;
-  headsignClass: string;
-  subClass: string;
-  ellipsis: boolean;
-}) {
-  return (
-    <span className="inline-flex min-w-0 flex-col">
-      {info.isNormalEnabled && names.subNames.length > 0 && (
-        <span className={cn(subClass, ellipsis && 'truncate')}>{names.subNames.join(' / ')}</span>
-      )}
-      <span className={cn(headsignClass, ellipsis && 'truncate')}>{names.name}</span>
-    </span>
-  );
-}
-
 interface TripInfoProps {
   /** Agency operating this trip. Rendered only when `showAgency` is true. */
   agency?: Agency;
@@ -141,53 +104,52 @@ export function TripInfo({
   ellipsisHeadsign = false,
 }: TripInfoProps) {
   const { route } = routeDirection;
-  const info = useInfoLevel(infoLevel);
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
   const headsignNames = getHeadsignDisplayNames(routeDirection, dataLangs, agencyLang, 'stop');
 
-  const headsignClass = cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200');
-  const subClass = cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400');
-
-  const headSignInfos = info.isVerboseEnabled ? (
+  const headSignInfos = infoLevelFlag.isVerboseEnabled ? (
     <>
       {hasDisplayContent(headsignNames.tripName) && (
         <>
-          <HeadsignInfo
+          <StackedDisplayNames
             names={{
               ...headsignNames.tripName,
               name: headsignSourceEmoji('trip') + ' ' + headsignNames.tripName.name,
             }}
-            info={info}
-            headsignClass={headsignClass}
-            subClass={subClass}
+            size={v.sizeForNames}
             ellipsis={ellipsisHeadsign}
+            showSubNames={infoLevelFlag.isNormalEnabled}
+            subNamesPosition="top"
           />
         </>
       )}
       {headsignNames.stopName && hasDisplayContent(headsignNames.stopName) && (
         <>
-          <HeadsignInfo
+          <StackedDisplayNames
             names={{
               ...headsignNames.stopName,
               name: headsignSourceEmoji('stop') + ' ' + headsignNames.stopName.name,
             }}
-            info={info}
-            headsignClass={headsignClass}
-            subClass={subClass}
+            size={v.sizeForNames}
             ellipsis={ellipsisHeadsign}
+            showSubNames={infoLevelFlag.isNormalEnabled}
+            subNamesPosition="top"
           />
         </>
       )}
     </>
   ) : (
-    <HeadsignInfo
-      names={headsignNames.resolved}
-      info={info}
-      headsignClass={headsignClass}
-      subClass={subClass}
-      ellipsis={ellipsisHeadsign}
-    />
+    <>
+      <StackedDisplayNames
+        names={headsignNames.resolved}
+        size={v.sizeForNames}
+        ellipsis={ellipsisHeadsign}
+        showSubNames={infoLevelFlag.isNormalEnabled}
+        subNamesPosition="top"
+      />
+    </>
   );
 
   return (
@@ -203,7 +165,7 @@ export function TripInfo({
         infoLevel={infoLevel}
         showBorder={true}
       />
-      {info.isDetailedEnabled && agency && showAgency && (
+      {infoLevelFlag.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge
           size={size}
           agency={agency}

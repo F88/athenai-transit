@@ -14,6 +14,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - TransitDisplay (rail / subway / tram / monorail): per-route board (1 board = 1 route) を導入した。渋谷 subway 等の多 line 駅で銀座線 / 半蔵門線 / 副都心線が個別 board として並ぶようになった (#296, #300)。
 - TransitDisplay: per-route 用の row cap (`transitDisplayMaxEntriesPerRouteFor`) を追加した (simple: 3 / normal: 5 / detailed: 10 / verbose: 10、1 route board が冗長にならないように multi-route 用より少なく) (#296, #300)。
 - TransitDisplay2: Header band を 2 columns 構成 (Title + Routes / stats badges) に再構成し、`RouteBadge` を Title 行に表示するようにした (#296, #300)。
+- StopTime views: 新しい `route` view (per-route card) を導入し、view picker の並びでも `route` を `transit-display` より先に置いた。bus / trolleybus / ferry を含む全 route_type で per-route card を表示する (#302)。
+- Shared components: 多言語 sub-names を inline / 縦 stack でレンダリングする `InlineDisplayNames` / `StackedDisplayNames` を `src/components/shared/` に追加した。必須 `size` (`ExtendedDisplaySize`) / `showSubNames` / (Stacked のみ) `subNamesPosition` を受け取り、default 色 (`text-[#333]` / `text-[#888]` + dark variants) を内蔵する。caller-provided `nameClassName` / `subNamesClassName` は twMerge で text-\* を override 可能 (#302)。
+- Storybook: `DisplayNames/StackedDisplayNames` / `DisplayNames/InlineDisplayNames` の stories を追加した (#302)。
 
 ### Changed
 
@@ -25,10 +28,14 @@ and this project adheres to [CalVer](https://calver.org/).
 - transit-display: UI 表示用のヘルパー (`sortTransitDisplayDataWithMetaData` / `resolveTransitDisplayState` / `transitDisplayMaxEntriesFor` ほか) を `transit-display-ui.ts` に分離した。builder (`build-transit-display-data.ts`) は board データ生成のみ、UI 配慮 (並び順 / row 上限 / empty-state) は専用 module に集約 (#296, #300)。
 - TransitDisplaysContainer: 鉄道系 (`DIRECTION_SPLIT_ROUTE_TYPES`) は per-route board (`splitByRoute: true`) で構築し、bus / trolleybus / ferry (`NO_SPLIT_ROUTE_TYPES`) は multi-route のまま維持する per-mode policy を採用した。group-by の runtime toggle は意図的に追加しない (#296, #300)。
 - TransitDisplay: multi-route board の row cap (`simple` / `normal`) を 10 に下げた (per-route と数を揃え、過剰な行数を抑制) (#296, #300)。
+- TripInfo: ヘッドサインのレンダーをローカル `HeadsignInfo` から shared `StackedDisplayNames` に置き換えた (#302)。
+- TransitDisplayPerRoute: route info row に `flex-wrap` を入れ、RouteBadge が長文のとき Route names を次の行へ折り返して表示するようにした (#302)。
+- `hasDisplayContent`: truthy/falsy collapse を strict empty-string check (`!== ''`) に書き換えた (テスト追加、挙動は不変) (#302)。
 
 ### Fixed
 
 - TransitDisplay: 多 route 停留所 (都営バス渋谷駅前 / 伊予鉄バス大街道等) で「到着」 board が「出発」 board より先に並んでしまうバグを修正した。multi-route 板の `meta.routes` / `meta.directions` は boardCandidates ベースで計算されるため dep / arr 間で `routes[0]` / `directions[0]` がズレることがあり、sort key として信頼できない。sort 関数で multi-value のときは route 軸 / direction 軸を skip し、category 軸で確実に departures → arrivals 順になるようにした (#296, #300)。
+- StackedDisplayNames / InlineDisplayNames: `subNames` に空文字 / whitespace-only エントリが混入した際に空 span や leading separator (例: `' / Nakano'`) が描画される問題を、`map(trim).filter(non-empty)` で正規化して防ぐようにした (#302)。
 
 ## [2026.06.11]
 

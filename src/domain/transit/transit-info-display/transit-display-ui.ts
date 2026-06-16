@@ -84,8 +84,8 @@ export function sortTransitDisplayDataWithMetaData(
       // different head values for that axis; comparing by it would mis-order
       // arrivals before departures. Evaluated independently so each axis can
       // remain usable on its own merit.
-      hasMultipleRoutes: d.meta.routes.length > 1,
-      hasMultipleDirections: d.meta.directions.length > 1,
+      hasMultipleRoutes: hasMultipleRoutes(d),
+      hasMultipleDirections: hasMultipleDirections(d),
       routeId: d.meta.routes[0]?.route_id ?? '',
       direction: DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
       category: CATEGORIES.indexOf(d.meta.category),
@@ -127,4 +127,24 @@ export function resolveTransitDisplayState(
     return 'no-service';
   }
   return 'ready';
+}
+
+/**
+ * Whether the given display covers multiple routes on its single board
+ * (i.e. a multi-route board, built with `splitByRoute: false` and serving
+ * more than one route at this stop). Implementation reads `meta.routes`
+ * (O(1)); the same count could be derived from `data.data` but with O(n).
+ */
+export function hasMultipleRoutes(d: TransitDisplayDataWithMetaData): boolean {
+  return d.meta.routes.length > 1;
+}
+
+/**
+ * Whether the given display covers multiple directions on its single board
+ * (i.e. a multi-direction board, built with `splitByDirection: false` and
+ * carrying trips of more than one direction at this stop). Implementation
+ * reads `meta.directions` (O(1)).
+ */
+export function hasMultipleDirections(d: TransitDisplayDataWithMetaData): boolean {
+  return d.meta.directions.length > 1;
 }
