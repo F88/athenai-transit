@@ -1303,7 +1303,7 @@ export const headsignLong: TranslatableText = {
 };
 
 /**
- * Default radius-scope stop stats for TransitDisplay meta in stories.
+ * Default radius-scope stop stats for SplitFlapTransitDisplay meta in stories.
  * Mirrors a small multi-agency cluster (the exact figures are illustrative).
  */
 export const storyStopStats: StopWithMetaStats = {
@@ -1313,7 +1313,7 @@ export const storyStopStats: StopWithMetaStats = {
   routeTypeCount: 1,
 };
 
-/** Default derived stats bundle for a TransitDisplay (radius-scope + per-board). */
+/** Default derived stats bundle for a SplitFlapTransitDisplay (radius-scope + per-board). */
 export const storyTransitDisplayStats: TransitDisplayStats = {
   stopsInRadius: storyStopStats,
   qualifying: { entryCount: 8, stopCount: 6, routeCount: 3, agencyCount: 2, routeTypeCount: 1 },

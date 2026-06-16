@@ -107,7 +107,7 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xl: 'max-w-[32ch] min-w-[32ch]',
 };
 
-export interface TransitDisplaysProps {
+export interface SplitFlapTransitDisplaysProps {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
   /** Build state + radius, for the empty-state message (no stops / no service). */
@@ -144,7 +144,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
  * presentation-only local state: it narrows the rendered displays, it does not
  * change how they are built or fetched.
  */
-export function TransitDisplays({
+export function SplitFlapTransitDisplays({
   dataWithMeta,
   status,
   dataLangs,
@@ -155,13 +155,13 @@ export function TransitDisplays({
   size,
   onStopSelected,
   onInspectTrip,
-}: TransitDisplaysProps) {
+}: SplitFlapTransitDisplaysProps) {
   const { t } = useTranslation();
 
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
 
-  // Resolve every raw display's rows into UI data here -- TransitDisplays is the
+  // Resolve every raw display's rows into UI data here -- SplitFlapTransitDisplays is the
   // only consumer that needs the resolved rows. Resolve all up front, then let
   // the category filter below narrow the already-resolved list.
   const resolvedDataWithMeta = useMemo<readonly TransitDisplayDataWithMetaDataForUi[]>(
@@ -214,7 +214,7 @@ export function TransitDisplays({
         // map index as a disambiguator: a `custom` route grouping can collapse
         // two groups to the same present route types, so identity alone is not
         // guaranteed unique.
-        <TransitDisplay
+        <SplitFlapTransitDisplay
           key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
           dataWithMeta={dataWithMeta}
           emptyMessage={emptyMessage}
@@ -335,7 +335,7 @@ function TransitDisplayCategoryFilter({
   );
 }
 
-export interface TransitDisplayProps {
+export interface SplitFlapTransitDisplayProps {
   dataWithMeta: TransitDisplayDataWithMetaDataForUi;
   emptyMessage: string;
   now: Date;
@@ -359,7 +359,7 @@ export interface TransitDisplayProps {
  * Layout: a header band (title on the left, recent-count / radius on the right)
  * above the rows, or an empty fallback when the board has no entries.
  */
-export function TransitDisplay({
+export function SplitFlapTransitDisplay({
   dataWithMeta,
   emptyMessage,
   mapCenter,
@@ -367,7 +367,7 @@ export function TransitDisplay({
   size,
   onStopSelected,
   onInspectTrip,
-}: TransitDisplayProps) {
+}: SplitFlapTransitDisplayProps) {
   const { t } = useTranslation();
   // Airport-board-style title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
@@ -448,7 +448,7 @@ export function TransitDisplay({
         ) : (
           <ul className="m-0 list-none p-0">
             {dataWithMeta.data.map((row) => (
-              <TransitDisplayEntry
+              <SplitFlapTransitDisplayEntry
                 key={row.key}
                 dataWithMeta={row}
                 mapCenter={mapCenter}
@@ -514,7 +514,7 @@ function TimeInfo({
   );
 }
 
-export interface TransitDisplayEntryProps {
+export interface SplitFlapTransitDisplayEntryProps {
   dataWithMeta: TransitDisplayDatumForUi;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -531,7 +531,7 @@ export interface TransitDisplayEntryProps {
 }
 
 /** A single departure-board row (one stop event). */
-export function TransitDisplayEntry({
+export function SplitFlapTransitDisplayEntry({
   dataWithMeta,
   mapCenter,
   infoLevel,
@@ -539,7 +539,7 @@ export function TransitDisplayEntry({
   hasMultiRoutes,
   onStopSelected,
   onInspectTrip,
-}: TransitDisplayEntryProps) {
+}: SplitFlapTransitDisplayEntryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
 
   // Distance is baked on the row (query-time); bearing is computed live from the

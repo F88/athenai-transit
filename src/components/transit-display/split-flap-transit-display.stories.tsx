@@ -15,7 +15,7 @@ import {
 import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
-import { TransitDisplay } from './transit-displays';
+import { SplitFlapTransitDisplay } from './split-flap-transit-display';
 
 /** Flat override knobs for {@link makeEntry}, assembled into the nested row shape. */
 interface MakeEntryOverrides {
@@ -173,8 +173,8 @@ const trainRows: TransitDisplayDatumForUi[] = [
 ];
 
 const meta = {
-  title: 'TransitDisplay/TransitDisplay',
-  component: TransitDisplay,
+  title: 'TransitDisplay/SplitFlapTransitDisplay',
+  component: SplitFlapTransitDisplay,
   args: {
     dataWithMeta: makeDisplay(),
     emptyMessage: 'Hidden by filter',
@@ -190,7 +190,7 @@ const meta = {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
-  // Mirror the parent TransitDisplays wrapper (px-4) so framing/spacing match production.
+  // Mirror the parent SplitFlapTransitDisplays wrapper (px-4) so framing/spacing match production.
   decorators: [
     (Story) => (
       <div className="max-w-sm bg-white px-4 py-2 dark:bg-gray-900">
@@ -198,7 +198,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof TransitDisplay>;
+} satisfies Meta<typeof SplitFlapTransitDisplay>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -229,7 +229,7 @@ export const SizeComparison: Story = {
   render: (args) => (
     <div className="space-y-2">
       {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((size) => (
-        <TransitDisplay
+        <SplitFlapTransitDisplay
           key={size}
           dataWithMeta={args.dataWithMeta}
           emptyMessage={args.emptyMessage}
