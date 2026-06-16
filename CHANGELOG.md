@@ -17,6 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopTime views: 新しい `route` view (per-route card) を導入し、view picker の並びでも `route` を `transit-display` より先に置いた。bus / trolleybus / ferry を含む全 route_type で per-route card を表示する (#302)。
 - Shared components: 多言語 sub-names を inline / 縦 stack でレンダリングする `InlineDisplayNames` / `StackedDisplayNames` を `src/components/shared/` に追加した。必須 `size` (`ExtendedDisplaySize`) / `showSubNames` / (Stacked のみ) `subNamesPosition` を受け取り、default 色 (`text-[#333]` / `text-[#888]` + dark variants) を内蔵する。caller-provided `nameClassName` / `subNamesClassName` は twMerge で text-\* を override 可能 (#302)。
 - Storybook: `DisplayNames/StackedDisplayNames` / `DisplayNames/InlineDisplayNames` の stories を追加した (#302)。
+- Filter: route 単位の pill を並べる `RouteFilter` component を `src/components/filter/` に追加した。 PillButton ベースで route の brand color + 多言語解決済み (`getRouteDisplayNames`) の label を表示する controlled component。 caller が `routes` / `activeFilters: Set<route_id>` / `onToggleFilter` / `dataLangs` / `agencies` / `size` を渡し、 翻訳 / 色 / contrast 計算は `useMemo` で precompute するので toggle 操作で再計算は走らない。
 
 ### Changed
 
