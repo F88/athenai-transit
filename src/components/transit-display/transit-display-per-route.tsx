@@ -118,7 +118,12 @@ export function TransitDisplayPerRoute({
 
       {/* Route info */}
       <div
-        className={cn('flex items-center gap-2', 'my-0 overflow-hidden p-2', 'rounded border-2')}
+        className={cn(
+          //
+          'flex items-center gap-2',
+          'my-0 overflow-hidden p-2',
+          'rounded border-2',
+        )}
         style={{ borderColor: routeColor ?? undefined }}
       >
         {/* Left: route info */}
