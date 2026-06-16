@@ -11,7 +11,7 @@ import {
 import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
-import { TransitDisplayEntry } from './transit-displays';
+import { SplitFlapTransitDisplayEntry } from './split-flap-transit-display';
 
 /** Flat override knobs for {@link makeRow}, assembled into the nested row shape. */
 interface MakeRowOverrides {
@@ -92,8 +92,8 @@ function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayDatumForUi {
 }
 
 const meta = {
-  title: 'TransitDisplay/TransitDisplayEntry',
-  component: TransitDisplayEntry,
+  title: 'TransitDisplay/SplitFlapTransitDisplayEntry',
+  component: SplitFlapTransitDisplayEntry,
   args: {
     dataWithMeta: makeRow(),
     infoLevel: 'normal' as const,
@@ -109,8 +109,8 @@ const meta = {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     hasMultiRoutes: { control: 'boolean' },
   },
-  // TransitDisplayEntry renders an <li>; wrap in a <ul> mirroring the
-  // parent TransitDisplays list so layout and semantics match production.
+  // SplitFlapTransitDisplayEntry renders an <li>; wrap in a <ul> mirroring the
+  // parent SplitFlapTransitDisplays list so layout and semantics match production.
   decorators: [
     (Story) => (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
@@ -120,7 +120,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof TransitDisplayEntry>;
+} satisfies Meta<typeof SplitFlapTransitDisplayEntry>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -197,7 +197,7 @@ export const SizeComparison: Story = {
     return (
       <>
         {rows.map(({ size, data }) => (
-          <TransitDisplayEntry
+          <SplitFlapTransitDisplayEntry
             key={data.key}
             dataWithMeta={data}
             infoLevel={args.infoLevel}
@@ -313,7 +313,7 @@ export const KitchenSink: Story = {
   render: (args) => (
     <>
       {kitchenSinkRows.map((row) => (
-        <TransitDisplayEntry
+        <SplitFlapTransitDisplayEntry
           key={row.key}
           dataWithMeta={row}
           infoLevel={args.infoLevel}
