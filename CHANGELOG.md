@@ -18,6 +18,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Shared components: 多言語 sub-names を inline / 縦 stack でレンダリングする `InlineDisplayNames` / `StackedDisplayNames` を `src/components/shared/` に追加した。必須 `size` (`ExtendedDisplaySize`) / `showSubNames` / (Stacked のみ) `subNamesPosition` を受け取り、default 色 (`text-[#333]` / `text-[#888]` + dark variants) を内蔵する。caller-provided `nameClassName` / `subNamesClassName` は twMerge で text-\* を override 可能 (#302)。
 - Storybook: `DisplayNames/StackedDisplayNames` / `DisplayNames/InlineDisplayNames` の stories を追加した (#302)。
 - Filter: route 単位の pill を並べる `RouteFilter` component を `src/components/filter/` に追加した。 PillButton ベースで route の brand color + 多言語解決済み (`getRouteDisplayNames`) の label を表示する controlled component。 caller が `routes` / `activeFilters: Set<route_id>` / `onToggleFilter` / `dataLangs` / `agencies` / `size` を渡し、 翻訳 / 色 / contrast 計算は `useMemo` で precompute するので toggle 操作で再計算は走らない。
+- TransitDisplays2: 上記 `RouteFilter` を category filter の直後に表示するようにし、 active な route を含む boards のみを下流の grouping に渡すパイプライン (`dataWithMeta` -> `categoryFilteredData` -> `routeFilteredData`) を導入した。 `activeRouteFilters.size === 0` は noFilter (全 board 通過) として扱う。 `lucide-react` の `Route` icon は `RouteIcon` に alias して domain type `Route` との衝突を回避。
 
 ### Changed
 
