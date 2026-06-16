@@ -16,7 +16,6 @@ import {
   type TransitDisplay2Props,
 } from '@/components/transit-display/transit-displays-2';
 import { VerboseRoutes } from '@/components/verbose/verbose-routes';
-import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
 import { hasDisplayContent } from '@/domain/transit/name-resolver/get-display-names';
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 
@@ -83,11 +82,6 @@ export function TransitDisplayPerRoute({
     return null;
   }
 
-  const { agencyColor } =
-    routeAgency !== undefined
-      ? resolveAgencyColors(routeAgency, 'css-hex')
-      : { agencyColor: undefined };
-
   const route = group.route;
   const { routeColor } = resolveRouteColors(route, 'css-hex');
 
@@ -110,7 +104,6 @@ export function TransitDisplayPerRoute({
         //
         {
           // borderColor: routeColor ?? undefined,
-          borderColor: agencyColor ?? undefined,
         }
       }
     >
