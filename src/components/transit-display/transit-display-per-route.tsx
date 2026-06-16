@@ -3,20 +3,22 @@ import { useMemo } from 'react';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import type { TransitDisplayDataWithMetaData } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import type { Agency, Route } from '@/types/app/transit';
-
-import { RouteBadge } from '../badge/route-badge';
-import { TransitDisplay2, type TransitDisplay2Props } from './transit-displays-2';
-import { AgencyBadge } from '../badge/agency-badge';
-import { cn } from '@/lib/utils';
-import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
-import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
-import { VerboseRoutes } from '../verbose/verbose-routes';
-import { hasDisplayContent } from '@/domain/transit/name-resolver/get-display-names';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { InlineDisplayNames } from '../shared/inline-display-names';
+import { cn } from '@/lib/utils';
+import type { Agency, Route } from '@/types/app/transit';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
-import { StackedDisplayNames } from '../shared/stacked-display-names';
+
+import { AgencyBadge } from '@/components/badge/agency-badge';
+import { RouteBadge } from '@/components/badge/route-badge';
+import { InlineDisplayNames } from '@/components/shared/inline-display-names';
+import {
+  TransitDisplay2,
+  type TransitDisplay2Props,
+} from '@/components/transit-display/transit-displays-2';
+import { VerboseRoutes } from '@/components/verbose/verbose-routes';
+import { resolveAgencyColors } from '@/domain/transit/color-resolver/agency-colors';
+import { hasDisplayContent } from '@/domain/transit/name-resolver/get-display-names';
+import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 
 /**
  * A group of boards that belong to the same route, paired with the route
@@ -31,8 +33,6 @@ export interface TransitDisplayRouteGroup {
   /** Boards for this route (typically the cluster's dep / arr boards across both directions). */
   data: readonly TransitDisplayDataWithMetaData[];
 }
-
-
 
 /**
  * Props for {@link TransitDisplayPerRoute}.
@@ -129,7 +129,7 @@ export function TransitDisplayPerRoute({
         style={{ borderColor: routeColor ?? undefined }}
       >
         {/* Left: route info */}
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {routeTypesEmoji([route.route_type])}
           <RouteBadge
             route={route}
@@ -142,46 +142,25 @@ export function TransitDisplayPerRoute({
           {/* Route names */}
           <div className="flex min-w-0 flex-col">
             <div>
-              {/* <RouteBadge
-                route={route}
-                dataLang={dataLangs}
-                agencyLangs={routeAgencyLangs}
-                infoLevel={infoLevel}
-                size="sm"
-                showBorder={true}
-              /> */}
               <InlineDisplayNames
                 names={resolvedRouteNames}
                 size="md"
                 ellipsis={false}
                 showSubNames={infoLevelFlag.isNormalEnabled}
               />
-              <StackedDisplayNames
-                names={resolvedRouteNames}
-                size="md"
-                ellipsis={false}
-                showSubNames={infoLevelFlag.isNormalEnabled}
-                subNamesPosition="top"
-              />
             </div>
             {hasOtherNames && (
-              <div>
+              <>
                 <hr />
-                <InlineDisplayNames
-                  names={otherRouteNames}
-                  size="xs"
-                  ellipsis={false}
-                  showSubNames={infoLevelFlag.isNormalEnabled}
-                />
-                <hr />
-                <StackedDisplayNames
-                  names={otherRouteNames}
-                  size="xs"
-                  ellipsis={false}
-                  showSubNames={infoLevelFlag.isNormalEnabled}
-                  subNamesPosition="top"
-                />
-              </div>
+                <div>
+                  <InlineDisplayNames
+                    names={otherRouteNames}
+                    size="xs"
+                    ellipsis={false}
+                    showSubNames={infoLevelFlag.isNormalEnabled}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
