@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
 
+import { Proportions } from 'lucide-react';
 import { createLogger } from '../lib/logger';
 import { cn } from '../lib/utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopsCounts } from '../types/app/stop';
+import { IconTextBadge } from './badge/icon-text-badge';
 import { LabelCountBadge } from './badge/label-count-badge';
-import type { BaseLabelSize } from './label/base-label';
+import { type BaseLabelSize } from './label/base-label';
 import type { ExtendedDisplaySize } from './shared/display-size';
 
 const summaryLogger = createLogger('StopsSummary');
@@ -123,6 +125,9 @@ export function StopsSummary({
         />
       )}
       {text}
+      {infoLevel === 'verbose' && (
+        <IconTextBadge size={size} icon={<Proportions />} text={String(size)} />
+      )}
     </div>
   );
 }
