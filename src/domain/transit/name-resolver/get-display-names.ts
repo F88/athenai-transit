@@ -21,5 +21,5 @@ export interface ResolvedDisplayNames {
  * Returns `false` when `name` is empty and all `subNames` are empty strings.
  */
 export function hasDisplayContent(names: ResolvedDisplayNames): boolean {
-  return !!names.name || names.subNames.some(Boolean);
+  return names.name !== '' || names.subNames.some((s) => s !== '');
 }
