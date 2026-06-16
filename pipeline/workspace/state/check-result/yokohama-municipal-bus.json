@@ -1,6 +1,6 @@
 {
   "sourceName": "yokohama-municipal-bus",
-  "checkedAt": "2026-06-15T06:46:39.014Z",
+  "checkedAt": "2026-06-16T06:47:26.586Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20230801",
     "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20231001",
@@ -26,7 +26,6 @@
   ],
   "result": "attention",
   "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD",
