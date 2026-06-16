@@ -61,6 +61,8 @@ export function InlineDisplayNames({
   nameClassName,
   subNamesClassName,
 }: InlineDisplayNamesProps) {
+  const { name, subNames } = names;
+  const normalizedSubNames = subNames.map((e) => e.trim()).filter((s) => s !== '');
   return (
     <span className="">
       <span
@@ -74,9 +76,9 @@ export function InlineDisplayNames({
           'leading-tight',
         )}
       >
-        {names.name}
+        {name}
       </span>
-      {showSubNames && names.subNames.length > 0 && (
+      {showSubNames && normalizedSubNames.length > 0 && (
         <span
           className={cn(
             //
@@ -88,7 +90,7 @@ export function InlineDisplayNames({
             'leading-tight',
           )}
         >
-          {names.subNames.join(' / ')}
+          {normalizedSubNames.join(' / ')}
         </span>
       )}
     </span>

@@ -66,9 +66,9 @@ export function StackedDisplayNames({
   subNamesClassName,
 }: StackedDisplayNamesProps) {
   const { name, subNames } = names;
-  const hasSubNames = subNames.some((s) => s !== '');
+  const normalizedSubNames = subNames.map((e) => e.trim()).filter((s) => s !== '');
   const subElement =
-    showSubNames && hasSubNames ? (
+    showSubNames && normalizedSubNames.length > 0 ? (
       <span
         className={cn(
           //
@@ -80,7 +80,7 @@ export function StackedDisplayNames({
           'leading-tight',
         )}
       >
-        {subNames.join(' / ')}
+        {normalizedSubNames.join(' / ')}
       </span>
     ) : null;
   const nameElement = (
