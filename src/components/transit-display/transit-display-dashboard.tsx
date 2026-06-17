@@ -361,11 +361,14 @@ export function TransitDisplayDashboard({
           // 'bg-pink-100',
         )}
       >
-        {groupedDisplays.map((item, index) => {
+        {groupedDisplays.map((item) => {
           if (item.kind === 'single') {
+            // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`
+            // already deduped by route_id when groupedDisplays was built, so this
+            // is unique within the rendered list and stable across filter changes.
             return (
               <TransitDisplayPerRoute
-                key={`single__${item.group.route.route_id}__${index}`}
+                key={`single__${item.group.route.route_id}`}
                 group={item.group}
                 dataLangs={dataLangs}
                 now={now}
@@ -377,14 +380,18 @@ export function TransitDisplayDashboard({
               />
             );
           }
-          // Multi-route board: rendered standalone with the existing TransitDisplay.
-          // Key combines board identity (category + route types) with the map
-          // index, since a `custom` route grouping can collapse two groups to
-          // the same present route types.
+          // Multi-route board: keyed by (category, sorted route_id set). Distinct
+          // groupings always carry a distinct route_id set, so this stays unique
+          // even if a `custom` policy collapses two groupings to the same
+          // route_type set. Stable across filter-driven reorderings.
           const board = item.board;
+          const routeIdsKey = board.meta.routes
+            .map((r) => r.route_id)
+            .sort()
+            .join('-');
           return (
             <TransitDisplay
-              key={`multi__${board.meta.category}__${board.meta.routeTypes.join('-')}__${index}`}
+              key={`multi__${board.meta.category}__${routeIdsKey}`}
               transitDisplayDataWithMetaData={board}
               dataLangs={dataLangs}
               now={now}
