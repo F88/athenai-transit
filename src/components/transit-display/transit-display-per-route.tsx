@@ -22,7 +22,7 @@ import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-d
 
 /**
  * A group of boards that belong to the same route, paired with the route
- * itself. Produced by upstream grouping in `TransitDisplays2` and consumed by
+ * itself. Produced by upstream grouping in `TransitDisplayDashboard` and consumed by
  * {@link TransitDisplayPerRoute}. The caller is responsible for the
  * shared-route invariant (all `data[i].meta.routes[0]` equal `route`); this
  * shape does not re-check it.

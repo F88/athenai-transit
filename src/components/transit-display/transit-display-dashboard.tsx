@@ -51,7 +51,7 @@ const TITLE_ICON_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xl: 'size-15', // 60px
 };
 
-export interface TransitDisplays2Props {
+export interface TransitDisplayDashboardProps {
   /** Raw displays (meta + unresolved board); rows are passed down and resolved at the leaf ({@link TransitDisplayEntry}). */
   dataWithMeta: readonly TransitDisplayDataWithMetaData[];
   /** Build state + radius, for the empty-state message (no stops / no service). */
@@ -88,7 +88,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
  * presentation-only local state: it narrows the rendered displays, it does not
  * change how they are built or fetched.
  */
-export function TransitDisplays2({
+export function TransitDisplayDashboard({
   dataWithMeta,
   status,
   dataLangs,
@@ -98,7 +98,7 @@ export function TransitDisplays2({
   size,
   onStopSelected,
   onInspectTrip,
-}: TransitDisplays2Props) {
+}: TransitDisplayDashboardProps) {
   const { t } = useTranslation();
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);

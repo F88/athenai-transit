@@ -24,7 +24,7 @@ import {
   VIEW_POLICY,
 } from '@/components/transit-display/transit-display-view-policy';
 import { SplitFlapTransitDisplays } from '@/components/transit-display/split-flap-transit-display';
-import { TransitDisplays2 } from '@/components/transit-display/transit-displays-2';
+import { TransitDisplayDashboard } from '@/components/transit-display/transit-display-dashboard';
 
 const logger = createLogger('TransitDisplaysContainer');
 
@@ -154,7 +154,7 @@ export function TransitDisplaysContainer({
             );
           case 'transit-display-2':
             return (
-              <TransitDisplays2
+              <TransitDisplayDashboard
                 dataWithMeta={transitDisplayData}
                 status={transitDisplayStatus}
                 dataLangs={dataLangs}
@@ -168,7 +168,7 @@ export function TransitDisplaysContainer({
             );
           case 'route':
             return (
-              <TransitDisplays2
+              <TransitDisplayDashboard
                 dataWithMeta={transitDisplayData}
                 status={transitDisplayStatus}
                 dataLangs={dataLangs}
