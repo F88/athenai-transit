@@ -2,9 +2,11 @@ import { act, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimetableDialog } from '../timetable-dialog';
+import { getRouteHeadsignKey } from '@/domain/transit/get-route-headsign-key';
 import type { GlobalFilter } from '@/types/app/global-filter';
 import type { TimetableData } from '@/types/app/timetable';
 import type { Route, Stop } from '@/types/app/transit';
+import type { RouteDirection, TimetableEntry } from '@/types/app/transit-composed';
 
 type MockDialogProps = { children: React.ReactNode; onOpenChange?: (open: boolean) => void };
 type MockHeadsignFilterProps = {
@@ -132,6 +134,28 @@ function makeRoute(id: string): Route {
   };
 }
 
+// Build a minimal `RouteDirection` whose `getEffectiveHeadsign` (and thus
+// `getRouteHeadsignKey`) resolves to the given headsign string. Other
+// `TimetableEntry` consumers in the dialog (filterTimetableEntries with
+// `showFirstStopOnly` / `showBoardableOnly` both false in this suite) do not
+// inspect this object, so only `route` + `tripHeadsign` need to be real.
+function makeRouteDirection(route: Route, headsign: string): RouteDirection {
+  return {
+    route,
+    tripHeadsign: { name: headsign, names: {} },
+  };
+}
+
+// Build a minimal `TimetableEntry` whose `routeDirection` carries the given
+// headsign. Cast through `unknown` because only the fields used by this
+// suite (-> `presentHeadsignKeys = entries.map(getRouteHeadsignKey(...))`)
+// are populated; the remaining structural fields are never read.
+function makeEntry(route: Route, headsign: string): TimetableEntry {
+  return {
+    routeDirection: makeRouteDirection(route, headsign),
+  } as unknown as TimetableEntry;
+}
+
 function makeData(overrides: Partial<TimetableData>): TimetableData {
   const stop = makeStop('stop-A');
   const route = makeRoute('route-1');
@@ -141,7 +165,7 @@ function makeData(overrides: Partial<TimetableData>): TimetableData {
     routes: [route],
     referenceDateTime: new Date(2026, 3, 1, 8, 0),
     serviceDate: new Date(2026, 3, 1),
-    timetableEntries: [],
+    timetableEntries: [makeEntry(route, '永福町')],
     omitted: { nonBoardable: 0 },
     stopServiceState: 'boardable',
     agencies: [
@@ -205,6 +229,7 @@ describe('TimetableDialog activeFilters state leak', () => {
       type: 'route-headsign',
       headsign: '永福町',
     });
+    const headsignKey = getRouteHeadsignKey(stopData.timetableEntries[0].routeDirection);
 
     const props = {
       infoLevel: 'detailed' as const,
@@ -221,11 +246,13 @@ describe('TimetableDialog activeFilters state leak', () => {
     expect(getLastFilterProps().activeFilters).toEqual(new Set());
 
     // 2. Apply a filter by invoking the headsign filter's onToggleFilter callback
-    //    (= what a chip click would do).
+    //    (= what a chip click would do). The key must be the real
+    //    `getRouteHeadsignKey(...)` output so it matches an entry's
+    //    `routeDirection` and survives the `useReconcileIdSet` sync.
     act(() => {
-      getLastFilterProps().onToggleFilter('永福町');
+      getLastFilterProps().onToggleFilter(headsignKey);
     });
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
 
     // 3. Retarget the dialog to route-headsign mode for the SAME stop.
     //    (`TimetableHeadsignFilter` is only rendered for `data.type === 'stop'`,
@@ -238,14 +265,22 @@ describe('TimetableDialog activeFilters state leak', () => {
     expect(getLastFilterProps().activeFilters).toEqual(new Set());
   });
 
-  it('keeps activeFilters when only the date changes for the same stop and mode', () => {
-    // Same identity (type / stop_id / headsign) = filter must be preserved.
-    const initialData = makeData({ type: 'stop' });
-    const sameStopLaterDate = makeData({
+  it('keeps activeFilters across date change when the picked headsign still appears in the new entries', () => {
+    // Same identity (type / stop_id / headsign) so the `dataIdentity` B-style
+    // reset does not fire, AND the picked headsign is still represented in
+    // the new date's entries -> `useReconcileIdSet` is a no-op, filter kept.
+    const route = makeRoute('route-1');
+    const initialData = makeData({
+      type: 'stop',
+      timetableEntries: [makeEntry(route, '永福町')],
+    });
+    const sameStopLaterDateSameRoutes = makeData({
       type: 'stop',
       referenceDateTime: new Date(2026, 3, 2, 8, 0),
       serviceDate: new Date(2026, 3, 2),
+      timetableEntries: [makeEntry(route, '永福町')],
     });
+    const headsignKey = getRouteHeadsignKey(initialData.timetableEntries[0].routeDirection);
 
     const props = {
       infoLevel: 'detailed' as const,
@@ -259,14 +294,53 @@ describe('TimetableDialog activeFilters state leak', () => {
     const { rerender } = render(<TimetableDialog {...props} data={initialData} />);
 
     act(() => {
-      getLastFilterProps().onToggleFilter('永福町');
+      getLastFilterProps().onToggleFilter(headsignKey);
     });
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
 
-    rerender(<TimetableDialog {...props} data={sameStopLaterDate} />);
+    rerender(<TimetableDialog {...props} data={sameStopLaterDateSameRoutes} />);
 
-    // Date changed, but (type, stop_id, headsign) are unchanged -> filter kept.
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
+  });
+
+  it('drops activeFilters keys that have left the entry population after a same-identity data update', () => {
+    // Same identity (type / stop_id / headsign) so the `dataIdentity` reset
+    // does NOT fire. The new entries no longer contain the picked headsign
+    // (e.g. a different timetable on a different date) -> `useReconcileIdSet`
+    // removes it in the same render so a "no clickable pill but filter on"
+    // dead-end never appears.
+    const route = makeRoute('route-1');
+    const initialData = makeData({
+      type: 'stop',
+      timetableEntries: [makeEntry(route, '永福町')],
+    });
+    const sameStopLaterDateDifferentHeadsigns = makeData({
+      type: 'stop',
+      referenceDateTime: new Date(2026, 3, 2, 8, 0),
+      serviceDate: new Date(2026, 3, 2),
+      timetableEntries: [makeEntry(route, '新宿')],
+    });
+    const headsignKey = getRouteHeadsignKey(initialData.timetableEntries[0].routeDirection);
+
+    const props = {
+      infoLevel: 'detailed' as const,
+      dataLangs: ['ja'] as const,
+      globalFilter,
+      onClose: vi.fn(),
+      onInspectTrip: vi.fn(),
+      onChangeDateTime: vi.fn(),
+    };
+
+    const { rerender } = render(<TimetableDialog {...props} data={initialData} />);
+
+    act(() => {
+      getLastFilterProps().onToggleFilter(headsignKey);
+    });
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
+
+    rerender(<TimetableDialog {...props} data={sameStopLaterDateDifferentHeadsigns} />);
+
+    expect(getLastFilterProps().activeFilters).toEqual(new Set());
   });
 
   it('clears activeFilters when the stop changes within stop mode', () => {
@@ -278,6 +352,7 @@ describe('TimetableDialog activeFilters state leak', () => {
       type: 'stop',
       stop: makeStop('stop-B'),
     });
+    const headsignKey = getRouteHeadsignKey(stopAData.timetableEntries[0].routeDirection);
 
     const props = {
       infoLevel: 'detailed' as const,
@@ -291,9 +366,9 @@ describe('TimetableDialog activeFilters state leak', () => {
     const { rerender } = render(<TimetableDialog {...props} data={stopAData} />);
 
     act(() => {
-      getLastFilterProps().onToggleFilter('永福町');
+      getLastFilterProps().onToggleFilter(headsignKey);
     });
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
 
     rerender(<TimetableDialog {...props} data={stopBData} />);
 
@@ -311,6 +386,7 @@ describe('TimetableDialog activeFilters state leak', () => {
       stop: makeStop('tmm'),
       headsign: '101:',
     });
+    const headsignKey = getRouteHeadsignKey(colonStopData.timetableEntries[0].routeDirection);
 
     const props = {
       infoLevel: 'detailed' as const,
@@ -324,9 +400,9 @@ describe('TimetableDialog activeFilters state leak', () => {
     const { rerender } = render(<TimetableDialog {...props} data={colonStopData} />);
 
     act(() => {
-      getLastFilterProps().onToggleFilter('永福町');
+      getLastFilterProps().onToggleFilter(headsignKey);
     });
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
 
     rerender(<TimetableDialog {...props} data={routeHeadsignData} />);
     rerender(<TimetableDialog {...props} data={colonStopData} />);
@@ -336,6 +412,7 @@ describe('TimetableDialog activeFilters state leak', () => {
 
   it('clears activeFilters when the dialog closes', () => {
     const stopData = makeData({ type: 'stop' });
+    const headsignKey = getRouteHeadsignKey(stopData.timetableEntries[0].routeDirection);
     const onClose = vi.fn();
 
     const props = {
@@ -350,9 +427,9 @@ describe('TimetableDialog activeFilters state leak', () => {
     render(<TimetableDialog {...props} data={stopData} />);
 
     act(() => {
-      getLastFilterProps().onToggleFilter('永福町');
+      getLastFilterProps().onToggleFilter(headsignKey);
     });
-    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+    expect(getLastFilterProps().activeFilters).toEqual(new Set([headsignKey]));
 
     act(() => {
       getLastDialogProps().onOpenChange?.(false);
