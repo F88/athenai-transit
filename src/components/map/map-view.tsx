@@ -213,6 +213,54 @@ function DistanceRings() {
   );
 }
 
+/**
+ * Render caller-supplied circles in addition to (or in place of) the
+ * always-on `DistanceRings`. Each circle is anchored to its own `center`
+ * (independent of the current map viewport center) and stays put when the
+ * user drags the map, so the circle reflects "the area the caller cares
+ * about" (e.g. the most recently committed stops-fetch center) rather
+ * than the live viewport.
+ */
+function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] }) {
+  return (
+    <>
+      {circles.map((c, i) => (
+        <Circle
+          key={`additional-${i}`}
+          center={[c.center.lat, c.center.lng]}
+          radius={c.radius}
+          interactive={false}
+          pathOptions={{
+            color: c.color,
+            fillColor: c.color,
+            fillOpacity: 0.12,
+            weight: 6,
+            opacity: 0.85,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Specification for one extra Circle rendered on top of the always-on
+ * `DistanceRings`. The caller decides everything: where the circle is
+ * anchored, how large it is, and what color it gets. Color is required
+ * (and intentionally an opaque CSS color string) so the MapView never
+ * has to know about `DISTANCE_BANDS` -- caller-side helpers in
+ * `utils/distance-style.ts` etc. can be used to look one up if the
+ * caller wants band-consistent colors.
+ */
+export interface HighlightedCircle {
+  /** Anchor point. Does NOT follow the user dragging the map. */
+  center: LatLng;
+  /** Radius in meters. Free-form; not restricted to `DISTANCE_BANDS.max`. */
+  radius: number;
+  /** CSS color string used for both stroke and fill. */
+  color: string;
+}
+
 export interface MapViewProps {
   /** Stops within the current viewport. Used for simplified marker rendering. */
   inBoundStops: StopWithMeta[];
@@ -290,6 +338,19 @@ export interface MapViewProps {
    * `EdgeMarkersSwitch`) can interact with the same map.
    */
   onMapInstance?: (map: L.Map) => void;
+  /**
+   * Whether to render the always-on distance reference rings
+   * (= existing {@link DISTANCE_BANDS}-based concentric circles).
+   * Defaults to true so existing call sites keep the historical behavior.
+   */
+  showDistanceRings?: boolean;
+  /**
+   * Caller-supplied circles to draw on top of (or in place of) the distance
+   * rings -- e.g. to highlight the current display radius. Each entry is
+   * rendered as a single Leaflet `Circle` with a transparent-tinted fill.
+   * Defaults to nothing rendered. See {@link HighlightedCircle}.
+   */
+  highlightedCircles?: HighlightedCircle[];
 }
 
 export function MapView({
@@ -323,6 +384,8 @@ export function MapView({
   userLocation,
   onLocated,
   onMapInstance,
+  showDistanceRings = true,
+  highlightedCircles,
 }: MapViewProps) {
   const { t } = useTranslation();
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
@@ -561,7 +624,10 @@ export function MapView({
           doubleTapDrag={doubleTapDrag}
         />
         <RouteShapePanes />
-        <DistanceRings />
+        {showDistanceRings && <DistanceRings />}
+        {highlightedCircles && highlightedCircles.length > 0 && (
+          <AdditionalCircles circles={highlightedCircles} />
+        )}
         {infoLevel === 'verbose' && <ZoomDisplay />}
         <PanToFocus position={focusPosition} />
         <MapRef onMap={handleMapInstance} />
