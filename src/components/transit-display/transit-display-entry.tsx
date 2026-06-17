@@ -254,7 +254,7 @@ export function TransitDisplayEntry({
       </div>
 
       {/* 3rd column: 2 rows - Route agency / Stop */}
-      <div className="py-0.5pr-2 flex flex-1 flex-col justify-center gap-1 border-0 pl-2">
+      <div className="flex flex-1 flex-col justify-center gap-1 border-0 py-0.5 pr-2 pl-2">
         {/* 1st row: Route agency */}
         <div className="flex items-center gap-2">
           {/* Agency name */}
