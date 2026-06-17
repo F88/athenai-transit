@@ -14,8 +14,8 @@ import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../domain/transit/route-type-display-order';
 import { STOP_TIMES_VIEWS, type StopTimeViewId } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
+import { reconcileIdSet } from '../lib/reconcile-id-set';
 import { useElementRect } from '../hooks/use-element-rect';
-import { useReconcileIdSet } from '../hooks/use-reconcile-id-set';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
@@ -173,17 +173,41 @@ export function StopBrowser({
 
   const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
 
-  // Agency ids still represented by the current `stopTimes` population. Feeds
-  // `useReconcileIdSet` so an id the user previously chose to hide -- but
-  // which has dropped out of the nearby population after `stopTimes` changed
-  // (location move, source toggle, ...) -- is removed from `hiddenAgencyIds`
-  // in the same render. Without this, the dead id would silently reactivate
-  // if the agency later reappears in the data.
+  // Agency ids still represented by the current `stopTimes` population. Used
+  // by the reconciliation effect below so a hide entry the user previously
+  // picked -- but whose agency has dropped out of the nearby population after
+  // `stopTimes` changed (location move, source toggle, ...) -- is removed from
+  // `hiddenAgencyIds`. Without this sync, a dead id would silently reactivate
+  // as a hide once the same agency reappears later in the data.
   const presentAgencyIds = useMemo<Set<string>>(
     () => new Set(presentAgencies.map((a) => a.agency_id)),
     [presentAgencies],
   );
-  useReconcileIdSet(hiddenAgencyIds, presentAgencyIds, setHiddenAgencyIds);
+  // Why useEffect (not the render-time `useReconcileIdSet` hook used by
+  // `TransitDisplayDashboard` / `TimetableDialog`):
+  //
+  // `hiddenAgencyIds` is part of `stopBrowserState`, which is lifted into
+  // `AppLayout` so that filter / view settings survive the multi-pane
+  // <-> bottom-sheet layout swap (= the StopBrowser subtree unmounts and
+  // remounts on swap). Consequently `setHiddenAgencyIds` here is a wrapper
+  // around `onStopBrowserStateChange`, which is AppLayout's own
+  // `setStopBrowserState`. Calling it during StopBrowser's render would
+  // update a PARENT component's state mid-render -- exactly what React
+  // refuses with "Cannot update a component (AppLayout) while rendering a
+  // different component (StopBrowser)". The render-phase `useReconcileIdSet`
+  // hook is intentionally restricted to local-state setters; for lifted
+  // state we have to wait for commit and do the work in an effect.
+  //
+  // Block-list semantics make the deferred timing tolerable: a stale id
+  // sitting in the hide set is harmless while the agency is absent (it
+  // simply matches no row), so the one extra paint before the effect runs
+  // does not produce a visible UX regression.
+  useEffect(() => {
+    setHiddenAgencyIds((prev) => {
+      const reconciled = reconcileIdSet(prev, presentAgencyIds);
+      return reconciled === prev ? prev : new Set(reconciled);
+    });
+  }, [presentAgencyIds, setHiddenAgencyIds]);
 
   const toggleRouteType = useCallback(
     (rt: number) => {
