@@ -224,12 +224,17 @@ export function TransitDisplays2({
     [dataWithMeta, shownCategories],
   );
 
-  // Routes present in `categoryFilteredData` (after the category filter), deduped by
-  // route_id and sorted by route_id ascending. Used both for the route filter
-  // toggle row and as the source for `routeFilteredData`.
-  const visibleRoutes = useMemo<Route[]>(() => {
+  // Routes that become per-route cards (TransitDisplayRouteGroup): collected
+  // only from single-route boards in `categoryFilteredData`, deduped by
+  // route_id and sorted ascending. Feeds the `RouteFilter` pill row.
+  // Multi-route boards are skipped here (and exempt from the route filter
+  // in `routeFilteredData`) since they cannot be reduced to a single route.
+  const routesForRouteGroups = useMemo<Route[]>(() => {
     const byId = new Map<string, Route>();
     for (const display of categoryFilteredData) {
+      if (hasMultipleRoutes(display)) {
+        continue;
+      }
       for (const route of display.meta.routes) {
         if (!byId.has(route.route_id)) {
           byId.set(route.route_id, route);
@@ -257,16 +262,24 @@ export function TransitDisplays2({
     return Array.from(byId.values());
   }, [dataWithMeta]);
 
-  // Apply the route filter on top of `categoryFilteredData`. When no route is active,
-  // the filter is considered "off" and every board passes through (matches the
+  // Apply the route filter on top of `categoryFilteredData`. When no route is
+  // active, the filter is "off" and every board passes through (matches the
   // TimetableHeadsignFilter convention).
+  //
+  // Multi-route boards are always kept: the filter pill set is built from
+  // single-route boards only (see `routesForRouteGroups`), so a multi-route
+  // board's routes never appear in `activeRouteFilters` and a naive `some`
+  // check would always drop them.
   const routeFilteredData = useMemo(() => {
     if (activeRouteFilters.size === 0) {
       return categoryFilteredData;
     }
-    return categoryFilteredData.filter((display) =>
-      display.meta.routes.some((r) => activeRouteFilters.has(r.route_id)),
-    );
+    return categoryFilteredData.filter((display) => {
+      if (hasMultipleRoutes(display)) {
+        return true;
+      }
+      return display.meta.routes.some((r) => activeRouteFilters.has(r.route_id));
+    });
   }, [categoryFilteredData, activeRouteFilters]);
 
   // No boards to show because the dataset itself is empty: either no stops within
@@ -343,9 +356,9 @@ export function TransitDisplays2({
             onToggleCategory={toggleCategory}
           />
         )}
-        {visibleRoutes.length > 0 && (
+        {routesForRouteGroups.length > 0 && (
           <RouteFilter
-            routes={visibleRoutes}
+            routes={routesForRouteGroups}
             activeFilters={activeRouteFilters}
             onToggleFilter={toggleRouteFilter}
             dataLangs={dataLangs}
