@@ -25,32 +25,57 @@ import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { StopTimeTimeInfo } from '@/components/stop-time-time-info';
 import { PlatformCodeLabel } from '@/components/stop/platform-code-label';
 
-/** Row text size per display size; the larger the container, the larger the rows. */
-const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'text-[10px]',
-  sm: 'text-xs',
-  md: 'text-xs',
-  lg: 'text-xl',
-  xl: 'text-2xl',
-};
+/**
+ * Per-`size` style bundle for `TransitDisplayEntry`. Looked up via
+ * {@link TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE}.
+ */
+interface TransitDisplayEntrySizeStyle {
+  /** Row-level layout. */
+  row: {
+    /** Text size utility class for the row (`text-*`). */
+    textClass: string;
+  };
+  /** `TimetableEntryAttributesLabels` rendering. */
+  attributesLabels: {
+    /** `TimetableEntryAttributesLabels` size. */
+    size: ExtendedDisplaySize;
+  };
+  /** Badges (RouteBadge / AgencyBadge / DistanceBadge / PlatformCodeLabel) downscaled together. */
+  badge: {
+    /** Shared size for the entry's badges. */
+    size: ExtendedDisplaySize;
+  };
+}
 
-const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
+const TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE: Record<
   ExtendedDisplaySize,
-  ExtendedDisplaySize
+  TransitDisplayEntrySizeStyle
 > = {
-  xs: 'xs',
-  sm: 'xs',
-  md: 'xs',
-  lg: 'sm',
-  xl: 'md',
-};
-
-const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
-  xs: 'xs',
-  sm: 'xs',
-  md: 'sm',
-  lg: 'md',
-  xl: 'lg',
+  xs: {
+    row: { textClass: 'text-[10px]' },
+    attributesLabels: { size: 'xs' },
+    badge: { size: 'xs' },
+  },
+  sm: {
+    row: { textClass: 'text-xs' },
+    attributesLabels: { size: 'xs' },
+    badge: { size: 'xs' },
+  },
+  md: {
+    row: { textClass: 'text-xs' },
+    attributesLabels: { size: 'xs' },
+    badge: { size: 'sm' },
+  },
+  lg: {
+    row: { textClass: 'text-xl' },
+    attributesLabels: { size: 'sm' },
+    badge: { size: 'md' },
+  },
+  xl: {
+    row: { textClass: 'text-2xl' },
+    attributesLabels: { size: 'md' },
+    badge: { size: 'lg' },
+  },
 };
 
 export interface TransitDisplayEntryProps {
@@ -89,6 +114,7 @@ export function TransitDisplayEntry({
   onInspectTrip,
 }: TransitDisplayEntryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
+  const style = TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE[size];
 
   const { stop: stopWithContext, timetableEntry } = data;
 
@@ -153,7 +179,7 @@ export function TransitDisplayEntry({
         'cursor-pointer',
         'hover:bg-info/10',
         'my-0.5 px-0 pt-0 pb-0',
-        ROW_TEXT_CLASS_BY_SIZE[size],
+        style.row.textClass,
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
@@ -204,11 +230,11 @@ export function TransitDisplayEntry({
             dataLang={dataLangs}
             agencyLangs={routeAgencyLangs}
             infoLevel={infoLevel}
-            size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+            size={style.badge.size}
             showBorder={true}
           />
           <TimetableEntryAttributesLabels
-            size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
+            size={style.attributesLabels.size}
             attributes={getTimetableEntryAttributes(timetableEntry)}
             showDisplayLastStop={true}
             showDisplayFirstStop={true}
@@ -229,7 +255,7 @@ export function TransitDisplayEntry({
             <AgencyBadge
               //
               agency={routeAgency}
-              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+              size={style.badge.size}
               // size={'xs'}
               infoLevel={infoLevel}
               dataLang={dataLangs}
@@ -241,7 +267,7 @@ export function TransitDisplayEntry({
             <DistanceBadge
               meters={distanceRounded}
               bearingDeg={bearing}
-              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+              size={style.badge.size}
               showDirection
             />
           )}
@@ -254,7 +280,7 @@ export function TransitDisplayEntry({
               <PlatformCodeLabel
                 className="ml-1 inline-block align-[0.15em]"
                 code={stopWithContext.stop.platform_code}
-                size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+                size={style.badge.size}
               />
             )}
           </span>

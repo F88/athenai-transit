@@ -32,32 +32,6 @@ import { TransitDisplayEntry } from './transit-display-entry';
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
 
 /**
- * Title text size per display size, one step larger than the rows so headings
- * (the board title and the filter toggles) read above the data rows.
- */
-const TITLE_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'text-[10px]',
-  sm: 'text-xs',
-  md: 'text-base',
-  lg: 'text-2xl',
-  xl: 'text-4xl',
-};
-
-/**
- * Title icon size class per display size; tracks {@link TITLE_TEXT_CLASS_BY_SIZE}.
- * A `size-*` class (not the lucide `size` prop) is required so the icon overrides
- * the ui/button base rule `[&_svg:not([class*='size-'])]:size-4`, which otherwise
- * pins button icons to 16px regardless of the prop.
- */
-const TITLE_ICON_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'size-2.5', // 10px
-  sm: 'size-3', // 12px
-  md: 'size-4', // 16px
-  lg: 'size-9', // 36px
-  xl: 'size-15', // 60px
-};
-
-/**
  * Styling for one header IconTextBadge: the component `size` (padding / base
  * scale) plus class overrides for the text half and the icon svg (to scale
  * beyond the component's built-in presets, which cap at ~14px).
@@ -69,35 +43,72 @@ interface HeaderBadgeStyle {
 }
 
 /**
- * Header badge styling per display size, in two variants:
- * - `small`: the four stats badges ({@link StatsBadges}).
- * - `large`: the radius badge.
- *
- * `props.size` is the single input; consumers pick `small` / `large` internally.
+ * Per-`size` style bundle for `TransitDisplay`. Looked up via
+ * {@link TRANSIT_DISPLAY_STYLE_BY_SIZE}.
  */
-const HEADER_STATS_ICONS_BY_SIZE: Record<
-  ExtendedDisplaySize,
-  { small: HeaderBadgeStyle; large: HeaderBadgeStyle }
-> = {
+interface TransitDisplaySizeStyle {
+  /** Board title (left side of the header band). */
+  title: {
+    /**
+     * Text utility class one step larger than the rows so the title reads
+     * above the data.
+     */
+    textClass: string;
+    /**
+     * Icon size utility class tracking `title.textClass`. A `size-*` class
+     * (not the lucide `size` prop) is required so the icon overrides the
+     * ui/button base rule `[&_svg:not([class*='size-'])]:size-4`.
+     */
+    iconClass: string;
+  };
+  /**
+   * Header badges (`StatsBadges` small variant and the radius `large` variant).
+   * Drives both the IconTextBadge component size and class overrides for the
+   * text / icon svg.
+   */
+  headerStatsIcons: {
+    /** Four stats badges in `StatsBadges`. */
+    small: HeaderBadgeStyle;
+    /** Radius badge in the header. */
+    large: HeaderBadgeStyle;
+  };
+}
+
+const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplaySizeStyle> = {
   xs: {
-    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
-    large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+    title: { textClass: 'text-[10px]', iconClass: 'size-2.5' },
+    headerStatsIcons: {
+      small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+      large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+    },
   },
   sm: {
-    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
-    large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+    title: { textClass: 'text-xs', iconClass: 'size-3' },
+    headerStatsIcons: {
+      small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+      large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
+    },
   },
   md: {
-    small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
-    large: { size: 'xs', textClass: 'text-xs', iconClass: '[&>svg]:size-3' },
+    title: { textClass: 'text-base', iconClass: 'size-4' },
+    headerStatsIcons: {
+      small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
+      large: { size: 'xs', textClass: 'text-xs', iconClass: '[&>svg]:size-3' },
+    },
   },
   lg: {
-    small: { size: 'sm', textClass: 'text-base', iconClass: '[&>svg]:size-4' },
-    large: { size: 'sm', textClass: 'text-xl', iconClass: '[&>svg]:size-5' },
+    title: { textClass: 'text-2xl', iconClass: 'size-9' },
+    headerStatsIcons: {
+      small: { size: 'sm', textClass: 'text-base', iconClass: '[&>svg]:size-4' },
+      large: { size: 'sm', textClass: 'text-xl', iconClass: '[&>svg]:size-5' },
+    },
   },
   xl: {
-    small: { size: 'md', textClass: 'text-2xl', iconClass: '[&>svg]:size-6' },
-    large: { size: 'md', textClass: 'text-3xl', iconClass: '[&>svg]:size-8' },
+    title: { textClass: 'text-4xl', iconClass: 'size-15' },
+    headerStatsIcons: {
+      small: { size: 'md', textClass: 'text-2xl', iconClass: '[&>svg]:size-6' },
+      large: { size: 'md', textClass: 'text-3xl', iconClass: '[&>svg]:size-8' },
+    },
   },
 };
 
@@ -131,7 +142,8 @@ function StatsBadges({
   routeCount: number;
   agencyCount: number;
 }) {
-  const { size: badgeSize, textClass, iconClass } = HEADER_STATS_ICONS_BY_SIZE[size].small;
+  const style = TRANSIT_DISPLAY_STYLE_BY_SIZE[size];
+  const { size: badgeSize, textClass, iconClass } = style.headerStatsIcons.small;
 
   return (
     <div className="flex flex-col items-end gap-0.5 border-0">
@@ -203,6 +215,7 @@ export function TransitDisplay({
 
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
+  const style = TRANSIT_DISPLAY_STYLE_BY_SIZE[size];
 
   // Board title: mode emoji + departures/arrivals phrase. The
   // route type and basis are structured meta; the UI composes the localized text.
@@ -266,20 +279,20 @@ export function TransitDisplay({
           <h3
             className={cn(
               'flex min-w-0 items-center gap-2 font-bold tracking-[0.18em] uppercase',
-              TITLE_TEXT_CLASS_BY_SIZE[size],
+              style.title.textClass,
             )}
           >
             {isArrivalBoard ? (
               <ArrowRight
                 strokeWidth={4}
                 aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+                className={cn('shrink-0', style.title.iconClass)}
               />
             ) : (
               <ArrowUp
                 strokeWidth={4}
                 aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+                className={cn('shrink-0', style.title.iconClass)}
               />
             )}
             {routeTypeIcon}
@@ -289,11 +302,11 @@ export function TransitDisplay({
           {/* Right side: stats badges + radius, grouped and right-aligned. */}
           <div className="flex shrink-0 items-center gap-1">
             <IconTextBadge
-              size={HEADER_STATS_ICONS_BY_SIZE[size].large.size}
+              size={style.headerStatsIcons.large.size}
               icon={<Radio />}
               text={`${meta.radius.toLocaleString(i18n.language)}m`}
-              textClassName={HEADER_STATS_ICONS_BY_SIZE[size].large.textClass}
-              iconClassName={HEADER_STATS_ICONS_BY_SIZE[size].large.iconClass}
+              textClassName={style.headerStatsIcons.large.textClass}
+              iconClassName={style.headerStatsIcons.large.iconClass}
               frameClassName="p-1 border-none"
               aria-label="radius"
             />
@@ -325,7 +338,7 @@ export function TransitDisplay({
                   dataLang={dataLangs}
                   agencyLangs={agencyLangs}
                   infoLevel={infoLevel}
-                  size={HEADER_STATS_ICONS_BY_SIZE[size].large.size}
+                  size={style.headerStatsIcons.large.size}
                   showBorder={true}
                 />
               );

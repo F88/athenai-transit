@@ -26,29 +26,69 @@ import { TransitDisplayPerRoute, type TransitDisplayRouteGroup } from './transit
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
 
 /**
- * Title text size per display size, one step larger than the rows so headings
- * (the board title and the filter toggles) read above the data rows.
+ * Per-`size` style bundle for `TransitDisplayDashboard`. Looked up via
+ * {@link TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE}.
  */
-const TITLE_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'text-[10px]',
-  sm: 'text-xs',
-  md: 'text-base',
-  lg: 'text-2xl',
-  xl: 'text-4xl',
-};
+interface TransitDisplayDashboardSizeStyle {
+  /** Section title (also used by the filter toggles). */
+  title: {
+    /**
+     * Text utility class one step larger than the rows so the title reads
+     * above the data.
+     */
+    textClass: string;
+    /**
+     * Icon size utility class tracking `title.textClass`. A `size-*` class
+     * (not the lucide `size` prop) is required so the icon overrides the
+     * ui/button base rule `[&_svg:not([class*='size-'])]:size-4`.
+     */
+    iconClass: string;
+  };
+  /** One filter toggle button (the `departures` / `arrivals` chip). */
+  filterButton: {
+    /**
+     * Border / padding utility classes. `has-[>svg]:px-*` overrides the
+     * ui/button size variant's `has-[>svg]:px-3` so the inset scales with the
+     * size-scaled label.
+     */
+    boxClass: string;
+  };
+  /** Outer filter row that holds the filter toggle buttons. */
+  filterBox: {
+    /** Padding + gap utility classes for the row. */
+    boxClass: string;
+  };
+}
 
-/**
- * Title icon size class per display size; tracks {@link TITLE_TEXT_CLASS_BY_SIZE}.
- * A `size-*` class (not the lucide `size` prop) is required so the icon overrides
- * the ui/button base rule `[&_svg:not([class*='size-'])]:size-4`, which otherwise
- * pins button icons to 16px regardless of the prop.
- */
-const TITLE_ICON_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'size-2.5', // 10px
-  sm: 'size-3', // 12px
-  md: 'size-4', // 16px
-  lg: 'size-9', // 36px
-  xl: 'size-15', // 60px
+const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
+  ExtendedDisplaySize,
+  TransitDisplayDashboardSizeStyle
+> = {
+  xs: {
+    title: { textClass: 'text-[10px]', iconClass: 'size-2.5' },
+    filterButton: { boxClass: 'border has-[>svg]:px-1 py-0' },
+    filterBox: { boxClass: 'py-2 px-3 gap-2' },
+  },
+  sm: {
+    title: { textClass: 'text-xs', iconClass: 'size-3' },
+    filterButton: { boxClass: 'border-2 has-[>svg]:px-1.5 py-0' },
+    filterBox: { boxClass: 'py-2 px-3 gap-2.5' },
+  },
+  md: {
+    title: { textClass: 'text-base', iconClass: 'size-4' },
+    filterButton: { boxClass: 'border-4 has-[>svg]:px-2 py-0' },
+    filterBox: { boxClass: 'py-2 px-3 gap-3' },
+  },
+  lg: {
+    title: { textClass: 'text-2xl', iconClass: 'size-9' },
+    filterButton: { boxClass: 'border-6 has-[>svg]:px-4 py-0' },
+    filterBox: { boxClass: 'py-3 px-8 gap-8' },
+  },
+  xl: {
+    title: { textClass: 'text-4xl', iconClass: 'size-15' },
+    filterButton: { boxClass: 'border-8 has-[>svg]:px-8 py-0' },
+    filterBox: { boxClass: 'py-4 px-12 gap-12' },
+  },
 };
 
 export interface TransitDisplayDashboardProps {
@@ -322,14 +362,6 @@ export function TransitDisplayDashboard({
  * the ui/button size variant's own `has-[>svg]:px-3`; `py-*` sets the height feel.
  * Border color is applied separately (the shown / hidden state classes).
  */
-const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'border has-[>svg]:px-1 py-0',
-  sm: 'border-2 has-[>svg]:px-1.5 py-0',
-  md: 'border-4 has-[>svg]:px-2 py-0',
-  lg: 'border-6 has-[>svg]:px-4 py-0',
-  xl: 'border-8 has-[>svg]:px-8 py-0',
-};
-
 const FILTER_BUTTON_BASE_CLASS =
   'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase hover:bg-info/20';
 
@@ -341,14 +373,6 @@ const FILTER_BUTTON_HIDDEN_CLASS = cn(
   BOARD_PANEL_BG,
   'border-neutral-300 text-neutral-400 hover:text-neutral-600 dark:border-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300',
 );
-
-const FILTER_BOX_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'py-2 px-3 gap-2',
-  sm: 'py-2 px-3 gap-2.5',
-  md: 'py-2 px-3 gap-3',
-  lg: 'py-3 px-8 gap-8',
-  xl: 'py-4 px-12 gap-12',
-};
 
 interface TransitDisplayCategoryFilterProps {
   /** Categories that have a board, in board order; one toggle is rendered per entry. */
@@ -372,6 +396,7 @@ function TransitDisplayCategoryFilter({
   onToggleCategory,
 }: TransitDisplayCategoryFilterProps) {
   const { t } = useTranslation();
+  const style = TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE[size];
   return (
     <div
       role="group"
@@ -379,7 +404,7 @@ function TransitDisplayCategoryFilter({
       className={cn(
         'mb-2 flex items-center rounded-sm',
         'border-0',
-        FILTER_BOX_SIZE[size],
+        style.filterBox.boxClass,
         // BOARD_FRAME_COLOR,
         // BOARD_PANEL_BG,
       )}
@@ -398,8 +423,8 @@ function TransitDisplayCategoryFilter({
             onClick={() => onToggleCategory(category)}
             className={cn(
               FILTER_BUTTON_BASE_CLASS,
-              FILTER_BUTTON_BOX_BY_SIZE[size],
-              TITLE_TEXT_CLASS_BY_SIZE[size],
+              style.filterButton.boxClass,
+              style.title.textClass,
               isShown ? FILTER_BUTTON_SHOWN_CLASS : FILTER_BUTTON_HIDDEN_CLASS,
             )}
           >
@@ -407,13 +432,13 @@ function TransitDisplayCategoryFilter({
               <ArrowRight
                 strokeWidth={4}
                 aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+                className={cn('shrink-0', style.title.iconClass)}
               />
             ) : (
               <ArrowUp
                 strokeWidth={4}
                 aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+                className={cn('shrink-0', style.title.iconClass)}
               />
             )}
             <span className="truncate">
