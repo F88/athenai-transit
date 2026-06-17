@@ -95,6 +95,8 @@ export interface TransitDisplayEntryProps {
   // hasMultiRoutes: boolean;
   /** Maximum characters for headsign truncation. */
   headsignMaxLength?: number;
+  showRouteBadge?: boolean;
+  showAgencyBadge?: boolean;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -110,6 +112,8 @@ export function TransitDisplayEntry({
   size,
   // hasMultiRoutes,
   headsignMaxLength: _headsignMaxLength,
+  showRouteBadge = true,
+  showAgencyBadge = true,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayEntryProps) {
@@ -178,8 +182,9 @@ export function TransitDisplayEntry({
         'flex items-stretch overflow-hidden',
         'cursor-pointer',
         'hover:bg-info/10',
-        'my-0.5 px-0 pt-0 pb-0',
+        'my-0.5',
         style.row.textClass,
+        // 'bg-yellow-200',
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
@@ -222,17 +227,19 @@ export function TransitDisplayEntry({
       </div>
 
       {/* 2nd column (2 rows) */}
-      <div className="flex-2 border-0 pt-1 pl-4">
+      <div className="flex flex-2 flex-col justify-center gap-1 border-0 py-0.5 pl-4">
         {/* 1st row: Route info (Route name, Headsign, ...) */}
         <div className="flex items-center gap-2">
-          <RouteBadge
-            route={timetableEntry.routeDirection.route}
-            dataLang={dataLangs}
-            agencyLangs={routeAgencyLangs}
-            infoLevel={infoLevel}
-            size={style.badge.size}
-            showBorder={true}
-          />
+          {showRouteBadge && (
+            <RouteBadge
+              route={timetableEntry.routeDirection.route}
+              dataLang={dataLangs}
+              agencyLangs={routeAgencyLangs}
+              infoLevel={infoLevel}
+              size={style.badge.size}
+              showBorder={true}
+            />
+          )}
           <TimetableEntryAttributesLabels
             size={style.attributesLabels.size}
             attributes={getTimetableEntryAttributes(timetableEntry)}
@@ -243,20 +250,18 @@ export function TransitDisplayEntry({
           />
         </div>
         {/* 2nd row: Headsign (destination) */}
-        <div className="border-0 pt-1">{headsign}</div>
+        <div className="">{headsign}</div>
       </div>
 
       {/* 3rd column: 2 rows - Route agency / Stop */}
-      <div className="flex-1 border-0 px-2 pt-1">
+      <div className="py-0.5pr-2 flex flex-1 flex-col justify-center gap-1 border-0 pl-2">
         {/* 1st row: Route agency */}
-        <div className="flex items-center gap-2 border-0 px-0 py-0">
+        <div className="flex items-center gap-2">
           {/* Agency name */}
-          {routeAgency && (
+          {showAgencyBadge && routeAgency && (
             <AgencyBadge
-              //
               agency={routeAgency}
               size={style.badge.size}
-              // size={'xs'}
               infoLevel={infoLevel}
               dataLang={dataLangs}
               showBorder={true}
@@ -273,7 +278,7 @@ export function TransitDisplayEntry({
           )}
         </div>
         {/* 2nd row: Stop */}
-        <div className="border-0 pt-1">
+        <div className="">
           <span className="block min-w-0 leading-tight wrap-break-word whitespace-normal">
             {stopName}
             {stopWithContext.stop.platform_code !== undefined && (

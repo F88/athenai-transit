@@ -370,6 +370,8 @@ export function TransitDisplay({
                   mapCenter={mapCenter}
                   infoLevel={infoLevel}
                   size={size}
+                  // showRouteBadge={hasMultiRoutes}
+                  // showAgencyBadge={hasMultiRoutes}
                   onStopSelected={onStopSelected}
                   onInspectTrip={onInspectTrip}
                 />
