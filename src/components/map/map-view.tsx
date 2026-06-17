@@ -224,9 +224,9 @@ function DistanceRings() {
 function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] }) {
   return (
     <>
-      {circles.map((c, i) => (
+      {circles.map((c) => (
         <Circle
-          key={`additional-${i}`}
+          key={`additional-${c.center.lat}-${c.center.lng}-${c.radius}-${c.color}`}
           center={[c.center.lat, c.center.lng]}
           radius={c.radius}
           interactive={false}
@@ -350,7 +350,7 @@ export interface MapViewProps {
    * rendered as a single Leaflet `Circle` with a transparent-tinted fill.
    * Defaults to nothing rendered. See {@link HighlightedCircle}.
    */
-  highlightedCircles?: HighlightedCircle[];
+  highlightedCircles?: readonly HighlightedCircle[];
 }
 
 export function MapView({
