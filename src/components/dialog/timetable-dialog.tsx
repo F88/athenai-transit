@@ -32,6 +32,7 @@ import { filterTimetableEntries } from '@/domain/transit/timetable-filter';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { useInfoLevel } from '@/hooks/use-info-level';
+import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 import type { GlobalFilter } from '@/types/app/global-filter';
 import type { InfoLevel } from '@/types/app/settings';
@@ -371,6 +372,21 @@ export const TimetableDialog = memo(function TimetableDialog({
       }),
     [allTimetableEntries, showOriginOnly, showBoardableOnly],
   );
+
+  // Route-headsign keys that are still represented in the current filtered
+  // entry set. Feeds `useReconcileIdSet` so a key the user picked earlier --
+  // but which no longer matches any surviving entry after a `showOriginOnly`
+  // or `showBoardableOnly` toggle reshapes the population -- is dropped from
+  // `activeFilters` in the same render. Complementary to the `dataIdentity`
+  // reset above: that covers dialog retargeting; this covers in-dialog
+  // population shifts where `dataIdentity` does not change.
+  const presentHeadsignKeys = useMemo<Set<string>>(
+    () =>
+      new Set(stopEventAttributesFilteredEntries.map((e) => getRouteHeadsignKey(e.routeDirection))),
+    [stopEventAttributesFilteredEntries],
+  );
+  useReconcileIdSet(activeFilters, presentHeadsignKeys, setActiveFilters);
+
   const stopEventAttributesFilteredEntriesStats = useMemo(
     () =>
       computeTimetableEntryStats(
