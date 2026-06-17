@@ -58,11 +58,11 @@ const ROUTE_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, RouteFilterSizeSty
   },
   lg: {
     wrapper: { gap: 'gap-1', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'sm' },
+    pill: { size: 'md' },
   },
   xl: {
     wrapper: { gap: 'gap-2', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'md' },
+    pill: { size: 'lg' },
   },
 };
 
