@@ -164,6 +164,7 @@ export function TransitDisplaysContainer({
                 size={size}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
+                enableRouteFilter={false}
               />
             );
           case 'route':
@@ -178,6 +179,7 @@ export function TransitDisplaysContainer({
                 size={size}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
+                enableRouteFilter={true}
               />
             );
           default:

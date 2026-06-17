@@ -44,19 +44,24 @@ interface TransitDisplayDashboardSizeStyle {
      */
     iconClass: string;
   };
-  /** One filter toggle button (the `departures` / `arrivals` chip). */
-  filterButton: {
-    /**
-     * Border / padding utility classes. `has-[>svg]:px-*` overrides the
-     * ui/button size variant's `has-[>svg]:px-3` so the inset scales with the
-     * size-scaled label.
-     */
-    boxClass: string;
-  };
-  /** Outer filter row that holds the filter toggle buttons. */
-  filterBox: {
-    /** Padding + gap utility classes for the row. */
-    boxClass: string;
+  // routeFilter: {
+  //   padding: string;
+  // };
+  categoryFilter: {
+    /** One filter toggle button (the `departures` / `arrivals` chip). */
+    filterButton: {
+      /**
+       * Border / padding utility classes. `has-[>svg]:px-*` overrides the
+       * ui/button size variant's `has-[>svg]:px-3` so the inset scales with the
+       * size-scaled label.
+       */
+      boxClass: string;
+    };
+    /** Outer filter row that holds the filter toggle buttons. */
+    filterBox: {
+      /** Padding + gap utility classes for the row. */
+      boxClass: string;
+    };
   };
 }
 
@@ -66,28 +71,38 @@ const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
 > = {
   xs: {
     title: { textClass: 'text-[10px]', iconClass: 'size-2.5' },
-    filterButton: { boxClass: 'border has-[>svg]:px-1 py-0' },
-    filterBox: { boxClass: 'py-2 px-3 gap-2' },
+    categoryFilter: {
+      filterButton: { boxClass: 'border has-[>svg]:px-1 py-0' },
+      filterBox: { boxClass: 'py-2 px-3 gap-2' },
+    },
   },
   sm: {
     title: { textClass: 'text-xs', iconClass: 'size-3' },
-    filterButton: { boxClass: 'border-2 has-[>svg]:px-1.5 py-0' },
-    filterBox: { boxClass: 'py-2 px-3 gap-2.5' },
+    categoryFilter: {
+      filterButton: { boxClass: 'border-2 has-[>svg]:px-1.5 py-0' },
+      filterBox: { boxClass: 'py-2 px-3 gap-2.5' },
+    },
   },
   md: {
     title: { textClass: 'text-base', iconClass: 'size-4' },
-    filterButton: { boxClass: 'border-4 has-[>svg]:px-2 py-0' },
-    filterBox: { boxClass: 'py-2 px-3 gap-3' },
+    categoryFilter: {
+      filterButton: { boxClass: 'border-4 has-[>svg]:px-2 py-0' },
+      filterBox: { boxClass: 'py-2 px-3 gap-3' },
+    },
   },
   lg: {
     title: { textClass: 'text-2xl', iconClass: 'size-9' },
-    filterButton: { boxClass: 'border-6 has-[>svg]:px-4 py-0' },
-    filterBox: { boxClass: 'py-3 px-8 gap-8' },
+    categoryFilter: {
+      filterButton: { boxClass: 'border-6 has-[>svg]:px-4 py-0' },
+      filterBox: { boxClass: 'py-3 px-8 gap-8' },
+    },
   },
   xl: {
     title: { textClass: 'text-4xl', iconClass: 'size-15' },
-    filterButton: { boxClass: 'border-8 has-[>svg]:px-8 py-0' },
-    filterBox: { boxClass: 'py-4 px-12 gap-12' },
+    categoryFilter: {
+      filterButton: { boxClass: 'border-8 has-[>svg]:px-8 py-0' },
+      filterBox: { boxClass: 'py-4 px-12 gap-12' },
+    },
   },
 };
 
@@ -102,6 +117,7 @@ export interface TransitDisplayDashboardProps {
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   size: ExtendedDisplaySize;
+  enableRouteFilter: boolean;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -136,6 +152,7 @@ export function TransitDisplayDashboard({
   mapCenter,
   infoLevel,
   size,
+  enableRouteFilter,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayDashboardProps) {
@@ -283,26 +300,42 @@ export function TransitDisplayDashboard({
       <div
         className={cn(
           //
-          'px-0',
+          // 'px-0',
+          // 'border-10',
+          'space-y-0',
+          // 'bg-orange-400',
+          'pb-2',
         )}
       >
         {presentCategories.length > 0 && (
-          <TransitDisplayCategoryFilter
-            categories={presentCategories}
-            shownCategories={shownCategories}
-            size={size}
-            onToggleCategory={toggleCategory}
-          />
+          <div className="">
+            <TransitDisplayCategoryFilter
+              categories={presentCategories}
+              shownCategories={shownCategories}
+              size={size}
+              onToggleCategory={toggleCategory}
+            />
+          </div>
         )}
-        {routesForRouteGroups.length > 0 && (
-          <RouteFilter
-            routes={routesForRouteGroups}
-            activeFilters={activeRouteFilters}
-            onToggleFilter={toggleRouteFilter}
-            dataLangs={dataLangs}
-            agencies={allAgencies}
-            size={size}
-          />
+        {enableRouteFilter && routesForRouteGroups.length > 0 && (
+          <div
+            className={cn(
+              //
+              // 'bg-green-600',
+              // 'py-4',
+              'pb-2',
+              // 'pb-4',
+            )}
+          >
+            <RouteFilter
+              routes={routesForRouteGroups}
+              activeFilters={activeRouteFilters}
+              onToggleFilter={toggleRouteFilter}
+              dataLangs={dataLangs}
+              agencies={allAgencies}
+              size={size}
+            />
+          </div>
         )}
       </div>
 
@@ -313,6 +346,7 @@ export function TransitDisplayDashboard({
           // 'font-dotgothic16',
           'space-y-4',
           // 'px-0',
+          // 'bg-pink-100',
         )}
       >
         {groupedDisplays.map((item, index) => {
@@ -402,9 +436,9 @@ function TransitDisplayCategoryFilter({
       role="group"
       aria-label={t('transitDisplay2.filter.label')}
       className={cn(
-        'mb-2 flex items-center rounded-sm',
-        'border-0',
-        style.filterBox.boxClass,
+        'flex items-center rounded-sm',
+        // 'border-0',
+        style.categoryFilter.filterBox.boxClass,
         // BOARD_FRAME_COLOR,
         // BOARD_PANEL_BG,
       )}
@@ -423,7 +457,7 @@ function TransitDisplayCategoryFilter({
             onClick={() => onToggleCategory(category)}
             className={cn(
               FILTER_BUTTON_BASE_CLASS,
-              style.filterButton.boxClass,
+              style.categoryFilter.filterButton.boxClass,
               style.title.textClass,
               isShown ? FILTER_BUTTON_SHOWN_CLASS : FILTER_BUTTON_HIDDEN_CLASS,
             )}
