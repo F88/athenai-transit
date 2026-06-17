@@ -86,7 +86,7 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
   xs: {
     panels: { gap: 'mt-2' },
     routeInfoRow: {
-      padding: 'p-1',
+      padding: 'px-1 py-1',
       gap: 'gap-1',
       borderWidth: 'border',
       borderRadius: 'rounded-sm',
@@ -98,7 +98,7 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
   sm: {
     panels: { gap: 'mt-3' },
     routeInfoRow: {
-      padding: 'p-1.5',
+      padding: 'px-1.5 py-0.5',
       gap: 'gap-1.5',
       borderWidth: 'border-2',
       borderRadius: 'rounded',
@@ -110,7 +110,7 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
   md: {
     panels: { gap: 'mt-4' },
     routeInfoRow: {
-      padding: 'p-2',
+      padding: 'px-2 py-1',
       gap: 'gap-2',
       borderWidth: 'border-3',
       borderRadius: 'rounded-lg',
@@ -120,9 +120,9 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
     badges: { routeSize: 'sm', agencySize: 'sm' },
   },
   lg: {
-    panels: { gap: 'mt-6' },
+    panels: { gap: 'mt-4' },
     routeInfoRow: {
-      padding: 'p-3',
+      padding: 'px-3 py-2',
       gap: 'gap-3',
       borderWidth: 'border-4',
       borderRadius: 'rounded-lg',
@@ -132,9 +132,9 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
     badges: { routeSize: 'lg', agencySize: 'lg' },
   },
   xl: {
-    panels: { gap: 'mt-8' },
+    panels: { gap: 'mt-4' },
     routeInfoRow: {
-      padding: 'p-3',
+      padding: 'px-4 py-3',
       gap: 'gap-3',
       borderWidth: 'border-8',
       borderRadius: 'rounded-xl',
@@ -233,17 +233,19 @@ export function TransitDisplayPerRoute({
       {/* Route info */}
       <div
         className={cn(
-          //
           'flex items-center',
-          'my-0 overflow-hidden',
+          'overflow-hidden',
           style.routeInfoRow.gap,
           style.routeInfoRow.padding,
           style.routeInfoRow.borderRadius,
           style.routeInfoRow.borderWidth,
         )}
-        style={{ borderColor: routeColor ?? undefined }}
+        style={{
+          //
+          borderColor: routeColor ?? undefined,
+          backgroundColor: routeColor ? `${routeColor}20` : undefined, // opacity 20% for background
+        }}
       >
-        {' '}
         {/* Left: route info */}
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className={style.routeTypeEmoji.textSize}>
