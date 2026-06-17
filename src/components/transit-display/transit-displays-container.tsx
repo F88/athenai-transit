@@ -8,6 +8,7 @@ import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-
 
 import { createLogger } from '@/lib/logger';
 
+import { useMapOverlayControls } from '@/hooks/use-map-overlay';
 import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
@@ -19,8 +20,7 @@ import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { ScrollToTopButton } from '@/components/shared/scroll-to-top-button';
 import {
   buildBoardsForPolicy,
-  ROUTE_VIEW_POLICY,
-  TRANSIT_DISPLAY_POLICY,
+  transitDisplayViewSettings,
   VIEW_POLICY,
 } from '@/components/transit-display/transit-display-view-policy';
 import { SplitFlapTransitDisplays } from '@/components/transit-display/split-flap-transit-display';
@@ -64,20 +64,27 @@ export function TransitDisplaysContainer({
   onInspectTrip,
 }: TransitDisplaysContainerProps) {
   const { t } = useTranslation();
+  const { setHighlightedCircles, clearHighlightedCircles, setShowDistanceRings } =
+    useMapOverlayControls();
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
-  // distance filter: stops within radiusMeters of the center. Memoized so its
-  // reference is stable while stopTimes are unchanged -- otherwise the
+  // Per-view nearby radius (the value this view's boards are filtered within
+  // and the map's highlight circle is drawn at). Container-owned views always
+  // have settings; the fallback is defensive only.
+  const radiusMeters = transitDisplayViewSettings(viewId)?.nearbyRadiusMeters ?? NEARBY_RADIUS_M;
+
+  // Distance filter: stops within `radiusMeters` of the center. Memoized so its
+  // reference is stable while stopTimes / radius are unchanged -- otherwise the
   // transitDisplayData useMemo below (which depends on it) would rebuild every render.
   const nearbyStops = useMemo(
-    () => filterStopsWithinDistance(stopTimes, NEARBY_RADIUS_M),
-    [stopTimes],
+    () => filterStopsWithinDistance(stopTimes, radiusMeters),
+    [stopTimes, radiusMeters],
   );
 
   const transitDisplayStatus = useMemo(
-    () => ({ radius: NEARBY_RADIUS_M, state: resolveTransitDisplayState(nearbyStops) }),
-    [nearbyStops],
+    () => ({ radius: radiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
+    [nearbyStops, radiusMeters],
   );
 
   // Log only when the status value (radius / state) changes, not every render.
@@ -87,38 +94,42 @@ export function TransitDisplaysContainer({
     );
   }, [transitDisplayStatus.radius, transitDisplayStatus.state]);
 
-  // Per-policy memos: data depends only on (nearbyStops, infoLevel, ready
-  // state), so switching the view does not invalidate either one. Both are
-  // computed eagerly because the per-stop dataset is small (NEARBY_RADIUS_M)
-  // and the cost is dominated by the active view's render anyway.
-  const memoizedTransitDisplayBoards = useMemo(
-    () =>
-      transitDisplayStatus.state === 'ready'
-        ? buildBoardsForPolicy(nearbyStops, NEARBY_RADIUS_M, TRANSIT_DISPLAY_POLICY, infoLevel)
-        : [],
-    [nearbyStops, infoLevel, transitDisplayStatus.state],
-  );
-  const memoizedRouteViewBoards = useMemo(
-    () =>
-      transitDisplayStatus.state === 'ready'
-        ? buildBoardsForPolicy(nearbyStops, NEARBY_RADIUS_M, ROUTE_VIEW_POLICY, infoLevel)
-        : [],
-    [nearbyStops, infoLevel, transitDisplayStatus.state],
-  );
+  // Draw the active view's nearby radius as a highlight circle on the hoisted
+  // map via the shared store. Anchored to the fetched-stops center
+  // (`mapCenter`); radius + color come from the same per-view settings the
+  // boards are filtered by, so circle and boards agree. The cleanup clears it,
+  // so leaving this view (or unmounting to a non-board view) removes the circle.
+  useEffect(() => {
+    const settings = transitDisplayViewSettings(viewId);
+    if (mapCenter != null && settings != null) {
+      setHighlightedCircles([
+        {
+          center: mapCenter,
+          radius: settings.nearbyRadiusMeters,
+          color: settings.highlightCircleColor,
+        },
+      ]);
+      // setShowDistanceRings(false);
+    }
+    return () => {
+      clearHighlightedCircles();
+      setShowDistanceRings(true);
+    };
+  }, [mapCenter, viewId, setHighlightedCircles, clearHighlightedCircles, setShowDistanceRings]);
 
-  // Select the memo for the active view via VIEW_POLICY lookup (identity
-  // compare on the policy reference -- adding a new view = new memo + new
-  // VIEW_POLICY entry + a new branch here, all explicit).
+  // Build only the active view's boards. Each view carries its own radius (= its
+  // own `nearbyStops`), so a view switch recomputes here -- cheap for the small
+  // in-radius dataset and avoids building the inactive policy every render.
   const transitDisplayData = useMemo(() => {
+    if (transitDisplayStatus.state !== 'ready') {
+      return [];
+    }
     const policy = VIEW_POLICY[viewId];
-    if (policy === ROUTE_VIEW_POLICY) {
-      return memoizedRouteViewBoards;
+    if (!policy) {
+      return [];
     }
-    if (policy === TRANSIT_DISPLAY_POLICY) {
-      return memoizedTransitDisplayBoards;
-    }
-    return [];
-  }, [viewId, memoizedTransitDisplayBoards, memoizedRouteViewBoards]);
+    return buildBoardsForPolicy(nearbyStops, radiusMeters, policy, infoLevel);
+  }, [viewId, nearbyStops, radiusMeters, infoLevel, transitDisplayStatus.state]);
 
   return (
     <div

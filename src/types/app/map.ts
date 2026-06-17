@@ -23,6 +23,24 @@ export interface LatLng {
 }
 
 /**
+ * Specification for one extra Circle rendered on top of the always-on
+ * `DistanceRings`. The caller decides everything: where the circle is
+ * anchored, how large it is, and what color it gets. Color is required
+ * (and intentionally an opaque CSS color string) so the MapView never
+ * has to know about `DISTANCE_BANDS` -- caller-side helpers in
+ * `utils/distance-style.ts` etc. can be used to look one up if the
+ * caller wants band-consistent colors.
+ */
+export interface HighlightedCircle {
+  /** Anchor point. Does NOT follow the user dragging the map. */
+  center: LatLng;
+  /** Radius in meters. Free-form; not restricted to `DISTANCE_BANDS.max`. */
+  radius: number;
+  /** CSS color string used for both stroke and fill. */
+  color: string;
+}
+
+/**
  * A marker displayed at the screen edge pointing toward an off-screen stop.
  *
  * Position (x, y) is in screen pixels, clamped to the viewport boundary.
