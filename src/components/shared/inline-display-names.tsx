@@ -64,16 +64,27 @@ export function InlineDisplayNames({
   const { name, subNames } = names;
   const normalizedSubNames = subNames.map((e) => e.trim()).filter((s) => s !== '');
   return (
-    <span className="">
+    <span
+      className={
+        cn()
+        //
+        // 'align-middle',
+        // 'align-top',
+        //
+        //
+        // 'inline-block',
+        // 'leading-tight',
+      }
+    >
       <span
         className={cn(
           //
           NAME_TEXT_BY_SIZE[size],
           'text-[#333] dark:text-gray-200',
-          nameClassName,
-          ellipsis && 'truncate',
-          'inline-block',
           'leading-tight',
+          'pr-1',
+          ellipsis && 'truncate',
+          nameClassName,
         )}
       >
         {name}
@@ -84,10 +95,10 @@ export function InlineDisplayNames({
             //
             SUB_TEXT_BY_SIZE[size],
             'text-[#888] dark:text-gray-400',
-            subNamesClassName,
-            ellipsis && 'truncate',
             'inline-block',
             'leading-tight',
+            ellipsis && 'truncate',
+            subNamesClassName,
           )}
         >
           {normalizedSubNames.join(' / ')}

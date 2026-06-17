@@ -17,6 +17,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopTime views: 新しい `route` view (per-route card) を導入し、view picker の並びでも `route` を `transit-display` より先に置いた。bus / trolleybus / ferry を含む全 route_type で per-route card を表示する (#302)。
 - Shared components: 多言語 sub-names を inline / 縦 stack でレンダリングする `InlineDisplayNames` / `StackedDisplayNames` を `src/components/shared/` に追加した。必須 `size` (`ExtendedDisplaySize`) / `showSubNames` / (Stacked のみ) `subNamesPosition` を受け取り、default 色 (`text-[#333]` / `text-[#888]` + dark variants) を内蔵する。caller-provided `nameClassName` / `subNamesClassName` は twMerge で text-\* を override 可能 (#302)。
 - Storybook: `DisplayNames/StackedDisplayNames` / `DisplayNames/InlineDisplayNames` の stories を追加した (#302)。
+- Filter: route 単位の pill を並べる `RouteFilter` component を `src/components/filter/` に追加した。 PillButton ベースで route の brand color + 多言語解決済み (`getRouteDisplayNames`) の label を表示する controlled component。 caller が `routes` / `activeFilters: Set<route_id>` / `onToggleFilter` / `dataLangs` / `agencies` / `size` を渡し、 翻訳 / 色 / contrast 計算は `useMemo` で precompute するので toggle 操作で再計算は走らない (#304)。
+- TransitDisplayDashboard: 上記 `RouteFilter` を category filter の直後に表示するようにし、 active な route を含む boards のみを下流の grouping に渡すパイプライン (`dataWithMeta` -> `categoryFilteredData` -> `routeFilteredData`) を導入した。 `activeRouteFilters.size === 0` は noFilter (全 board 通過) として扱う。 route filter の pill 集合は single-route board (= `TransitDisplayPerRoute`) のみから組み立て、 multi-route board は filter 適用対象外で常に表示する。 `lucide-react` の `Route` icon は `RouteIcon` に alias して domain type `Route` との衝突を回避 (#304)。
+- TransitDisplayDashboard: route filter の表示有無を caller 側で制御する `enableRouteFilter` prop を追加した (既定 false)。 per-route card view など、 filter UI を見せたいユースケースのための opt-in (#304)。
+- TransitDisplayEntry: row 内 badge の表示有無を個別制御する `showRouteBadge` / `showAgencyBadge` props を追加した (既定 true)。 per-route card のように board ヘッダで route / agency をすでに示している場合、 row 側の重複表示を抑制できる (#304)。
+- 5 つのコンポーネントに size 駆動の nested style table を導入した: `TRANSIT_DISPLAY_STYLE_BY_SIZE` / `TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE` / `TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE` / `PER_ROUTE_STYLE_BY_SIZE` (`TransitDisplayPerRoute`) / `ROUTE_FILTER_STYLE_BY_SIZE`。 `xs` / `sm` / `md` / `lg` / `xl` の `ExtendedDisplaySize` 毎に text size / border 太さ / 余白 / 子 component の size を 1 ヶ所で lookup する。 `md` は従来のハードコード値と一致 (#304)。
+- StopsSummary: `infoLevel === 'verbose'` のとき解決済み `size` を表す debug badge を表示するようにした。 container 駆動 sizing の挙動確認用 (#304)。
 
 ### Changed
 
@@ -32,11 +38,16 @@ and this project adheres to [CalVer](https://calver.org/).
 - TransitDisplayPerRoute: route info row に `flex-wrap` を入れ、RouteBadge が長文のとき Route names を次の行へ折り返して表示するようにした (#302)。
 - `hasDisplayContent`: truthy/falsy collapse を strict empty-string check (`!== ''`) に書き換えた (テスト追加、挙動は不変) (#302)。
 - TransitDisplay: classic split-flap signage board の components / Props / ファイル名を `SplitFlap*` prefix に rename した (新方式 `TransitDisplay2` 系との視覚的区別を明確化、メタファー prefix で時期非依存)。`TransitDisplays` -> `SplitFlapTransitDisplays`、`TransitDisplay` -> `SplitFlapTransitDisplay`、`TransitDisplayEntry` -> `SplitFlapTransitDisplayEntry` および各 Props 型。ファイル: `transit-displays.tsx` -> `split-flap-transit-display.tsx`、stories 2 ファイルも `split-flap-` prefix。Storybook category (`TransitDisplay/`) はそのままで component 名のみ更新。
+- TransitDisplay: classic 系 (`SplitFlap*`) の rename と対をなす形で、新方式の `2` 世代 suffix を落として 3 つの component を rename + 別ファイルに抽出した。`TransitDisplays2` -> `TransitDisplayDashboard` (`transit-displays-2.tsx` -> `transit-display-dashboard.tsx`、 hybrid container/presenter として責務を表す名前に変更)、 `TransitDisplay2` -> `TransitDisplay` (`transit-display.tsx`)、 `TransitDisplayEntry2` -> `TransitDisplayEntry` (`transit-display-entry.tsx`) および各 Props 型 (`TransitDisplay2EntryProps` -> `TransitDisplayEntryProps` ほか)。 stories / Storybook タイトル / import path も追従。 1 ファイルに同居していた dashboard + board + row を責務単位で分離し、 各ファイルが固有の size 駆動 style table を所有する形に整理 (#304)。
+- TransitDisplayPerRoute: route info row の padding / gap を size 駆動の style table 経由に再構成した (border 太さ / emoji size / displayNames / RouteBadge / AgencyBadge も含む)。 size prop を required に変更 (#304)。
+- TransitDisplayDashboard: filter 群の styles を nested table に集約した (title / filterButton / filterBox)。 category filter と route filter で共通の余白規則を読み込むようになった (#304)。
 
 ### Fixed
 
 - TransitDisplay: 多 route 停留所 (都営バス渋谷駅前 / 伊予鉄バス大街道等) で「到着」 board が「出発」 board より先に並んでしまうバグを修正した。multi-route 板の `meta.routes` / `meta.directions` は boardCandidates ベースで計算されるため dep / arr 間で `routes[0]` / `directions[0]` がズレることがあり、sort key として信頼できない。sort 関数で multi-value のときは route 軸 / direction 軸を skip し、category 軸で確実に departures → arrivals 順になるようにした (#296, #300)。
 - StackedDisplayNames / InlineDisplayNames: `subNames` に空文字 / whitespace-only エントリが混入した際に空 span や leading separator (例: `' / Nakano'`) が描画される問題を、`map(trim).filter(non-empty)` で正規化して防ぐようにした (#302)。
+- TransitDisplayDashboard: `activeRouteFilters` に「pill 集合から消えた `route_id`」 (= stale id) が残り続け、 結果として `size > 0` のまま誰の board ともマッチせず「触れる pill が居ないのに filter は on で全 board が drop される」 デッドエンドが起き得る問題を修正した。 render 中に新設の `useReconcileIdSet` で pill 集合 (`pillRouteIds`) と intersection を取り、 stale id を都度除去する。 副次効果として、 過去に放置した id が将来データ復活で勝手に active 化する問題も解消する (#304)。
+- 新規ユーティリティ: `src/lib/reconcile-id-set.ts` (`reconcileIdSet<T extends string>(tracked, present)` 純関数) と `src/hooks/use-reconcile-id-set.ts` (`useReconcileIdSet`) を追加した。 allow list / block list の意味付けに対して中立な「`tracked` 集合の中から `present` 集合に含まれない id を除去する」 純粋な set intersection。 同じ問題を持つ TimetableHeadsignFilter / Agency Filter にも将来再利用予定 (#304)。
 
 ## [2026.06.11]
 

@@ -26,7 +26,7 @@ import {
 } from '../../stories/fixtures';
 import type { Agency, Route, Stop } from '../../types/app/transit';
 import type { StopServiceType, TranslatableText } from '../../types/app/transit-composed';
-import { TransitDisplayEntry2 } from './transit-displays-2';
+import { TransitDisplayEntry } from './transit-display-entry';
 
 /** Flat override knobs for {@link makeDatum}, assembled into the raw row shape. */
 interface MakeDatumOverrides {
@@ -48,7 +48,7 @@ interface MakeDatumOverrides {
 /**
  * Build a raw {@link TransitDisplayDatum} for stories.
  *
- * Unlike the classic view, `TransitDisplayEntry2` consumes RAW data and resolves
+ * Unlike the classic view, `TransitDisplayEntry` consumes RAW data and resolves
  * names / colors at the leaf via `dataLangs`, so stories construct the unresolved
  * candidate ({@link createEntry} entry + its {@link StopWithContext}) rather than
  * a presentational row. `agency` is kept in the stop context so the route agency
@@ -97,8 +97,8 @@ function makeMeta(overrides: Partial<TransitDisplayMeta> = {}): TransitDisplayMe
 }
 
 const meta = {
-  title: 'TransitDisplay/TransitDisplayEntry2',
-  component: TransitDisplayEntry2,
+  title: 'TransitDisplay/TransitDisplayEntry',
+  component: TransitDisplayEntry,
   args: {
     data: makeDatum(),
     meta: makeMeta(),
@@ -116,8 +116,8 @@ const meta = {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
-  // TransitDisplayEntry2 renders an <li>; wrap in a <ul> on the board's
-  // theme-aware panel face, mirroring the parent TransitDisplay2 body.
+  // TransitDisplayEntry renders an <li>; wrap in a <ul> on the board's
+  // theme-aware panel face, mirroring the parent TransitDisplay body.
   decorators: [
     (Story) => (
       <div className="max-w-sm rounded-sm bg-[#f5f7fa] p-3 dark:bg-gray-800">
@@ -127,7 +127,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof TransitDisplayEntry2>;
+} satisfies Meta<typeof TransitDisplayEntry>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -244,7 +244,7 @@ export const SizeComparison: Story = {
   render: (args) => (
     <>
       {SIZES.map((size) => (
-        <TransitDisplayEntry2
+        <TransitDisplayEntry
           key={`short-${size}`}
           data={makeDatum()}
           meta={args.meta}
@@ -258,7 +258,7 @@ export const SizeComparison: Story = {
         />
       ))}
       {SIZES.map((size) => (
-        <TransitDisplayEntry2
+        <TransitDisplayEntry
           key={`long-${size}`}
           data={makeDatum({ stop: longNameStop, tripHeadsign: tripHeadsignLong })}
           meta={args.meta}
