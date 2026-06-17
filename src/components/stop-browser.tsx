@@ -15,6 +15,7 @@ import { ROUTE_TYPE_DISPLAY_ORDER } from '../domain/transit/route-type-display-o
 import { STOP_TIMES_VIEWS, type StopTimeViewId } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { useElementRect } from '../hooks/use-element-rect';
+import { useReconcileIdSet } from '../hooks/use-reconcile-id-set';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
@@ -171,6 +172,18 @@ export function StopBrowser({
   );
 
   const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
+
+  // Agency ids still represented by the current `stopTimes` population. Feeds
+  // `useReconcileIdSet` so an id the user previously chose to hide -- but
+  // which has dropped out of the nearby population after `stopTimes` changed
+  // (location move, source toggle, ...) -- is removed from `hiddenAgencyIds`
+  // in the same render. Without this, the dead id would silently reactivate
+  // if the agency later reappears in the data.
+  const presentAgencyIds = useMemo<Set<string>>(
+    () => new Set(presentAgencies.map((a) => a.agency_id)),
+    [presentAgencies],
+  );
+  useReconcileIdSet(hiddenAgencyIds, presentAgencyIds, setHiddenAgencyIds);
 
   const toggleRouteType = useCallback(
     (rt: number) => {
