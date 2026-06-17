@@ -307,16 +307,6 @@ export function TransitDisplayDashboard({
           'pb-2',
         )}
       >
-        {presentCategories.length > 0 && (
-          <div className="">
-            <TransitDisplayCategoryFilter
-              categories={presentCategories}
-              shownCategories={shownCategories}
-              size={size}
-              onToggleCategory={toggleCategory}
-            />
-          </div>
-        )}
         {enableRouteFilter && routesForRouteGroups.length > 0 && (
           <div
             className={cn(
@@ -334,6 +324,16 @@ export function TransitDisplayDashboard({
               dataLangs={dataLangs}
               agencies={allAgencies}
               size={size}
+            />
+          </div>
+        )}
+        {presentCategories.length > 0 && (
+          <div className="">
+            <TransitDisplayCategoryFilter
+              categories={presentCategories}
+              shownCategories={shownCategories}
+              size={size}
+              onToggleCategory={toggleCategory}
             />
           </div>
         )}
