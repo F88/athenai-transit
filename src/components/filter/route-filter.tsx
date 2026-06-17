@@ -5,21 +5,65 @@ import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/co
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { useThemeContrastBackgroundColor } from '@/hooks/use-is-low-contrast-against-theme';
+import { cn } from '@/lib/utils';
 import type { Agency, Route } from '@/types/app/transit';
 import { getContrastAssessment } from '@/utils/color/color-contrast';
 
 import { PillButton } from '@/components/button/pill-button';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 
-// Pill rendering is one notch smaller than the surrounding board size so the
-// filter row stays subordinate to the boards. md / sm / xs all collapse to
-// `xs` (the minimum), lg / xl step down by one.
-const PILL_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
-  xs: 'xs',
-  sm: 'xs',
-  md: 'xs',
-  lg: 'sm',
-  xl: 'md',
+/**
+ * Per-`size` style bundle for {@link RouteFilter}: wrapper layout and the
+ * downscaled PillButton size. Looked up via {@link ROUTE_FILTER_STYLE_BY_SIZE}.
+ */
+interface RouteFilterSizeStyle {
+  /** Wrapper row layout utility classes. */
+  wrapper: {
+    /** Gap utility class between pills (`gap-*`). */
+    gap: string;
+    /** Padding utility class applied to the wrapper (`p-*`). */
+    padding: string;
+    /** Margin utility class applied to the wrapper (`m-*`). */
+    margin: string;
+  };
+  /** PillButton rendering. */
+  pill: {
+    /**
+     * Rendered PillButton size -- typically one notch smaller than the
+     * surrounding board size so the filter row stays subordinate to the
+     * boards. md / sm / xs all collapse to `xs` (the minimum), lg / xl
+     * step down by one.
+     */
+    size: ExtendedDisplaySize;
+  };
+}
+
+/**
+ * Size-driven style table for {@link RouteFilter}. The `md` entry mirrors the
+ * previously hardcoded wrapper values; other entries are starter values that
+ * may be tuned independently.
+ */
+const ROUTE_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, RouteFilterSizeStyle> = {
+  xs: {
+    wrapper: { gap: 'gap-px', padding: 'p-0', margin: 'm-0' },
+    pill: { size: 'xs' },
+  },
+  sm: {
+    wrapper: { gap: 'gap-0.5', padding: 'p-0', margin: 'm-0' },
+    pill: { size: 'xs' },
+  },
+  md: {
+    wrapper: { gap: 'gap-0.5', padding: 'p-0', margin: 'm-0' },
+    pill: { size: 'xs' },
+  },
+  lg: {
+    wrapper: { gap: 'gap-1', padding: 'p-0', margin: 'm-0' },
+    pill: { size: 'sm' },
+  },
+  xl: {
+    wrapper: { gap: 'gap-2', padding: 'p-0', margin: 'm-0' },
+    pill: { size: 'md' },
+  },
 };
 
 /**
@@ -86,19 +130,27 @@ export function RouteFilter({
   }, [routes, dataLangs, agencies, themeContrastBackgroundColor]);
 
   const noFilter = activeFilters.size === 0;
+  const style = ROUTE_FILTER_STYLE_BY_SIZE[size];
 
   if (routes.length === 0) {
     return null;
   }
 
   return (
-    <div className="flex flex-wrap gap-0.5">
+    <div
+      className={cn(
+        'flex flex-wrap',
+        style.wrapper.gap,
+        style.wrapper.padding,
+        style.wrapper.margin,
+      )}
+    >
       {pillItems.map(({ route, routeColor, routeTextColor, inactiveBorderColor, label }) => {
         const isActive = noFilter || activeFilters.has(route.route_id);
         return (
           <PillButton
             key={route.route_id}
-            size={PILL_SIZE_BY_SIZE[size]}
+            size={style.pill.size}
             active={isActive}
             activeBg={routeColor}
             activeFg={routeTextColor}
