@@ -13,9 +13,9 @@ import { RouteBadge } from '@/components/badge/route-badge';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { InlineDisplayNames } from '@/components/shared/inline-display-names';
 import {
-  TransitDisplay2,
-  type TransitDisplay2Props,
-} from '@/components/transit-display/transit-displays-2';
+  TransitDisplay,
+  type TransitDisplayProps,
+} from '@/components/transit-display/transit-display';
 import { VerboseRoutes } from '@/components/verbose/verbose-routes';
 import { hasDisplayContent } from '@/domain/transit/name-resolver/get-display-names';
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
@@ -148,13 +148,13 @@ const PER_ROUTE_STYLE_BY_SIZE: Record<ExtendedDisplaySize, PerRouteSizeStyle> = 
 /**
  * Props for {@link TransitDisplayPerRoute}.
  *
- * Reuses {@link TransitDisplay2Props} for every prop except the data, which is
+ * Reuses {@link TransitDisplayProps} for every prop except the data, which is
  * a {@link TransitDisplayRouteGroup} (route + its boards) rather than a
- * single board. `Omit` ensures any future change to {@link TransitDisplay2Props}
+ * single board. `Omit` ensures any future change to {@link TransitDisplayProps}
  * flows here automatically.
  */
 export interface TransitDisplayPerRouteProps extends Omit<
-  TransitDisplay2Props,
+  TransitDisplayProps,
   'transitDisplayDataWithMetaData'
 > {
   /** Route + its boards. */
@@ -163,7 +163,7 @@ export interface TransitDisplayPerRouteProps extends Omit<
 
 /**
  * Renders a group of boards that belong to the same route as one cohesive
- * card-like section. Currently a thin wrapper that stacks {@link TransitDisplay2}
+ * card-like section. Currently a thin wrapper that stacks {@link TransitDisplay}
  * for each board; a dedicated Route header (using `group.route`) and an outer
  * card frame can be layered on later without touching the call sites.
  */
@@ -300,7 +300,7 @@ export function TransitDisplayPerRoute({
       <div>
         {group.data.map((d, i) => (
           <div key={i} className={style.panels.gap}>
-            <TransitDisplay2
+            <TransitDisplay
               transitDisplayDataWithMetaData={d}
               dataLangs={dataLangs}
               now={now}

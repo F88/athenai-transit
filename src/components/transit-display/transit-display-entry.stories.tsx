@@ -117,7 +117,7 @@ const meta = {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
   // TransitDisplayEntry renders an <li>; wrap in a <ul> on the board's
-  // theme-aware panel face, mirroring the parent TransitDisplay2 body.
+  // theme-aware panel face, mirroring the parent TransitDisplay body.
   decorators: [
     (Story) => (
       <div className="max-w-sm rounded-sm bg-[#f5f7fa] p-3 dark:bg-gray-800">
