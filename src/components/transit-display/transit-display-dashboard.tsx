@@ -9,6 +9,7 @@ import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
+import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
@@ -198,6 +199,17 @@ export function TransitDisplayDashboard({
     }
     return Array.from(byId.values()).sort((a, b) => a.route_id.localeCompare(b.route_id));
   }, [categoryFilteredData]);
+
+  // Set view of route ids currently present as pills; the source of truth for
+  // which `activeRouteFilters` entries are still meaningful. When the pill set
+  // shrinks (category toggle, dataWithMeta swap, ...), reconcile drops any
+  // tracked id that is no longer offered as a pill -- preventing stale ids
+  // from keeping the filter "on" with nothing the user can click to recover.
+  const pillRouteIds = useMemo<Set<string>>(
+    () => new Set(routesForRouteGroups.map((r) => r.route_id)),
+    [routesForRouteGroups],
+  );
+  useReconcileIdSet(activeRouteFilters, pillRouteIds, setActiveRouteFilters);
 
   // All agencies referenced by `dataWithMeta`, deduped by `agency_id`. Source
   // for `RouteFilter`'s display name resolution -- collected from the full
