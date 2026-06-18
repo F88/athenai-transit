@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'r
 import L from 'leaflet';
 import { toast } from 'sonner';
 import type { AutoLocateOffReason } from '../../types/app/auto-locate';
-import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
+import type { Bounds, HighlightedCircle, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
@@ -221,7 +221,15 @@ function DistanceRings() {
  * about" (e.g. the most recently committed stops-fetch center) rather
  * than the live viewport.
  */
-function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] }) {
+function AdditionalCircles({
+  circles,
+  theme,
+}: {
+  circles: readonly HighlightedCircle[];
+  theme: Theme;
+}) {
+  // Dark map tiles need a stronger fill for the same color to read.
+  const fillOpacity = theme === 'dark' ? 0.4 : 0.2;
   return (
     <>
       {circles.map((c) => (
@@ -233,32 +241,14 @@ function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] 
           pathOptions={{
             color: c.color,
             fillColor: c.color,
-            fillOpacity: 0.12,
-            weight: 6,
-            opacity: 0.85,
+            fillOpacity,
+            weight: 2,
+            opacity: 0.8,
           }}
         />
       ))}
     </>
   );
-}
-
-/**
- * Specification for one extra Circle rendered on top of the always-on
- * `DistanceRings`. The caller decides everything: where the circle is
- * anchored, how large it is, and what color it gets. Color is required
- * (and intentionally an opaque CSS color string) so the MapView never
- * has to know about `DISTANCE_BANDS` -- caller-side helpers in
- * `utils/distance-style.ts` etc. can be used to look one up if the
- * caller wants band-consistent colors.
- */
-export interface HighlightedCircle {
-  /** Anchor point. Does NOT follow the user dragging the map. */
-  center: LatLng;
-  /** Radius in meters. Free-form; not restricted to `DISTANCE_BANDS.max`. */
-  radius: number;
-  /** CSS color string used for both stroke and fill. */
-  color: string;
 }
 
 export interface MapViewProps {
@@ -626,7 +616,7 @@ export function MapView({
         <RouteShapePanes />
         {showDistanceRings && <DistanceRings />}
         {highlightedCircles && highlightedCircles.length > 0 && (
-          <AdditionalCircles circles={highlightedCircles} />
+          <AdditionalCircles circles={highlightedCircles} theme={theme} />
         )}
         {infoLevel === 'verbose' && <ZoomDisplay />}
         <PanToFocus position={focusPosition} />

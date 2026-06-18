@@ -56,6 +56,7 @@ import { useDateTime } from './hooks/use-date-time';
 import { useGlobalFilter } from './hooks/use-global-filter';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { useLoadResult } from './hooks/use-load-result';
+import { useHighlightedCircles, useShowDistanceRings } from './hooks/use-map-overlay';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useRouteShapes } from './hooks/use-route-shapes';
 import { useRouteStops } from './hooks/use-route-stops';
@@ -194,6 +195,13 @@ export default function App() {
       perfProfile,
       onStopsCommitted: handleStopsCommitted,
     });
+  // Map overlay state published by any component via the shared store (e.g.
+  // TransitDisplaysContainer draws the active view's nearby radius circle).
+  // MapView stays a generic prop-driven renderer; App only bridges the store
+  // to its props.
+  const highlightedCircles = useHighlightedCircles();
+  const showDistanceRings = useShowDistanceRings();
+
   const routeShapes = useRouteShapes(repo);
   // Auto-tracking flag is intentionally not persisted: a tracking
   // permission/intent shouldn't silently survive a reload, so it always
@@ -896,6 +904,8 @@ export default function App() {
             userLocation={userLocation}
             onLocated={handleLocated}
             onMapInstance={setMapInstance}
+            highlightedCircles={highlightedCircles}
+            showDistanceRings={showDistanceRings}
             heightClassName="h-full"
           />
           {/* All chrome that overlays the map: corner panels, locate

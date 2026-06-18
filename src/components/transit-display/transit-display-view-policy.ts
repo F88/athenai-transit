@@ -87,6 +87,41 @@ export const TRANSIT_DISPLAY_VIEW_IDS: readonly StopTimeViewId[] = Object.keys(
   VIEW_POLICY,
 ) as StopTimeViewId[];
 
+/** Per-view nearby radius + map highlight circle appearance. */
+export interface TransitDisplayViewSettings {
+  /** Nearby radius (m): filters the boards AND sizes the map's highlight circle. */
+  nearbyRadiusMeters: number;
+  /** Color of the map's highlight circle drawn at the nearby radius. */
+  highlightCircleColor: string;
+}
+
+/**
+ * Per-view settings for the transit-display views. Single source of truth for
+ * both the board filtering in `TransitDisplaysContainer` and the map's
+ * highlight circle (published from the same component), so the two agree.
+ */
+const TRANSIT_DISPLAY_VIEW_SETTINGS: Partial<Record<StopTimeViewId, TransitDisplayViewSettings>> = {
+  'transit-display': {
+    nearbyRadiusMeters: 150,
+    highlightCircleColor: '#009688', // teal
+  },
+  'transit-display-2': {
+    nearbyRadiusMeters: 100,
+    highlightCircleColor: '#009688', // teal
+  },
+  route: {
+    nearbyRadiusMeters: 150,
+    highlightCircleColor: '#1e88e5', // blue (DISTANCE_BANDS[1].color)
+  },
+};
+
+/** Settings for a view, or null for a view this container does not own. */
+export function transitDisplayViewSettings(
+  viewId: StopTimeViewId,
+): TransitDisplayViewSettings | null {
+  return TRANSIT_DISPLAY_VIEW_SETTINGS[viewId] ?? null;
+}
+
 /**
  * Run the two builder calls for one policy and merge their output in the UI
  * order. Pure function so it can be called from `useMemo` hooks with stable
