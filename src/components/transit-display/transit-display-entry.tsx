@@ -44,6 +44,8 @@ interface TransitDisplayEntrySizeStyle {
   badge: {
     /** Shared size for the entry's badges. */
     size: ExtendedDisplaySize;
+    /** Maximum characters for badge text truncation. */
+    maxLength: number | undefined;
   };
 }
 
@@ -54,27 +56,27 @@ const TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE: Record<
   xs: {
     row: { textClass: 'text-[10px]' },
     attributesLabels: { size: 'xs' },
-    badge: { size: 'xs' },
+    badge: { size: 'xs', maxLength: 10 },
   },
   sm: {
     row: { textClass: 'text-xs' },
     attributesLabels: { size: 'xs' },
-    badge: { size: 'xs' },
+    badge: { size: 'xs', maxLength: 10 },
   },
   md: {
     row: { textClass: 'text-xs' },
     attributesLabels: { size: 'xs' },
-    badge: { size: 'sm' },
+    badge: { size: 'sm', maxLength: 10 },
   },
   lg: {
     row: { textClass: 'text-xl' },
     attributesLabels: { size: 'sm' },
-    badge: { size: 'md' },
+    badge: { size: 'md', maxLength: undefined },
   },
   xl: {
     row: { textClass: 'text-2xl' },
     attributesLabels: { size: 'md' },
-    badge: { size: 'lg' },
+    badge: { size: 'lg', maxLength: undefined },
   },
 };
 
@@ -185,6 +187,7 @@ export function TransitDisplayEntry({
         'my-0.5',
         style.row.textClass,
         // 'bg-yellow-200',
+        // 'bg-transparent',
       )}
       onClick={() => onStopSelected(stopWithContext.stop.stop_id)}
     >
@@ -238,6 +241,8 @@ export function TransitDisplayEntry({
               infoLevel={infoLevel}
               size={style.badge.size}
               showBorder={true}
+              maxLength={style.badge.maxLength}
+              ellipsis={true}
             />
           )}
           <TimetableEntryAttributesLabels
