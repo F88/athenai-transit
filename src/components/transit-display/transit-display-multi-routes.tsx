@@ -192,6 +192,7 @@ export function TransitDisplayMultiRoutes({
                 infoLevel={infoLevel}
                 size={style.badges.routeSize}
                 showBorder={true}
+                maxLength={undefined}
               />
             );
           })}
