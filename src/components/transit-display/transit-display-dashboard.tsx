@@ -8,6 +8,7 @@ import type { Agency, Route } from '@/types/app/transit';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { RouteFilter } from '@/components/filter/route-filter';
+import { RadiusToggleButton } from '@/components/transit-display/radius-toggle-button';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
 import {
@@ -119,6 +120,12 @@ export interface TransitDisplayDashboardProps {
   infoLevel: InfoLevel;
   size: ExtendedDisplaySize;
   enableRouteFilter: boolean;
+  /** Selectable coverage radii (m) for this view, in cycle order. */
+  coverageRadiusOptions: readonly number[];
+  /** Currently selected coverage radius (m); highlights the matching option. */
+  selectedCoverageRadius: number;
+  /** Fired with the picked coverage radius (m); the container rebuilds the boards at it. */
+  onCoverageRadiusChange: (radiusMeters: number) => void;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -154,6 +161,9 @@ export function TransitDisplayDashboard({
   infoLevel,
   size,
   enableRouteFilter,
+  coverageRadiusOptions,
+  selectedCoverageRadius,
+  onCoverageRadiusChange,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayDashboardProps) {
@@ -339,16 +349,24 @@ export function TransitDisplayDashboard({
             />
           </div>
         )}
-        {presentCategories.length > 0 && (
-          <div className="">
-            <TransitDisplayCategoryFilter
-              categories={presentCategories}
-              shownCategories={shownCategories}
-              size={size}
-              onToggleCategory={toggleCategory}
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <RadiusToggleButton
+            options={coverageRadiusOptions}
+            selected={selectedCoverageRadius}
+            onSelect={onCoverageRadiusChange}
+            size={size}
+          />
+          {presentCategories.length > 0 && (
+            <div className="flex-1">
+              <TransitDisplayCategoryFilter
+                categories={presentCategories}
+                shownCategories={shownCategories}
+                size={size}
+                onToggleCategory={toggleCategory}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Panels */}

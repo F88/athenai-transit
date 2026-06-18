@@ -187,6 +187,9 @@
       "label": "表示する便",
       "departures": "出発",
       "arrivals": "到着"
+    },
+    "radius": {
+      "label": "範囲"
     }
   },
   "showTimetable": "時刻表を表示",

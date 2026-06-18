@@ -87,11 +87,21 @@ export const TRANSIT_DISPLAY_VIEW_IDS: readonly StopTimeViewId[] = Object.keys(
   VIEW_POLICY,
 ) as StopTimeViewId[];
 
-/** Per-view nearby radius + map highlight circle appearance. */
+/** Per-view coverage radius + selectable radius options + map highlight circle appearance. */
 export interface TransitDisplayViewSettings {
-  /** Nearby radius (m): filters the boards AND sizes the map's highlight circle. */
-  nearbyRadiusMeters: number;
-  /** Color of the map's highlight circle drawn at the nearby radius. */
+  /**
+   * Coverage radius (m): filters the boards AND sizes the map's highlight circle.
+   * The default until the user picks one of `coverageRadiusOptions`; must be one of them.
+   */
+  defaultCoverageRadius: number;
+  /**
+   * Coverage radius options (m) the user can pick from in this view's UI, in cycle order.
+   * Each view sets its own (they need not match). Keep all values within the
+   * smallest stop fetch radius (perf profile `nearbyRadius`, >= 500 m) so
+   * selecting one never out-runs the fetched stop set.
+   */
+  coverageRadiusOptions: readonly number[];
+  /** Color of the map's highlight circle drawn at the coverage radius. */
   highlightCircleColor: string;
 }
 
@@ -102,15 +112,18 @@ export interface TransitDisplayViewSettings {
  */
 const TRANSIT_DISPLAY_VIEW_SETTINGS: Partial<Record<StopTimeViewId, TransitDisplayViewSettings>> = {
   'transit-display': {
-    nearbyRadiusMeters: 150,
+    defaultCoverageRadius: 150,
+    coverageRadiusOptions: [100, 150],
     highlightCircleColor: '#009688', // teal
   },
   'transit-display-2': {
-    nearbyRadiusMeters: 100,
+    defaultCoverageRadius: 100,
+    coverageRadiusOptions: [100, 150, 200],
     highlightCircleColor: '#009688', // teal
   },
   route: {
-    nearbyRadiusMeters: 150,
+    defaultCoverageRadius: 150,
+    coverageRadiusOptions: [100, 150],
     highlightCircleColor: '#1e88e5', // blue (DISTANCE_BANDS[1].color)
   },
 };
@@ -129,7 +142,7 @@ export function transitDisplayViewSettings(
  * `policy`, and `infoLevel`).
  */
 export function buildBoardsForPolicy(
-  nearbyStops: readonly StopWithContext[],
+  stops: readonly StopWithContext[],
   radiusMeters: number,
   policy: ViewPolicy,
   infoLevel: InfoLevel,
@@ -137,13 +150,13 @@ export function buildBoardsForPolicy(
   const maxEntriesMultiRoute = transitDisplayMaxEntriesFor(infoLevel);
   const maxEntriesPerRoute = transitDisplayMaxEntriesPerRouteFor(infoLevel);
 
-  const multiRouteRaw = buildTransitDisplayDataSet(nearbyStops, radiusMeters, {
+  const multiRouteRaw = buildTransitDisplayDataSet(stops, radiusMeters, {
     maxEntries: maxEntriesMultiRoute,
     routeTypeGrouping: { kind: 'custom', groups: policy.multiRoute.routeTypes.map((t) => [t]) },
     splitByRoute: false,
     splitByDirection: policy.multiRoute.splitByDirection,
   });
-  const perRouteRaw = buildTransitDisplayDataSet(nearbyStops, radiusMeters, {
+  const perRouteRaw = buildTransitDisplayDataSet(stops, radiusMeters, {
     maxEntries: maxEntriesPerRoute,
     routeTypeGrouping: { kind: 'custom', groups: policy.perRoute.routeTypes.map((t) => [t]) },
     splitByRoute: true,

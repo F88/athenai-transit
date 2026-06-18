@@ -187,6 +187,9 @@
       "label": "Boards to show",
       "departures": "Departures",
       "arrivals": "Arrivals"
+    },
+    "radius": {
+      "label": "Range"
     }
   },
   "showTimetable": "Show timetable",

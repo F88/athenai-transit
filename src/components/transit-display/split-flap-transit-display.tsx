@@ -10,6 +10,7 @@ import { DistanceBadge } from '@/components/badge/distance-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
+import { RadiusToggleButton } from '@/components/transit-display/radius-toggle-button';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
@@ -119,6 +120,12 @@ export interface SplitFlapTransitDisplaysProps {
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   size: ExtendedDisplaySize;
+  /** Selectable coverage radii (m) for this view, in cycle order. */
+  coverageRadiusOptions: readonly number[];
+  /** Currently selected coverage radius (m); highlights the matching option. */
+  selectedCoverageRadius: number;
+  /** Fired with the picked radius (m); the container rebuilds the boards at it. */
+  onCoverageRadiusChange: (radiusMeters: number) => void;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -153,6 +160,9 @@ export function SplitFlapTransitDisplays({
   mapCenter,
   infoLevel,
   size,
+  coverageRadiusOptions,
+  selectedCoverageRadius,
+  onCoverageRadiusChange,
   onStopSelected,
   onInspectTrip,
 }: SplitFlapTransitDisplaysProps) {
@@ -201,14 +211,24 @@ export function SplitFlapTransitDisplays({
 
   return (
     <div className="font-dotgothic16 px-4 pb-0">
-      {presentCategories.length > 0 && (
-        <TransitDisplayCategoryFilter
-          categories={presentCategories}
-          shownCategories={shownCategories}
+      <div className="flex items-center gap-2 pb-2">
+        <RadiusToggleButton
+          options={coverageRadiusOptions}
+          selected={selectedCoverageRadius}
+          onSelect={onCoverageRadiusChange}
           size={size}
-          onToggleCategory={toggleCategory}
         />
-      )}
+        {presentCategories.length > 0 && (
+          <div className="flex-1">
+            <TransitDisplayCategoryFilter
+              categories={presentCategories}
+              shownCategories={shownCategories}
+              size={size}
+              onToggleCategory={toggleCategory}
+            />
+          </div>
+        )}
+      </div>
       {visibleData.map((dataWithMeta, index) => (
         // Key from the board's identity (category + its route types), with the
         // map index as a disambiguator: a `custom` route grouping can collapse
