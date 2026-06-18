@@ -7,9 +7,9 @@ import type { LatLng } from '@/types/app/map';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
+import { RouteFilter } from '@/components/filter/route-filter';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
-import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
@@ -18,10 +18,10 @@ import {
   hasMultipleRoutes,
   type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
-import type { InfoLevel } from '@/types/app/settings';
+import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import { cn } from '@/lib/utils';
-import { RouteFilter } from '@/components/filter/route-filter';
-import { TransitDisplay } from './transit-display';
+import type { InfoLevel } from '@/types/app/settings';
+import { TransitDisplayMultiRoutes } from './transit-display-multi-routes';
 import { TransitDisplayPerRoute, type TransitDisplayRouteGroup } from './transit-display-per-route';
 
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
@@ -390,7 +390,7 @@ export function TransitDisplayDashboard({
             .sort()
             .join('-');
           return (
-            <TransitDisplay
+            <TransitDisplayMultiRoutes
               key={`multi__${board.meta.category}__${routeIdsKey}`}
               transitDisplayDataWithMetaData={board}
               dataLangs={dataLangs}
