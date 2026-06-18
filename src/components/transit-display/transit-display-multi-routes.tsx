@@ -22,7 +22,8 @@ interface MultiRoutesSizeStyle {
     padding: string;
   };
   /** Layout utility classes for the route info row (the header). */
-  routeInfoRow: {
+  info: {
+    margin: string;
     /** Padding utility class applied to the row. */
     padding: string;
     /** Gap utility class for the row's flex children. */
@@ -51,8 +52,9 @@ interface MultiRoutesSizeStyle {
  */
 const MULTI_ROUTES_STYLE_BY_SIZE: Record<ExtendedDisplaySize, MultiRoutesSizeStyle> = {
   xs: {
-    panel: { padding: 'mt-2' },
-    routeInfoRow: {
+    panel: { padding: '' },
+    info: {
+      margin: 'mb-2',
       padding: 'px-1 py-1',
       gap: 'gap-1',
       borderWidth: 'border',
@@ -62,8 +64,9 @@ const MULTI_ROUTES_STYLE_BY_SIZE: Record<ExtendedDisplaySize, MultiRoutesSizeSty
     badges: { routeSize: 'xs' },
   },
   sm: {
-    panel: { padding: 'mt-3' },
-    routeInfoRow: {
+    panel: { padding: '' },
+    info: {
+      margin: 'mb-4',
       padding: 'px-1.5 py-0.5',
       gap: 'gap-1.5',
       borderWidth: 'border-2',
@@ -73,8 +76,9 @@ const MULTI_ROUTES_STYLE_BY_SIZE: Record<ExtendedDisplaySize, MultiRoutesSizeSty
     badges: { routeSize: 'xs' },
   },
   md: {
-    panel: { padding: 'mt-4' },
-    routeInfoRow: {
+    panel: { padding: '' },
+    info: {
+      margin: 'mb-4',
       padding: 'px-2 py-1',
       gap: 'gap-2',
       borderWidth: 'border-3',
@@ -84,8 +88,9 @@ const MULTI_ROUTES_STYLE_BY_SIZE: Record<ExtendedDisplaySize, MultiRoutesSizeSty
     badges: { routeSize: 'sm' },
   },
   lg: {
-    panel: { padding: 'mt-4' },
-    routeInfoRow: {
+    panel: { padding: '' },
+    info: {
+      margin: 'mb-4',
       padding: 'px-3 py-2',
       gap: 'gap-3',
       borderWidth: 'border-4',
@@ -95,8 +100,9 @@ const MULTI_ROUTES_STYLE_BY_SIZE: Record<ExtendedDisplaySize, MultiRoutesSizeSty
     badges: { routeSize: 'lg' },
   },
   xl: {
-    panel: { padding: 'mt-4' },
-    routeInfoRow: {
+    panel: { padding: '' },
+    info: {
+      margin: 'mb-4',
       padding: 'px-4 py-3',
       gap: 'gap-3',
       borderWidth: 'border-8',
@@ -136,6 +142,7 @@ export function TransitDisplayMultiRoutes({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayMultiRoutesProps) {
+
   const { meta, data: transitDisplayData } = transitDisplayDataWithMetaData;
 
   const style = MULTI_ROUTES_STYLE_BY_SIZE[size];
@@ -149,50 +156,55 @@ export function TransitDisplayMultiRoutes({
     [meta.routes],
   );
 
+  const information = (
+    <div
+      className={cn(
+        'flex items-center',
+        'overflow-hidden',
+        style.info.gap,
+        style.info.margin,
+        style.info.padding,
+        style.info.borderRadius,
+        style.info.borderWidth,
+        'border-gray-600 dark:border-gray-600',
+      )}
+      // style={{
+      //   borderColor: '#555555',
+      // }}
+    >
+      {/* Left: route info */}
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className={style.routeTypeEmoji.textSize}>{routeTypeIcon}</span>
+
+        <div className="flex flex-wrap items-center gap-1">
+          {sortedRoutes.map((route) => {
+            // Find the agency that runs this route. board scope may span multiple
+            // stops, so flatten all agencies present and match by agency_id.
+            const agency = transitDisplayData.data
+              .flatMap((c) => c.stop.agencies)
+              .find((a) => a.agency_id === route.agency_id);
+            const agencyLangs = agency ? [agency.agency_lang] : undefined;
+            return (
+              <RouteBadge
+                key={route.route_id}
+                route={route}
+                dataLang={dataLangs}
+                agencyLangs={agencyLangs}
+                infoLevel={infoLevel}
+                size={style.badges.routeSize}
+                showBorder={true}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <section className="overflow-hidden">
       {/* Info */}
-      <div
-        className={cn(
-          'flex items-center',
-          'overflow-hidden',
-          style.routeInfoRow.gap,
-          style.routeInfoRow.padding,
-          style.routeInfoRow.borderRadius,
-          style.routeInfoRow.borderWidth,
-          'border-gray-600 dark:border-gray-600',
-        )}
-        // style={{
-        //   borderColor: '#555555',
-        // }}
-      >
-        {/* Left: route info */}
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className={style.routeTypeEmoji.textSize}>{routeTypeIcon}</span>
-
-          <div className="flex flex-wrap items-center gap-1">
-            {sortedRoutes.map((route) => {
-              // Find the agency that runs this route. board scope may span multiple
-              // stops, so flatten all agencies present and match by agency_id.
-              const agency = transitDisplayData.data
-                .flatMap((c) => c.stop.agencies)
-                .find((a) => a.agency_id === route.agency_id);
-              const agencyLangs = agency ? [agency.agency_lang] : undefined;
-              return (
-                <RouteBadge
-                  key={route.route_id}
-                  route={route}
-                  dataLang={dataLangs}
-                  agencyLangs={agencyLangs}
-                  infoLevel={infoLevel}
-                  size={style.badges.routeSize}
-                  showBorder={true}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      {infoLevel === 'verbose' && information}
 
       {/* Panel  */}
       <div className={style.panel.padding}>
