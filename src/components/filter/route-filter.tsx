@@ -11,6 +11,7 @@ import { getContrastAssessment } from '@/utils/color/color-contrast';
 
 import { PillButton } from '@/components/button/pill-button';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
+import { truncateLabel } from '@/utils/truncate-label';
 
 /**
  * Per-`size` style bundle for {@link RouteFilter}: wrapper layout and the
@@ -35,6 +36,7 @@ interface RouteFilterSizeStyle {
      * step down by one.
      */
     size: ExtendedDisplaySize;
+    maxLength: number | undefined;
   };
 }
 
@@ -46,23 +48,23 @@ interface RouteFilterSizeStyle {
 const ROUTE_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, RouteFilterSizeStyle> = {
   xs: {
     wrapper: { gap: 'gap-px', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'xs' },
+    pill: { size: 'xs', maxLength: 10 },
   },
   sm: {
     wrapper: { gap: 'gap-0.5', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'xs' },
+    pill: { size: 'xs', maxLength: 10 },
   },
   md: {
     wrapper: { gap: 'gap-0.5', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'xs' },
+    pill: { size: 'xs', maxLength: 10 },
   },
   lg: {
     wrapper: { gap: 'gap-1', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'md' },
+    pill: { size: 'md', maxLength: undefined },
   },
   xl: {
     wrapper: { gap: 'gap-2', padding: 'p-0', margin: 'm-0' },
-    pill: { size: 'lg' },
+    pill: { size: 'lg', maxLength: undefined },
   },
 };
 
@@ -105,6 +107,9 @@ export function RouteFilter({
 }: RouteFilterProps) {
   const themeContrastBackgroundColor = useThemeContrastBackgroundColor();
 
+  const noFilter = activeFilters.size === 0;
+  const style = ROUTE_FILTER_STYLE_BY_SIZE[size];
+
   // Precompute the per-pill data that does not depend on the filter state
   // (color / contrast / translated label). Recomputed only when one of the
   // structural inputs changes, so toggling `activeFilters` does not re-run
@@ -118,19 +123,22 @@ export function RouteFilter({
         LOW_CONTRAST_BADGE_MIN_RATIO,
       );
       const inactiveBorderColor = routeColorAssessment.isLowContrast ? routeTextColor : routeColor;
-      const label =
+      const resolvedLabel =
         getRouteDisplayNames(
           route,
           dataLangs,
           resolveAgencyLang(agencies, route.agency_id),
           'short',
         ).resolved.name || route.route_id;
+      // const label = resolvedLabel;
+      const label =
+        style.pill.maxLength === undefined
+          ? resolvedLabel
+          : truncateLabel(resolvedLabel, style.pill.maxLength);
+
       return { route, routeColor, routeTextColor, inactiveBorderColor, label };
     });
-  }, [routes, dataLangs, agencies, themeContrastBackgroundColor]);
-
-  const noFilter = activeFilters.size === 0;
-  const style = ROUTE_FILTER_STYLE_BY_SIZE[size];
+  }, [routes, themeContrastBackgroundColor, dataLangs, agencies, style.pill.maxLength]);
 
   if (routes.length === 0) {
     return null;
