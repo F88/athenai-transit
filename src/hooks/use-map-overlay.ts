@@ -21,8 +21,14 @@ import type { HighlightedCircle } from '@/types/app/map';
  * single global slot per value suffices and avoids provider wiring. Each slot
  * is single-writer in effect -- the most recent writer wins.
  */
-let highlightedCircles: readonly HighlightedCircle[] = [];
-let showDistanceRings = true;
+// Defaults, also returned as the SSR / hydration snapshot by the `use*` hooks.
+// `getServerSnapshot` must return a cached value, so these are stable
+// references rather than fresh literals.
+const DEFAULT_HIGHLIGHTED_CIRCLES: readonly HighlightedCircle[] = [];
+const DEFAULT_SHOW_DISTANCE_RINGS = true;
+
+let highlightedCircles: readonly HighlightedCircle[] = DEFAULT_HIGHLIGHTED_CIRCLES;
+let showDistanceRings = DEFAULT_SHOW_DISTANCE_RINGS;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -71,7 +77,11 @@ export function useMapOverlayControls(): typeof controls {
  * consumer (App passes the result to {@link MapView}).
  */
 export function useHighlightedCircles(): readonly HighlightedCircle[] {
-  return useSyncExternalStore(subscribe, () => highlightedCircles);
+  return useSyncExternalStore(
+    subscribe,
+    () => highlightedCircles,
+    () => DEFAULT_HIGHLIGHTED_CIRCLES,
+  );
 }
 
 /**
@@ -79,5 +89,9 @@ export function useHighlightedCircles(): readonly HighlightedCircle[] {
  * consumer (App passes the result to {@link MapView}).
  */
 export function useShowDistanceRings(): boolean {
-  return useSyncExternalStore(subscribe, () => showDistanceRings);
+  return useSyncExternalStore(
+    subscribe,
+    () => showDistanceRings,
+    () => DEFAULT_SHOW_DISTANCE_RINGS,
+  );
 }
