@@ -140,6 +140,18 @@ export function hasMultipleRoutes(d: TransitDisplayDataWithMetaData): boolean {
 }
 
 /**
+ * Whether the display was built as a multi-route display (routes folded
+ * together) rather than one-display-per-route. Determined by the build policy
+ * (`meta.selection.splitByRoute`), NOT by how many routes are present -- a
+ * multi-route display with a single present route is still multi-route. Use
+ * this (not {@link hasMultipleRoutes}, a count) to choose the per-route vs
+ * multi-route renderer in the dashboard.
+ */
+export function isMultiRouteDisplay(d: TransitDisplayDataWithMetaData): boolean {
+  return !d.meta.selection.splitByRoute;
+}
+
+/**
  * Whether the given display covers multiple directions on its single board
  * (i.e. a multi-direction board, built with `splitByDirection: false` and
  * carrying trips of more than one direction at this stop). Implementation

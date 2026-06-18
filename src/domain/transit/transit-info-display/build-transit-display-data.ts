@@ -21,11 +21,36 @@ import { isArrival, isDeparture } from '../timetable-entry-for-transit-display';
 export type TransitDisplayCategory = 'departures' | 'arrivals';
 
 /**
- * Descriptor of one transit display: the selection parameters the UI composes
- * its (localized) title and description from. All fields are raw structured
- * values (no display text), so this domain layer stays i18n-free: the UI derives
- * the mode emoji(s) from `routeTypes`, the departures/arrivals phrase from
- * `category`, and the row-count / radius text from `max` / `radius`.
+ * How this board's content was selected: the scope, partition strategy, and row
+ * cap that produced it. Distinct from the coverage fields ({@link
+ * TransitDisplayMeta.routes} etc.), which are the RESULT of the build; these are
+ * the build inputs. `radiusMeters` is the selection scope; the rest mirror the
+ * {@link TransitDisplayCondition} the board was built from (its
+ * `routeTypeGrouping` is not retained -- its outcome shows in `routeTypes`).
+ *
+ * `splitByRoute` in particular records whether the board was built one-per-route
+ * (true) or as a folded multi-route board (false). This is the policy origin,
+ * NOT a count: a multi-route board with a single present route still has
+ * `splitByRoute === false`. Consumers choosing a per-route vs multi-route
+ * renderer must read this, not the length of `routes`.
+ */
+export interface TransitDisplaySelection {
+  /** Radius (metres) the board's stops were selected within. */
+  radiusMeters: number;
+  /** Row cap applied to the board's entries (`TransitDisplayCondition.maxEntries`). */
+  maxEntries: number;
+  /** Whether the board was built one-per-route (`true`) or folded multi-route (`false`). */
+  splitByRoute: boolean;
+  /** Whether the board was built split by direction of travel. */
+  splitByDirection: boolean;
+}
+
+/**
+ * Descriptor of one transit display: its coverage (category / routeTypes /
+ * routes / directions -- what the board ended up covering) plus the
+ * {@link TransitDisplaySelection} (how its content was selected). All fields
+ * are raw structured values, not display text, so this domain layer stays
+ * i18n-free; the UI composes any localized title / description from them.
  */
 export interface TransitDisplayMeta {
   /** Whether this is a departures or an arrivals board. */
@@ -47,18 +72,16 @@ export interface TransitDisplayMeta {
    * when split by direction; several (the directions actually present) when not.
    */
   directions: readonly (0 | 1 | 'none')[];
-  /** Row cap applied to this display's entries. */
-  max: number;
-  /** Radius (metres) the display's stops were selected within. */
-  radius: number;
+  /** How this board's content was selected (scope / partition strategy / cap). */
+  selection: TransitDisplaySelection;
 }
 
 /**
- * One board's cell: which route type(s), direction(s) and category it is, plus
- * the entries selected for it in `data` ({@link TransitDisplayDatum}). These are
- * raw stop events (not resolved UI rows), so the same shape flows through
- * grouping, sort + cap, and UI conversion without those concerns leaking into
- * each other.
+ * One structural board: the scope it covers (route types / routes / directions
+ * / category) plus the entries selected for it in `data`
+ * ({@link TransitDisplayDatum}). These are raw stop events (not resolved UI
+ * rows), so the same shape flows through grouping, sort + cap, and UI
+ * conversion without those concerns leaking into each other.
  */
 export interface TransitDisplayData {
   routeTypes: readonly AppRouteTypeValue[];
@@ -78,27 +101,27 @@ export interface RouteTypeCluster {
 
 /**
  * Derived aggregate stats attached to one display, kept because they cannot be
- * recovered from the capped rows in `data`. Two scopes:
- * - `stopsInRadius`: dataset-level (all stops within the board's radius; the same
- *   value on every board of one build, like {@link TransitDisplayMeta.radius}).
- * - `qualifying`: per-board, the pre-cap ("qualifying") entry stats; consumers
- *   compare it against the rendered rows to detect truncation.
+ * recovered from the capped rows in `data`. Two scopes: `stopsInRadius` is
+ * dataset-level (every board of one build shares it, like
+ * {@link TransitDisplaySelection.radiusMeters}); `qualifying` is per-board.
  */
 export interface TransitDisplayStats {
   /** Stats for ALL stops within the board's radius (dataset-level). */
   stopsInRadius: StopWithMetaStats;
-  /** Pre-cap stats of the board's entries (per-board). */
+  /**
+   * Pre-cap ("qualifying") stats of the board's entries; consumers compare it
+   * against the rendered rows to detect truncation.
+   */
   qualifying: TransitDisplayDatumStats;
 }
 
 /**
- * A display: its {@link TransitDisplayMeta} descriptor, the structural board it
- * describes in `data`, and the derived {@link TransitDisplayStats}. `meta`
- * restates the board's category / routeTypes / directions and adds `max` /
- * `radius`.
+ * Data for rendering one transit display: a {@link TransitDisplayMeta}
+ * descriptor, the {@link TransitDisplayData} it presents, and the derived
+ * {@link TransitDisplayStats}.
  */
 export interface TransitDisplayDataWithMetaData {
-  /** Display descriptor (title + selection params). */
+  /** Display descriptor (coverage + selection). */
   meta: TransitDisplayMeta;
   /** The structural board this display describes. */
   data: TransitDisplayData;
@@ -524,7 +547,8 @@ export function sortAndCapTransitDisplayData(
  * the per-board pre-cap entry stats) that cannot be recovered from the capped rows.
  *
  * `radiusMeters` (the range stops are selected within; also each display's
- * `meta.radius`) and `condition` (the per-display selection condition) are both
+ * `meta.selection.radiusMeters`) and `condition` (the per-display selection
+ * condition) are both
  * required so the caller states the selection scope explicitly.
  */
 export function buildTransitDisplayDataSet(
@@ -563,8 +587,12 @@ export function buildTransitDisplayDataSet(
       routeTypes: data.routeTypes,
       routes: data.routes,
       directions: data.directions,
-      max: condition.maxEntries,
-      radius: radiusMeters,
+      selection: {
+        radiusMeters,
+        maxEntries: condition.maxEntries,
+        splitByRoute: condition.splitByRoute,
+        splitByDirection: condition.splitByDirection,
+      },
     },
     data: data,
     stats: {

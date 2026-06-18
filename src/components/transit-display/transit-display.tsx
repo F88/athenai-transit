@@ -72,6 +72,9 @@ interface TransitDisplaySizeStyle {
     /** Radius badge in the header. */
     large: HeaderBadgeStyle;
   };
+  routeBadge: {
+    maxLength: number | undefined;
+  };
 }
 
 const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplaySizeStyle> = {
@@ -81,6 +84,7 @@ const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplayS
       small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
       large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
     },
+    routeBadge: { maxLength: 10 },
   },
   sm: {
     title: { textClass: 'text-xs', iconClass: 'size-3' },
@@ -88,6 +92,7 @@ const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplayS
       small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
       large: { size: 'xs', textClass: 'text-[10px]', iconClass: '[&>svg]:size-2.5' },
     },
+    routeBadge: { maxLength: 10 },
   },
   md: {
     title: { textClass: 'text-base', iconClass: 'size-4' },
@@ -95,6 +100,7 @@ const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplayS
       small: { size: 'xs', textClass: 'text-[8px]', iconClass: '[&>svg]:size-2' },
       large: { size: 'xs', textClass: 'text-xs', iconClass: '[&>svg]:size-3' },
     },
+    routeBadge: { maxLength: 10 },
   },
   lg: {
     title: { textClass: 'text-2xl', iconClass: 'size-9' },
@@ -102,6 +108,7 @@ const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplayS
       small: { size: 'sm', textClass: 'text-base', iconClass: '[&>svg]:size-4' },
       large: { size: 'sm', textClass: 'text-xl', iconClass: '[&>svg]:size-5' },
     },
+    routeBadge: { maxLength: undefined },
   },
   xl: {
     title: { textClass: 'text-4xl', iconClass: 'size-15' },
@@ -109,6 +116,7 @@ const TRANSIT_DISPLAY_STYLE_BY_SIZE: Record<ExtendedDisplaySize, TransitDisplayS
       small: { size: 'md', textClass: 'text-2xl', iconClass: '[&>svg]:size-6' },
       large: { size: 'md', textClass: 'text-3xl', iconClass: '[&>svg]:size-8' },
     },
+    routeBadge: { maxLength: undefined },
   },
 };
 
@@ -249,10 +257,10 @@ export function TransitDisplay({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
+        //
         'overflow-hidden',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
-        // BOARD_FRAME_COLOR,
       )}
     >
       {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
@@ -261,7 +269,7 @@ export function TransitDisplay({
           <p className="m-0 w-full min-w-0 text-right">
             [{meta.category} / rt {meta.routeTypes.join(',')} / r {meta.routes.length} / dir{' '}
             {meta.directions.join(',')} / (max:
-            {meta.max}/{meta.radius}m)]
+            {meta.selection.maxEntries}/{meta.selection.radiusMeters}m)]
           </p>
           <p className="m-0 w-full min-w-0 text-right">
             [shown:
@@ -304,7 +312,7 @@ export function TransitDisplay({
             <IconTextBadge
               size={style.headerStatsIcons.large.size}
               icon={<Radio />}
-              text={`${meta.radius.toLocaleString(i18n.language)}m`}
+              text={`${meta.selection.radiusMeters.toLocaleString(i18n.language)}m`}
               textClassName={style.headerStatsIcons.large.textClass}
               iconClassName={style.headerStatsIcons.large.iconClass}
               frameClassName="p-1 border-none"
@@ -340,6 +348,8 @@ export function TransitDisplay({
                   infoLevel={infoLevel}
                   size={style.headerStatsIcons.large.size}
                   showBorder={true}
+                  maxLength={style.routeBadge.maxLength}
+                  ellipsis={true}
                 />
               );
             })}
@@ -347,7 +357,14 @@ export function TransitDisplay({
         )}
       </div>
       {/* Body: the rows (or the empty fallback). */}
-      <div className={cn('p-0', BOARD_PANEL_BG)}>
+      <div
+        className={cn(
+          'p-0',
+          //
+          // BOARD_PANEL_BG,
+          // 'bg-transparent',
+        )}
+      >
         <ul className="m-0 list-none p-0">
           {transitDisplayData.data.map((row) => {
             const { timetableEntry, stop: stopWithContext } = row;

@@ -17,6 +17,10 @@ interface RouteBadgeProps {
   agencyLangs?: readonly string[];
   infoLevel: InfoLevel;
   showBorder: boolean;
+  /** Truncate label to this many characters. Forwarded to {@link BaseLabel}. */
+  maxLength?: number;
+  /** Append "…" when truncated. @default true */
+  ellipsis?: boolean;
   enableVerboseExtras?: boolean;
   className?: string;
 }
@@ -48,6 +52,8 @@ export function RouteBadge({
   agencyLangs = DEFAULT_AGENCY_LANG,
   infoLevel,
   showBorder = true,
+  maxLength,
+  ellipsis = true,
   enableVerboseExtras = false,
   className,
 }: RouteBadgeProps) {
@@ -71,6 +77,8 @@ export function RouteBadge({
       showBorder={showBorder}
       className={className}
       infoLevel={infoLevel}
+      maxLength={maxLength}
+      ellipsis={ellipsis}
       verboseExtras={{
         enabled: enableVerboseExtras,
         idLabel: route.route_id,

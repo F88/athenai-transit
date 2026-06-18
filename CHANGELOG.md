@@ -25,6 +25,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopsSummary: `infoLevel === 'verbose'` のとき解決済み `size` を表す debug badge を表示するようにした。 container 駆動 sizing の挙動確認用 (#304)。
 - MapView: `showDistanceRings?: boolean` (既定 true、 既存距離参照同心円の on/off) と `highlightedCircles?: HighlightedCircle[]` (= 新規 export interface `{ center: LatLng; radius: number; color: string }` の配列、 内部 `AdditionalCircles` で fill-tinted Circle として描画) を追加した。 center は固定で map drag に追従せず、 color / radius は free-form (`DISTANCE_BANDS` 非依存)。 既存 call site は未変更 (#306)。
 - Map overlay store `useMapOverlay` を追加した (`useSyncExternalStore` ベース): hoisted な MapView の overlay を任意の component が prop-drill / context なしで制御できる (`useHighlightedCircles` / `useShowDistanceRings` read hook + `useMapOverlayControls` write hook)。 `HighlightedCircle` 型は `types/app/map.ts` へ移動。 `TransitDisplaysContainer` が active view の近接半径を circle として publish (半径 + 色は per-view `TRANSIT_DISPLAY_VIEW_SETTINGS`、 board filter と同一半径)。 `AdditionalCircles` の fill は dark で濃くする (fillOpacity 0.4 / 0.2) (#307)。
+- TransitDisplay: 1 つの multi-route board を card (route-type emoji + `meta.routes` から RouteBadge を 1 route ずつ) + `TransitDisplay` board として描画する `TransitDisplayMultiRoutes` component を追加した。 dashboard の multi-route 分岐を `TransitDisplayPerRoute` と同階層の wrapper 経由で描画する形にし、 将来の multi-route 専用表示の seam とする (#308)。
+- RouteBadge: ラベルを指定文字数で切り詰める `maxLength?: number` と、 切り詰め時の省略記号の有無を制御する `ellipsis?: boolean` (既定 true) を追加した (BaseBadge 経由で BaseLabel へ pass-through)。 切り詰め時も full name は title tooltip で参照可能。 既定は従来挙動を維持する (`maxLength` 未指定 = 切り詰め無し) (#308)。
 
 ### Changed
 
@@ -44,6 +46,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - TransitDisplay: 新方式 (`TransitDisplays2 / TransitDisplay2 / TransitDisplayEntry2`) を rename + 別ファイル抽出した: `TransitDisplayDashboard` (`transit-display-dashboard.tsx`) / `TransitDisplay` (`transit-display.tsx`) / `TransitDisplayEntry` (`transit-display-entry.tsx`)。 各 Props 型 (例: `TransitDisplay2EntryProps -> TransitDisplayEntryProps`) と stories / Storybook タイトル / import path も追従。 1 ファイル同居の dashboard + board + row を責務単位で分離し、 各ファイルが固有の size 駆動 style table を所有する (#304)。
 - TransitDisplayPerRoute: route info row の padding / gap を size 駆動の style table 経由に再構成した (border 太さ / emoji size / displayNames / RouteBadge / AgencyBadge も含む)。 size prop を required に変更 (#304)。
 - TransitDisplayDashboard: filter 群の styles を nested table に集約した (title / filterButton / filterBox)。 category filter と route filter で共通の余白規則を読み込むようになった (#304)。
+- TransitDisplay (build): `TransitDisplayMeta` の flat だった `max` / `radius` を `selection` sub-object (`radiusMeters` / `maxEntries` / `splitByRoute` / `splitByDirection`) に再構成した。 board の build 由来 (route / direction で split したか) を meta に記録し、 renderer の classification を count 依存から policy 依存へ移せるようにした。 meta-cluster の TSDoc 整理と stale な `meta.radius` 参照の修正も併せて実施 (#308)。
+- TransitDisplay: 長い route 名 (例: 渋谷区「ハチ公バス」 の循環ルート) が compact size で route badge から溢れる問題に対し、 RouteBadge の `maxLength` を size 駆動 style table 経由で適用した (xs / sm / md = 10 文字、 lg / xl = 切り詰め無し、 `ellipsis` は on)。 TransitDisplay header badge / `TransitDisplayEntry` / `RouteFilter` の pill に配線した (#308)。
 
 ### Fixed
 
@@ -53,6 +57,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - 新規ユーティリティ: `src/lib/reconcile-id-set.ts` (`reconcileIdSet<T extends string>(tracked, present)` 純関数) と `src/hooks/use-reconcile-id-set.ts` (`useReconcileIdSet`) を追加した。 allow list / block list の意味付けに対して中立な「`tracked` 集合の中から `present` 集合に含まれない id を除去する」 純粋な set intersection。 同じ問題を持つ TimetableHeadsignFilter / Agency Filter にも将来再利用予定 (#304)。
 - TimetableHeadsignFilter (timetable dialog): `activeFilters` に母集合 (`presentHeadsignKeys`) から外れた stale key が残り、 「触れる pill が居ないのに filter は on で全 entries が drop される」 デッドエンドを修正した。 既存の `dataIdentity` reset は dialog retarget のみカバーし、 dialog 内で `showOriginOnly` / `showBoardableOnly` / date navigation により母集合が変動するケースで起きていた。 `useReconcileIdSet` で render 中 intersection を取り stale を都度除去。 既存テスト (state-leak) も実 key 形式 (`getRouteHeadsignKey`) に揃え、 「同一 identity で entries に残れば保持 / 消えれば除去」 を二分検証する形に再構成 (#305)。
 - StopBrowser Agency Filter: `hiddenAgencyIds` に `presentAgencies` から消えた stale `agency_id` が残り、 同じ agency が将来 reappear した時に過去の hide が勝手に reactivate される block-list 特有の問題を修正した。 `hiddenAgencyIds` は AppLayout 所有のため `setHiddenAgencyIds` 経由 reconcile は親 state 更新となり、 render-time の `useReconcileIdSet` hook は React 制約 (parent state update during render) に抵触する。 `useEffect` + 純関数 `reconcileIdSet` 直呼びで commit 後同期に分けた。 block-list なので 1 paint 遅延は無害。 `useReconcileIdSet` は local state 専用と運用ガイド化した (#305)。
+- TransitDisplayDashboard: bus / trolleybus / ferry の board が、 実データが「1 route + n direction(s)」 のとき per-route と誤判定され `TransitDisplayPerRoute` で描画されてしまうバグを修正した。 これらは per-direction data ではないため常に multi-route 扱いが正しい。 renderer 選択を count ベース (`meta.routes.length > 1`) から build policy ベース (`isMultiRouteDisplay` = `!meta.selection.splitByRoute`) に変更した (#308)。
 
 ## [2026.06.11]
 

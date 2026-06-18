@@ -7,21 +7,21 @@ import type { LatLng } from '@/types/app/map';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
+import { RouteFilter } from '@/components/filter/route-filter';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
-import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
-  hasMultipleRoutes,
+  isMultiRouteDisplay,
   type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
-import type { InfoLevel } from '@/types/app/settings';
+import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import { cn } from '@/lib/utils';
-import { RouteFilter } from '@/components/filter/route-filter';
-import { TransitDisplay } from './transit-display';
+import type { InfoLevel } from '@/types/app/settings';
+import { TransitDisplayMultiRoutes } from './transit-display-multi-routes';
 import { TransitDisplayPerRoute, type TransitDisplayRouteGroup } from './transit-display-per-route';
 
 const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
@@ -188,7 +188,7 @@ export function TransitDisplayDashboard({
   const routesForRouteGroups = useMemo<Route[]>(() => {
     const byId = new Map<string, Route>();
     for (const display of categoryFilteredData) {
-      if (hasMultipleRoutes(display)) {
+      if (isMultiRouteDisplay(display)) {
         continue;
       }
       for (const route of display.meta.routes) {
@@ -242,7 +242,7 @@ export function TransitDisplayDashboard({
       return categoryFilteredData;
     }
     return categoryFilteredData.filter((display) => {
-      if (hasMultipleRoutes(display)) {
+      if (isMultiRouteDisplay(display)) {
         return true;
       }
       return display.meta.routes.some((r) => activeRouteFilters.has(r.route_id));
@@ -276,7 +276,7 @@ export function TransitDisplayDashboard({
   const singleBoardsByRouteId = new Map<string, TransitDisplayDataWithMetaData[]>();
   const groupedDisplays: GroupedItem[] = [];
   for (const d of routeFilteredData) {
-    if (hasMultipleRoutes(d)) {
+    if (isMultiRouteDisplay(d)) {
       groupedDisplays.push({ kind: 'multi', board: d });
       continue;
     }
@@ -390,7 +390,7 @@ export function TransitDisplayDashboard({
             .sort()
             .join('-');
           return (
-            <TransitDisplay
+            <TransitDisplayMultiRoutes
               key={`multi__${board.meta.category}__${routeIdsKey}`}
               transitDisplayDataWithMetaData={board}
               dataLangs={dataLangs}

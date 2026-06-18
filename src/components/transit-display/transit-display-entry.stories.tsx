@@ -90,8 +90,12 @@ function makeMeta(overrides: Partial<TransitDisplayMeta> = {}): TransitDisplayMe
     routeTypes: [3],
     routes: [],
     directions: [0],
-    max: 20,
-    radius: 100,
+    selection: {
+      radiusMeters: 100,
+      maxEntries: 20,
+      splitByRoute: false,
+      splitByDirection: false,
+    },
     ...overrides,
   };
 }
