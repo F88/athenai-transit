@@ -33,6 +33,23 @@ const longFallbackRoute = {
   },
 } as const;
 
+/**
+ * Bus route whose resolved short name is very long: `route_short_name` is
+ * empty, so the badge falls back to the long descriptive name. Models the
+ * real community-bus loop-route pattern (e.g. Shibuya "Hachiko Bus" route
+ * names) that overflows the compact chip and motivates the `maxLength` prop.
+ */
+const longNameBusRoute = {
+  ...busRoute,
+  route_id: 'route-long-name-source',
+  route_short_name: '',
+  route_short_names: {},
+  route_long_name: 'コミュニティバス・みなみみどり循環・ゆうやけこやけルート',
+  route_long_names: {
+    ja: 'コミュニティバス・みなみみどり循環・ゆうやけこやけルート',
+  },
+} as const;
+
 const meta = {
   title: 'Badge/RouteBadge',
   component: RouteBadge,
@@ -48,6 +65,8 @@ const meta = {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     enableVerboseExtras: { control: 'boolean' },
+    maxLength: { control: 'number' },
+    ellipsis: { control: 'boolean' },
   },
 } satisfies Meta<typeof RouteBadge>;
 
@@ -106,6 +125,80 @@ export const Detailed: Story = {
 
 export const Verbose: Story = {
   args: { infoLevel: 'verbose' },
+};
+
+// --- maxLength / ellipsis (truncation) ---
+
+/**
+ * Long resolved name without `maxLength`: the full name renders and can
+ * overflow its container — the case that motivates the prop.
+ */
+export const LongNameUntruncated: Story = {
+  args: { route: longNameBusRoute },
+};
+
+/** The same long name truncated to `maxLength` characters (ellipsis appended). */
+export const LongNameMaxLength: Story = {
+  args: { route: longNameBusRoute, maxLength: 8 },
+};
+
+/** Truncated to `maxLength` with `ellipsis: false`: a hard cut with no "…" marker. */
+export const LongNameMaxLengthNoEllipsis: Story = {
+  args: { route: longNameBusRoute, maxLength: 8, ellipsis: false },
+};
+
+/**
+ * The same long name across a range of `maxLength` values, full name on top
+ * for reference. Lower values truncate more and append the ellipsis.
+ */
+export const MaxLengthComparison: Story = {
+  args: { route: longNameBusRoute },
+  render: (args) => {
+    const limits = [undefined, 12, 8, 4] as const;
+    return (
+      <div className="flex flex-col items-start gap-2">
+        {limits.map((limit) => (
+          <div key={limit ?? 'full'} className="flex items-center gap-2">
+            <span className="w-28 text-[10px] text-gray-400">maxLength: {limit ?? 'none'}</span>
+            <RouteBadge
+              route={args.route}
+              dataLang={args.dataLang}
+              infoLevel={args.infoLevel}
+              size={args.size ?? 'md'}
+              showBorder={args.showBorder}
+              maxLength={limit}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Same long name and `maxLength`, comparing `ellipsis` on (the "…" marker
+ * signals truncation) versus off (a hard cut with no marker).
+ */
+export const EllipsisComparison: Story = {
+  args: { route: longNameBusRoute, maxLength: 8 },
+  render: (args) => (
+    <div className="flex flex-col items-start gap-2">
+      {[true, false].map((withEllipsis) => (
+        <div key={String(withEllipsis)} className="flex items-center gap-2">
+          <span className="w-28 text-[10px] text-gray-400">ellipsis: {String(withEllipsis)}</span>
+          <RouteBadge
+            route={args.route}
+            dataLang={args.dataLang}
+            infoLevel={args.infoLevel}
+            size={args.size ?? 'md'}
+            showBorder={args.showBorder}
+            maxLength={args.maxLength}
+            ellipsis={withEllipsis}
+          />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
 // --- Comparisons ---
