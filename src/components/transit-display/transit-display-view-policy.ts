@@ -111,7 +111,6 @@ const TRANSIT_DISPLAY_VIEW_SETTINGS: Partial<Record<StopTimeViewId, TransitDispl
   },
   route: {
     nearbyRadiusMeters: 150,
-    // highlightCircleColor: '#1e88e5'
     highlightCircleColor: '#1e88e5', // DISTANCE_BANDS[1].color // 100m = blue
   },
 };

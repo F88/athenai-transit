@@ -221,7 +221,15 @@ function DistanceRings() {
  * about" (e.g. the most recently committed stops-fetch center) rather
  * than the live viewport.
  */
-function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] }) {
+function AdditionalCircles({
+  circles,
+  theme,
+}: {
+  circles: readonly HighlightedCircle[];
+  theme: Theme;
+}) {
+  // Dark map tiles need a stronger fill for the same color to read.
+  const fillOpacity = theme === 'dark' ? 0.4 : 0.2;
   return (
     <>
       {circles.map((c) => (
@@ -233,7 +241,7 @@ function AdditionalCircles({ circles }: { circles: readonly HighlightedCircle[] 
           pathOptions={{
             color: c.color,
             fillColor: c.color,
-            fillOpacity: 0.15,
+            fillOpacity,
             weight: 2,
             opacity: 0.8,
           }}
@@ -608,7 +616,7 @@ export function MapView({
         <RouteShapePanes />
         {showDistanceRings && <DistanceRings />}
         {highlightedCircles && highlightedCircles.length > 0 && (
-          <AdditionalCircles circles={highlightedCircles} />
+          <AdditionalCircles circles={highlightedCircles} theme={theme} />
         )}
         {infoLevel === 'verbose' && <ZoomDisplay />}
         <PanToFocus position={focusPosition} />

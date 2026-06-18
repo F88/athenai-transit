@@ -109,7 +109,7 @@ export function TransitDisplaysContainer({
           color: settings.highlightCircleColor,
         },
       ]);
-      // setShowDistanceRings(false);
+      setShowDistanceRings(false);
     }
     return () => {
       clearHighlightedCircles();
