@@ -142,7 +142,6 @@ export function TransitDisplayMultiRoutes({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayMultiRoutesProps) {
-
   const { meta, data: transitDisplayData } = transitDisplayDataWithMetaData;
 
   const style = MULTI_ROUTES_STYLE_BY_SIZE[size];
