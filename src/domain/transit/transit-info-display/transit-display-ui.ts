@@ -140,14 +140,14 @@ export function hasMultipleRoutes(d: TransitDisplayDataWithMetaData): boolean {
 }
 
 /**
- * Whether the board was built as a multi-route board (routes folded together)
- * rather than one-board-per-route. Determined by the build policy
+ * Whether the display was built as a multi-route display (routes folded
+ * together) rather than one-display-per-route. Determined by the build policy
  * (`meta.selection.splitByRoute`), NOT by how many routes are present -- a
- * multi-route board with a single present route is still multi-route. Use this
- * (not {@link hasMultipleRoutes}, a count) to choose the per-route vs
+ * multi-route display with a single present route is still multi-route. Use
+ * this (not {@link hasMultipleRoutes}, a count) to choose the per-route vs
  * multi-route renderer in the dashboard.
  */
-export function isMultiRouteBoard(d: TransitDisplayDataWithMetaData): boolean {
+export function isMultiRouteDisplay(d: TransitDisplayDataWithMetaData): boolean {
   return !d.meta.selection.splitByRoute;
 }
 

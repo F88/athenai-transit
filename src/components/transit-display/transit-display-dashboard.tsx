@@ -15,7 +15,7 @@ import {
   type TransitDisplayDataWithMetaData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
-  isMultiRouteBoard,
+  isMultiRouteDisplay,
   type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
 import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
@@ -188,7 +188,7 @@ export function TransitDisplayDashboard({
   const routesForRouteGroups = useMemo<Route[]>(() => {
     const byId = new Map<string, Route>();
     for (const display of categoryFilteredData) {
-      if (isMultiRouteBoard(display)) {
+      if (isMultiRouteDisplay(display)) {
         continue;
       }
       for (const route of display.meta.routes) {
@@ -242,7 +242,7 @@ export function TransitDisplayDashboard({
       return categoryFilteredData;
     }
     return categoryFilteredData.filter((display) => {
-      if (isMultiRouteBoard(display)) {
+      if (isMultiRouteDisplay(display)) {
         return true;
       }
       return display.meta.routes.some((r) => activeRouteFilters.has(r.route_id));
@@ -276,7 +276,7 @@ export function TransitDisplayDashboard({
   const singleBoardsByRouteId = new Map<string, TransitDisplayDataWithMetaData[]>();
   const groupedDisplays: GroupedItem[] = [];
   for (const d of routeFilteredData) {
-    if (isMultiRouteBoard(d)) {
+    if (isMultiRouteDisplay(d)) {
       groupedDisplays.push({ kind: 'multi', board: d });
       continue;
     }
