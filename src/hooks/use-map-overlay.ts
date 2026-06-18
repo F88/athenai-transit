@@ -18,8 +18,16 @@ import type { HighlightedCircle } from '@/types/app/map';
  * is entirely the caller's decision.
  *
  * Plain module state (not a React context): there is exactly one map, so a
- * single global slot per value suffices and avoids provider wiring. Each slot
- * is single-writer in effect -- the most recent writer wins.
+ * single global slot per value suffices and avoids provider wiring.
+ *
+ * SINGLE active producer assumed. Each slot is single-slot and cleanup clears
+ * it UNCONDITIONALLY (a producer's effect cleanup resets to the default), so
+ * two producers writing at the same time would clobber each other -- e.g. A
+ * sets, B sets, then A unmounts and its cleanup wipes B's overlay. Today there
+ * is exactly one producer (`TransitDisplaysContainer`, rendered once in the
+ * single mounted stop-browser surface), so this never happens. If multiple
+ * concurrent producers are ever needed, switch to owned writes (a lease/token
+ * so clear only clears the current owner) or a keyed registry.
  */
 // Defaults, also returned as the SSR / hydration snapshot by the `use*` hooks.
 // `getServerSnapshot` must return a cached value, so these are stable
