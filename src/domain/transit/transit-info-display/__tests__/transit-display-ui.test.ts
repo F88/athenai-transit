@@ -68,8 +68,12 @@ describe('sortTransitDisplayDataWithMetaData', () => {
         routeTypes: [routeType],
         routes,
         directions,
-        max: 10,
-        radius: 100,
+        selection: {
+          radiusMeters: 100,
+          maxEntries: 10,
+          splitByRoute: false,
+          splitByDirection: false,
+        },
       },
       data: { routeTypes: [routeType], routes, directions, category, data: [] },
       stats: {

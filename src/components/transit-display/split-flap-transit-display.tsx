@@ -435,7 +435,7 @@ export function SplitFlapTransitDisplay({
               ROW_TEXT_CLASS_BY_SIZE[size],
             )}
           >
-            {dataWithMeta.meta.radius}m
+            {dataWithMeta.meta.selection.radiusMeters}m
           </p>
         </div>
       </div>

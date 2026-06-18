@@ -249,10 +249,10 @@ export function TransitDisplay({
     // boards are separated by their own surface and margin.
     <section
       className={cn(
+        //
         'overflow-hidden',
         'rounded-sm border-0',
         BOARD_PANEL_BG,
-        // BOARD_FRAME_COLOR,
       )}
     >
       {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
@@ -261,7 +261,7 @@ export function TransitDisplay({
           <p className="m-0 w-full min-w-0 text-right">
             [{meta.category} / rt {meta.routeTypes.join(',')} / r {meta.routes.length} / dir{' '}
             {meta.directions.join(',')} / (max:
-            {meta.max}/{meta.radius}m)]
+            {meta.selection.maxEntries}/{meta.selection.radiusMeters}m)]
           </p>
           <p className="m-0 w-full min-w-0 text-right">
             [shown:
@@ -304,7 +304,7 @@ export function TransitDisplay({
             <IconTextBadge
               size={style.headerStatsIcons.large.size}
               icon={<Radio />}
-              text={`${meta.radius.toLocaleString(i18n.language)}m`}
+              text={`${meta.selection.radiusMeters.toLocaleString(i18n.language)}m`}
               textClassName={style.headerStatsIcons.large.textClass}
               iconClassName={style.headerStatsIcons.large.iconClass}
               frameClassName="p-1 border-none"
@@ -347,7 +347,14 @@ export function TransitDisplay({
         )}
       </div>
       {/* Body: the rows (or the empty fallback). */}
-      <div className={cn('p-0', BOARD_PANEL_BG)}>
+      <div
+        className={cn(
+          'p-0',
+          //
+          // BOARD_PANEL_BG,
+          // 'bg-transparent',
+        )}
+      >
         <ul className="m-0 list-none p-0">
           {transitDisplayData.data.map((row) => {
             const { timetableEntry, stop: stopWithContext } = row;
