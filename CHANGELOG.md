@@ -24,6 +24,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - 5 つのコンポーネントに size 駆動の nested style table を導入した: `TRANSIT_DISPLAY_STYLE_BY_SIZE` / `TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE` / `TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE` / `PER_ROUTE_STYLE_BY_SIZE` (`TransitDisplayPerRoute`) / `ROUTE_FILTER_STYLE_BY_SIZE`。 `xs` / `sm` / `md` / `lg` / `xl` の `ExtendedDisplaySize` 毎に text size / border 太さ / 余白 / 子 component の size を 1 ヶ所で lookup する。 `md` は従来のハードコード値と一致 (#304)。
 - StopsSummary: `infoLevel === 'verbose'` のとき解決済み `size` を表す debug badge を表示するようにした。 container 駆動 sizing の挙動確認用 (#304)。
 - MapView: `showDistanceRings?: boolean` (既定 true、 既存距離参照同心円の on/off) と `highlightedCircles?: HighlightedCircle[]` (= 新規 export interface `{ center: LatLng; radius: number; color: string }` の配列、 内部 `AdditionalCircles` で fill-tinted Circle として描画) を追加した。 center は固定で map drag に追従せず、 color / radius は free-form (`DISTANCE_BANDS` 非依存)。 既存 call site は未変更 (#306)。
+- Map overlay store `useMapOverlay` を追加した (`useSyncExternalStore` ベース): hoisted な MapView の overlay を任意の component が prop-drill / context なしで制御できる (`useHighlightedCircles` / `useShowDistanceRings` read hook + `useMapOverlayControls` write hook)。 `HighlightedCircle` 型は `types/app/map.ts` へ移動。 `TransitDisplaysContainer` が active view の近接半径を circle として publish (半径 + 色は per-view `TRANSIT_DISPLAY_VIEW_SETTINGS`、 board filter と同一半径)。 `AdditionalCircles` の fill は dark で濃くする (fillOpacity 0.4 / 0.2) (#307)。
 
 ### Changed
 
@@ -34,6 +35,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - i18n: 未使用だった `stop.serviceState.boardable` ("運行中") を `inService` にリネームした (`passenger.boardableCount` ("乗車可") との混同を回避)。`stopTimeView` を `relativeTime` / `absoluteTime` / `passenger` / `endpoint` のサブグループに構造化し、将来の発着可否・端点種別 (現実の起終点 vs 直通境界) 表示用キーを足場として追加した (#162)。
 - transit-display: UI 表示用のヘルパー (`sortTransitDisplayDataWithMetaData` / `resolveTransitDisplayState` / `transitDisplayMaxEntriesFor` ほか) を `transit-display-ui.ts` に分離した。builder (`build-transit-display-data.ts`) は board データ生成のみ、UI 配慮 (並び順 / row 上限 / empty-state) は専用 module に集約 (#296, #300)。
 - TransitDisplaysContainer: 鉄道系 (`DIRECTION_SPLIT_ROUTE_TYPES`) は per-route board (`splitByRoute: true`) で構築し、bus / trolleybus / ferry (`NO_SPLIT_ROUTE_TYPES`) は multi-route のまま維持する per-mode policy を採用した。group-by の runtime toggle は意図的に追加しない (#296, #300)。
+- TransitDisplaysContainer: 近接半径を固定 `NEARBY_RADIUS_M` から per-view (`TRANSIT_DISPLAY_VIEW_SETTINGS`) 駆動に変更し、 board の構築を eager dual-policy memo から active view のみの lazy build に切り替えた (= view 毎に半径が異なり得るため。 inactive policy の毎レンダー構築も解消) (#307)。
 - TransitDisplay: multi-route board の row cap (`simple` / `normal`) を 10 に下げた (per-route と数を揃え、過剰な行数を抑制) (#296, #300)。
 - TripInfo: ヘッドサインのレンダーをローカル `HeadsignInfo` から shared `StackedDisplayNames` に置き換えた (#302)。
 - TransitDisplayPerRoute: route info row に `flex-wrap` を入れ、RouteBadge が長文のとき Route names を次の行へ折り返して表示するようにした (#302)。
