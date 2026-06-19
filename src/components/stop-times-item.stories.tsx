@@ -27,6 +27,9 @@ import { fn } from 'storybook/test';
 import { StopTimesItem } from './stop-times-item.tsx';
 
 /** Create a ContextualTimetableEntry for stories. */
+// Distinct tripIndex per call so list entries do not collide as React keys.
+let nextTripIndex = 0;
+
 function createEntry(
   overrides: Partial<{
     departureMinutes: number;
@@ -75,7 +78,7 @@ function createEntry(
     tripLocator: {
       patternId: `${(overrides.route ?? baseRoute).route_id}__${overrides.headsign ?? '中野駅'}`,
       serviceId: 'story:default',
-      tripIndex: 0,
+      tripIndex: nextTripIndex++,
     },
     insights: {
       remainingMinutes,

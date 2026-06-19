@@ -8,7 +8,8 @@
 import type { TimetableEntryAttributes } from '../../../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../../utils/route-type-emoji';
-import { formatDateKey, minutesToDate } from '../calendar-utils';
+import { minutesToDate } from '../calendar-utils';
+import { buildStopEventKey } from '../stop-event-key';
 import { getAgencyDisplayNames } from '../name-resolver/get-agency-display-name';
 import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
 import { getRouteDisplayNames } from '../name-resolver/get-route-display-names';
@@ -133,20 +134,9 @@ export function buildTransitDisplayDatumForUi(
       'stop',
     ).resolved.name;
 
-    // Include the service date: TripLocator is per-service (not per-day), so the
-    // same (patternId, serviceId, tripIndex, stopIndex) can recur on different
-    // service dates within one board, which would collide as a React key.
-    // JSON.stringify (not a delimiter join) keeps the parts unambiguous: a
-    // patternId already embeds "__" (`${route_id}__${headsign}`), so a literal
-    // separator could let different tuples stringify to the same key.
-    const key = JSON.stringify([
-      stopWithContext.stop.stop_id,
-      formatDateKey(timetableEntry.serviceDate),
-      timetableEntry.tripLocator.patternId,
-      timetableEntry.tripLocator.serviceId,
-      timetableEntry.tripLocator.tripIndex,
-      timetableEntry.patternPosition.stopIndex,
-    ]);
+    // A board spans multiple stops, so pass the stop id; see buildStopEventKey
+    // for the service-date / JSON.stringify rationale.
+    const key = buildStopEventKey(timetableEntry, stopWithContext.stop.stop_id);
     const tripInspectionTarget = buildTripInspectionTarget(
       timetableEntry,
       timetableEntry.serviceDate,

@@ -138,6 +138,9 @@ const now = new Date('2026-03-30T14:25:00');
 /** Map center ~70m west of the stop. */
 const mapCenter = { lat: 35.6955, lng: 139.8127 };
 
+// Distinct tripIndex per call so list entries do not collide as React keys.
+let nextTripIndex = 0;
+
 function createEntry(
   overrides: Partial<{
     departureMinutes: number;
@@ -179,7 +182,7 @@ function createEntry(
     tripLocator: {
       patternId: `${(overrides.route ?? busRoute).route_id}__${overrides.headsign ?? '大塚駅前'}`,
       serviceId: 'story:default',
-      tripIndex: 0,
+      tripIndex: nextTripIndex++,
     },
     serviceDate: new Date('2026-03-30T00:00:00'),
   };
