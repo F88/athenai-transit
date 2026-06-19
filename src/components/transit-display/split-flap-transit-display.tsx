@@ -14,7 +14,10 @@ import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
+import type {
+  TransitDisplayStatus,
+  TransitDisplayStopsState,
+} from '@/domain/transit/transit-info-display/transit-display-ui';
 import {
   buildTransitDisplayDatumForUi,
   type TransitDisplayDataWithMetaDataForUi,
@@ -163,6 +166,17 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 };
 
 /**
+ * Empty-state message i18n key per collection state. Only the states without
+ * boards have a message; `some-in-service` is absent (boards render instead).
+ */
+const EMPTY_STATE_MESSAGE_KEY: Partial<Record<TransitDisplayStopsState, string>> = {
+  'no-stops': 'transitDisplay.noStop',
+  'all-no-service': 'transitDisplay.noService',
+  'all-service-ended': 'transitDisplay.serviceEnded',
+  'all-filtered-out': 'transitDisplay.allFilteredOut',
+};
+
+/**
  * Resolves each {@link TransitDisplayDataWithMetaData} into UI rows (via
  * {@link buildTransitDisplayDatumForUi} -- this is the only consumer that needs
  * them) and renders it as its own stacked board, with a filter bar on top for
@@ -215,6 +229,8 @@ export function SplitFlapTransitDisplays({
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   };
 
+  const emptyMessageKey = EMPTY_STATE_MESSAGE_KEY[status.state];
+
   return (
     <div className="font-dotgothic16 px-4 pb-0">
       <div className="flex items-stretch gap-2 pb-2">
@@ -237,32 +253,11 @@ export function SplitFlapTransitDisplays({
           </div>
         )}
       </div>
-      {status.state === 'no-stops' && (
+      {emptyMessageKey && (
         <div
           className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
         >
-          {t('transitDisplay.noStop', { radius: status.radius })}
-        </div>
-      )}
-      {status.state === 'all-no-service' && (
-        <div
-          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
-        >
-          {t('transitDisplay.noService')}
-        </div>
-      )}
-      {status.state === 'all-service-ended' && (
-        <div
-          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
-        >
-          {t('transitDisplay.serviceEnded')}
-        </div>
-      )}
-      {status.state === 'all-filtered-out' && (
-        <div
-          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
-        >
-          {t('transitDisplay.allFilteredOut')}
+          {t(emptyMessageKey, { radius: status.radius })}
         </div>
       )}
 

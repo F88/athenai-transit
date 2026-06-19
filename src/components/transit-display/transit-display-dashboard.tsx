@@ -16,6 +16,7 @@ import {
 import {
   isMultiRouteDisplay,
   type TransitDisplayStatus,
+  type TransitDisplayStopsState,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
 import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import { cn } from '@/lib/utils';
@@ -101,6 +102,17 @@ const FILTERABLE_CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 
 const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
   departures: true,
   arrivals: false,
+};
+
+/**
+ * Empty-state message i18n key per collection state. Only the states without
+ * boards have a message; `some-in-service` is absent (boards render instead).
+ */
+const EMPTY_STATE_MESSAGE_KEY: Partial<Record<TransitDisplayStopsState, string>> = {
+  'no-stops': 'transitDisplay2.noStop',
+  'all-no-service': 'transitDisplay2.noService',
+  'all-service-ended': 'transitDisplay2.serviceEnded',
+  'all-filtered-out': 'transitDisplay2.allFilteredOut',
 };
 
 /**
@@ -261,6 +273,7 @@ export function TransitDisplayDashboard({
   };
 
   const style = TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE[size];
+  const emptyMessageKey = EMPTY_STATE_MESSAGE_KEY[status.state];
 
   return (
     <div
@@ -326,24 +339,9 @@ export function TransitDisplayDashboard({
           // 'bg-pink-100',
         )}
       >
-        {status.state === 'no-stops' && (
+        {emptyMessageKey && (
           <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
-            {t('transitDisplay2.noStop', { radius: status.radius })}
-          </div>
-        )}
-        {status.state === 'all-no-service' && (
-          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
-            {t('transitDisplay2.noService')}
-          </div>
-        )}
-        {status.state === 'all-service-ended' && (
-          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
-            {t('transitDisplay2.serviceEnded')}
-          </div>
-        )}
-        {status.state === 'all-filtered-out' && (
-          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
-            {t('transitDisplay2.allFilteredOut')}
+            {t(emptyMessageKey, { radius: status.radius })}
           </div>
         )}
         {groupedDisplays.map((item) => {
