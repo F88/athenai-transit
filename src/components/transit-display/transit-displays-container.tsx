@@ -69,29 +69,24 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
-  // Per-view coverage radius (the value this view's boards are filtered within
-  // and the map's highlight circle is drawn at). The view's setting is the
-  // default; the user can override it per view via the in-board radius selector.
-  // Ephemeral: kept per viewId in memory, so a reload reverts to the default.
-  // Container-owned views always have settings; the fallback is defensive only.
-  const [coverageRadiusByView, setCoverageRadiusByView] = useState<
-    Partial<Record<StopTimeViewId, number>>
-  >({});
+  // Coverage radius this view's boards are filtered within (and the map's
+  // highlight circle is drawn at). The view's setting is the default; the user
+  // can override it via the in-board radius selector. The container is remounted
+  // per view (`key={viewId}` in StopBrowser), so this resets to the view's
+  // default on every view switch and is retained only while the view stays
+  // active. Container-owned views always have settings; the fallback is defensive.
   const defaultRadiusMeters =
     transitDisplayViewSettings(viewId)?.defaultCoverageRadius ?? NEARBY_RADIUS_M;
-  const coverageRadiusMeters = coverageRadiusByView[viewId] ?? defaultRadiusMeters;
+  const [coverageRadiusMeters, setCoverageRadiusMeters] = useState<number>(defaultRadiusMeters);
   // Selectable options for this view (per-view). Falls back to just the default
   // radius for a view without explicit settings -- defensive, board views always
   // have them.
   const coverageRadiusOptions = transitDisplayViewSettings(viewId)?.coverageRadiusOptions ?? [
     defaultRadiusMeters,
   ];
-  const handleCoverageRadiusChange = useCallback(
-    (next: number) => {
-      setCoverageRadiusByView((prev) => ({ ...prev, [viewId]: next }));
-    },
-    [viewId],
-  );
+  const handleCoverageRadiusChange = useCallback((next: number) => {
+    setCoverageRadiusMeters(next);
+  }, []);
 
   // Distance filter: stops within `radiusMeters` of the center. Memoized so its
   // reference is stable while stopTimes / radius are unchanged -- otherwise the
