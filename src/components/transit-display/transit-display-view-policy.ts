@@ -123,7 +123,7 @@ const TRANSIT_DISPLAY_VIEW_SETTINGS: Partial<Record<StopTimeViewId, TransitDispl
   },
   route: {
     defaultCoverageRadius: 150,
-    coverageRadiusOptions: [100, 150],
+    coverageRadiusOptions: [10, 50, 100, 150],
     highlightCircleColor: '#1e88e5', // blue (DISTANCE_BANDS[1].color)
   },
 };

@@ -62,6 +62,9 @@ export function RadiusToggleButton({
   const { t } = useTranslation();
   const style = RADIUS_TOGGLE_BUTTON_STYLE_BY_SIZE[size];
   const onAdvance = () => {
+    if (options.length === 0) {
+      return;
+    }
     const currentIndex = options.indexOf(selected);
     const next = options[(currentIndex + 1) % options.length] ?? options[0];
     onSelect(next);

@@ -31,7 +31,7 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
   xs: {
     filterBoxClass: 'py-0 px-3 gap-2',
     button: {
-      padding: 'px-2 py-0',
+      padding: 'py-0',
       border: 'border',
       textClass: 'text-[10px]',
       iconClass: 'size-2.5',
@@ -40,7 +40,7 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
   sm: {
     filterBoxClass: 'py-0 px-3 gap-2.5',
     button: {
-      padding: 'px-2 py-0',
+      padding: 'py-0',
       border: 'border border-2',
       textClass: 'text-xs',
       iconClass: 'size-3',
@@ -49,7 +49,7 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
   md: {
     filterBoxClass: 'py-0 px-3 gap-3',
     button: {
-      padding: 'px-2 py-0',
+      padding: 'py-0',
       border: 'border border-4',
       textClass: 'text-base',
       iconClass: 'size-4',
@@ -58,7 +58,7 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
   lg: {
     filterBoxClass: 'py-0 px-8 gap-8',
     button: {
-      padding: 'px-2 py-0',
+      padding: 'py-0',
       border: 'border border-6',
       textClass: 'text-2xl',
       iconClass: 'size-9',
@@ -67,7 +67,7 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
   xl: {
     filterBoxClass: 'py-0 px-12 gap-12',
     button: {
-      padding: 'px-2 py-0',
+      padding: 'py-0',
       border: 'border border-8',
       textClass: 'text-4xl',
       iconClass: 'size-15',
@@ -76,10 +76,10 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
 };
 
 /**
- * Filter toggle button base metrics. The buttons always contain an arrow svg,
- * so horizontal padding uses `has-[>svg]:px-*` to override the ui/button size
- * variant's own `has-[>svg]:px-3`. Border color is applied separately (the
- * shown / hidden state classes).
+ * Filter toggle button base metrics (layout / weight / case). Horizontal
+ * padding is left to the ui/button size variant; only the vertical padding is
+ * zeroed (the size table's `py-0`) so the toggles sit flush. Border color is
+ * applied separately (the shown / hidden state classes).
  */
 const FILTER_BUTTON_BASE_CLASS =
   'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase hover:bg-info/20';
