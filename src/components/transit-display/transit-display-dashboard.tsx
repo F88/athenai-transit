@@ -37,6 +37,9 @@ interface TransitDisplayDashboardSizeStyle {
       padding: string;
     };
   };
+  message: {
+    textClass: string;
+  };
 }
 
 const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
@@ -45,18 +48,23 @@ const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
 > = {
   xs: {
     controls: { padding: 'pb-2', categoryFilter: { padding: 'px-1 py-0' } },
+    message: { textClass: 'text-[10px]' },
   },
   sm: {
     controls: { padding: 'pb-2', categoryFilter: { padding: 'px-1.5 py-0' } },
+    message: { textClass: 'text-xs' },
   },
   md: {
     controls: { padding: 'pb-2', categoryFilter: { padding: 'px-2 py-0' } },
+    message: { textClass: 'text-base' },
   },
   lg: {
     controls: { padding: 'pb-2', categoryFilter: { padding: 'px-0 py-0' } },
+    message: { textClass: 'text-2xl' },
   },
   xl: {
     controls: { padding: 'pb-2', categoryFilter: { padding: 'px-8 py-0' } },
+    message: { textClass: 'text-4xl' },
   },
 };
 
@@ -211,19 +219,8 @@ export function TransitDisplayDashboard({
     });
   }, [categoryFilteredData, activeRouteFilters]);
 
-  // No boards to show because the dataset itself is empty: either no stops within
-  // the radius (`no-stops`) or stops exist but none have service today
-  // (`no-service`). Show the reason instead of a blank view.
-  if (status.state === 'no-stops' || status.state === 'no-service') {
-    return (
-      <div className="text-muted-foreground px-4 py-6 text-center text-sm">
-        {t(status.state === 'no-service' ? 'transitDisplay2.noService' : 'transitDisplay2.empty', {
-          radius: status.radius,
-        })}
-      </div>
-    );
-  }
-
+  // Only offer toggles for categories that actually have a board, so the bar
+  // mirrors what is on screen rather than always showing both.
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
     dataWithMeta.some((display) => display.meta.category === category),
   );
@@ -329,15 +326,49 @@ export function TransitDisplayDashboard({
           // 'bg-pink-100',
         )}
       >
-        {groupedDisplays.map((item) => {
-          if (item.kind === 'single') {
-            // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`
-            // already deduped by route_id when groupedDisplays was built, so this
-            // is unique within the rendered list and stable across filter changes.
+        {status.state === 'no-stops' && (
+          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
+            {t('transitDisplay2.noStop', { radius: status.radius })}
+          </div>
+        )}
+        {status.state === 'no-service' && (
+          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
+            {t('transitDisplay2.noService')}
+          </div>
+        )}
+        {status.state === 'ready' &&
+          groupedDisplays.map((item) => {
+            if (item.kind === 'single') {
+              // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`
+              // already deduped by route_id when groupedDisplays was built, so this
+              // is unique within the rendered list and stable across filter changes.
+              return (
+                <TransitDisplayPerRoute
+                  key={`single__${item.group.route.route_id}`}
+                  group={item.group}
+                  dataLangs={dataLangs}
+                  now={now}
+                  mapCenter={mapCenter}
+                  infoLevel={infoLevel}
+                  size={size}
+                  onStopSelected={onStopSelected}
+                  onInspectTrip={onInspectTrip}
+                />
+              );
+            }
+            // Multi-route board: keyed by (category, sorted route_id set). Distinct
+            // groupings always carry a distinct route_id set, so this stays unique
+            // even if a `custom` policy collapses two groupings to the same
+            // route_type set. Stable across filter-driven reorderings.
+            const board = item.board;
+            const routeIdsKey = board.meta.routes
+              .map((r) => r.route_id)
+              .sort()
+              .join('-');
             return (
-              <TransitDisplayPerRoute
-                key={`single__${item.group.route.route_id}`}
-                group={item.group}
+              <TransitDisplayMultiRoutes
+                key={`multi__${board.meta.category}__${routeIdsKey}`}
+                transitDisplayDataWithMetaData={board}
                 dataLangs={dataLangs}
                 now={now}
                 mapCenter={mapCenter}
@@ -347,30 +378,7 @@ export function TransitDisplayDashboard({
                 onInspectTrip={onInspectTrip}
               />
             );
-          }
-          // Multi-route board: keyed by (category, sorted route_id set). Distinct
-          // groupings always carry a distinct route_id set, so this stays unique
-          // even if a `custom` policy collapses two groupings to the same
-          // route_type set. Stable across filter-driven reorderings.
-          const board = item.board;
-          const routeIdsKey = board.meta.routes
-            .map((r) => r.route_id)
-            .sort()
-            .join('-');
-          return (
-            <TransitDisplayMultiRoutes
-              key={`multi__${board.meta.category}__${routeIdsKey}`}
-              transitDisplayDataWithMetaData={board}
-              dataLangs={dataLangs}
-              now={now}
-              mapCenter={mapCenter}
-              infoLevel={infoLevel}
-              size={size}
-              onStopSelected={onStopSelected}
-              onInspectTrip={onInspectTrip}
-            />
-          );
-        })}
+          })}
       </div>
     </div>
   );

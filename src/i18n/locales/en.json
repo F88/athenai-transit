@@ -167,6 +167,8 @@
     "recentCount": "Latest {{count}} ({{radius}}m)",
     "entryCount": "{{count}} ({{radius}}m)",
     "stopCount": "{{count}} stops",
+    "noStop": "No stops within {{radius}}m",
+    "noService": "No service at stops",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS",
     "filter": {
@@ -179,8 +181,8 @@
     "recentCount": "Latest {{count}} ({{radius}}m)",
     "entryCount": "{{count}} ({{radius}}m)",
     "stopCount": "{{count}} stops",
-    "empty": "Transit display covers stops within {{radius}}m",
-    "noService": "No service today at stops",
+    "noStop": "No stops within {{radius}}m",
+    "noService": "No service at stops",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS",
     "filter": {

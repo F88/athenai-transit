@@ -7,13 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Radio } from 'lucide-react';
 import { distanceStyle } from '@/utils/distance-style';
 
-/**
- * Per-`size` style bundle for `RadiusToggleButton`. Looked up via
- * {@link RADIUS_TOGGLE_BUTTON_STYLE_BY_SIZE} so the text / icon scale with
- * `size`. Height is NOT set here: the button stretches (`h-auto` + the row's
- * `items-stretch`) to match the height-scaling category filter beside it,
- * which differs between the dashboard and split-flap views.
- */
+/** Per-`size` style bundle for `RadiusToggleButton`. */
 interface RadiusToggleButtonSizeStyle {
   /** Button label text size. */
   textClass: string;
@@ -22,15 +16,17 @@ interface RadiusToggleButtonSizeStyle {
    * ui/button base `[&_svg:not([class*='size-'])]:size-4`.
    */
   iconClass: string;
+  /** Vertical padding; sets the button height. */
+  paddingClass: string;
 }
 
 const RADIUS_TOGGLE_BUTTON_STYLE_BY_SIZE: Record<ExtendedDisplaySize, RadiusToggleButtonSizeStyle> =
   {
-    xs: { textClass: 'text-[10px]', iconClass: 'size-2.5' },
-    sm: { textClass: 'text-xs', iconClass: 'size-3' },
-    md: { textClass: 'text-base', iconClass: 'size-4' },
-    lg: { textClass: 'text-2xl', iconClass: 'size-9' },
-    xl: { textClass: 'text-4xl', iconClass: 'size-15' },
+    xs: { textClass: 'text-[10px]', iconClass: 'size-2.5', paddingClass: 'py-px' },
+    sm: { textClass: 'text-xs', iconClass: 'size-3', paddingClass: 'py-0.5' },
+    md: { textClass: 'text-base', iconClass: 'size-4', paddingClass: 'py-1' },
+    lg: { textClass: 'text-2xl', iconClass: 'size-9', paddingClass: 'py-1.5' },
+    xl: { textClass: 'text-4xl', iconClass: 'size-15', paddingClass: 'py-2' },
   };
 
 interface RadiusToggleButtonProps {
@@ -82,6 +78,7 @@ export function RadiusToggleButton({
         'h-auto w-fit shrink-0 cursor-pointer px-2 has-[>svg]:px-2',
         // 'border-0',
         style.textClass,
+        style.paddingClass,
         className,
       )}
       style={{

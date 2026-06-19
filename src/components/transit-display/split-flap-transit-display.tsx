@@ -80,6 +80,15 @@ const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xl: 'text-2xl',
 };
 
+/** Empty-state message text size per display size (no-stops / no-service). */
+const MESSAGE_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-[10px]',
+  sm: 'text-xs',
+  md: 'text-base',
+  lg: 'text-2xl',
+  xl: 'text-4xl',
+};
+
 const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
   ExtendedDisplaySize,
   ExtendedDisplaySize
@@ -193,19 +202,6 @@ export function SplitFlapTransitDisplays({
     [dataWithMeta, dataLangs],
   );
 
-  // No boards to show because the dataset itself is empty: either no stops within
-  // the radius (`no-stops`) or stops exist but none have service today
-  // (`no-service`). Show the reason instead of a blank view.
-  if (status.state === 'no-stops' || status.state === 'no-service') {
-    return (
-      <div className="text-muted-foreground px-4 py-6 text-center text-sm">
-        {t(status.state === 'no-service' ? 'transitDisplay2.noService' : 'transitDisplay2.empty', {
-          radius: status.radius,
-        })}
-      </div>
-    );
-  }
-
   // Only offer toggles for categories that actually have a board, so the bar
   // mirrors what is on screen rather than always showing both.
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
@@ -241,23 +237,38 @@ export function SplitFlapTransitDisplays({
           </div>
         )}
       </div>
-      {visibleData.map((dataWithMeta, index) => (
-        // Key from the board's identity (category + its route types), with the
-        // map index as a disambiguator: a `custom` route grouping can collapse
-        // two groups to the same present route types, so identity alone is not
-        // guaranteed unique.
-        <SplitFlapTransitDisplay
-          key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
-          dataWithMeta={dataWithMeta}
-          emptyMessage={emptyMessage}
-          now={now}
-          mapCenter={mapCenter}
-          infoLevel={infoLevel}
-          size={size}
-          onStopSelected={onStopSelected}
-          onInspectTrip={onInspectTrip}
-        />
-      ))}
+      {status.state === 'no-stops' && (
+        <div
+          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
+        >
+          {t('transitDisplay.noStop', { radius: status.radius })}
+        </div>
+      )}
+      {status.state === 'no-service' && (
+        <div
+          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
+        >
+          {t('transitDisplay.noService')}
+        </div>
+      )}
+      {status.state === 'ready' &&
+        visibleData.map((dataWithMeta, index) => (
+          // Key from the board's identity (category + its route types), with the
+          // map index as a disambiguator: a `custom` route grouping can collapse
+          // two groups to the same present route types, so identity alone is not
+          // guaranteed unique.
+          <SplitFlapTransitDisplay
+            key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
+            dataWithMeta={dataWithMeta}
+            emptyMessage={emptyMessage}
+            now={now}
+            mapCenter={mapCenter}
+            infoLevel={infoLevel}
+            size={size}
+            onStopSelected={onStopSelected}
+            onInspectTrip={onInspectTrip}
+          />
+        ))}
     </div>
   );
 }
