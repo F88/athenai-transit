@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
+import type { FilteredTimetableEntriesState } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { createLogger } from '@/lib/logger';
@@ -13,7 +14,7 @@ import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
-import { resolveTransitDisplayState } from '@/domain/transit/transit-info-display/transit-display-ui';
+import { aggregateTransitDisplayState } from '@/domain/transit/transit-info-display/transit-display-ui';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
@@ -37,6 +38,8 @@ export interface TransitDisplaysContainerProps {
    */
   viewId: StopTimeViewId;
   stopTimes: StopWithContext[];
+  /** Resolved per-stop display state, keyed by stop_id (SSOT from StopBrowser). */
+  filteredStateByStopId: ReadonlyMap<string, FilteredTimetableEntriesState>;
   /** Current wall-clock reference time for relative time display. */
   now: Date;
   mapCenter: LatLng | null;
@@ -54,6 +57,7 @@ export interface TransitDisplaysContainerProps {
 export function TransitDisplaysContainer({
   viewId,
   stopTimes,
+  filteredStateByStopId,
   now,
   mapCenter,
   infoLevel,
@@ -97,8 +101,13 @@ export function TransitDisplaysContainer({
   );
 
   const transitDisplayStatus = useMemo(
-    () => ({ radius: coverageRadiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
-    [nearbyStops, coverageRadiusMeters],
+    () => ({
+      radius: coverageRadiusMeters,
+      state: aggregateTransitDisplayState(
+        nearbyStops.map((swc) => filteredStateByStopId.get(swc.stop.stop_id) ?? 'no-service'),
+      ),
+    }),
+    [nearbyStops, coverageRadiusMeters, filteredStateByStopId],
   );
 
   // Log only when the status value (radius / state) changes, not every render.

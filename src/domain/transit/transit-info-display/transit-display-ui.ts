@@ -181,6 +181,23 @@ export function transitDisplayHasContent(state: TransitDisplayStopsState): boole
 }
 
 /**
+ * Aggregate the per-stop {@link FilteredTimetableEntriesState} of the in-radius
+ * stops into the collection display state.
+ *
+ * STUB: the aggregation precedence -- in particular `service-ended` vs
+ * `filter-hidden` when no stop has content -- is not specified yet. The body is
+ * intentionally unimplemented pending that decision; do not wire it into the
+ * display until the precedence is fixed.
+ */
+export function aggregateTransitDisplayState(
+  perStopStates: readonly FilteredTimetableEntriesState[],
+): TransitDisplayStopsState {
+  throw new Error(
+    `aggregateTransitDisplayState is not implemented yet (received ${perStopStates.length} states)`,
+  );
+}
+
+/**
  * Whether the given display covers multiple routes on its single board
  * (i.e. a multi-route board, built with `splitByRoute: false` and serving
  * more than one route at this stop). Implementation reads `meta.routes`

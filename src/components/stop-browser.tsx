@@ -364,6 +364,7 @@ export function StopBrowser({
         <TransitDisplaysContainer
           key={viewId}
           stopTimes={trimmedStopTimes}
+          filteredStateByStopId={filteredStateByStopId}
           viewId={viewId}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
