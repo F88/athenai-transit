@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.06.19]
+
 ### Added
 
 - TransitDisplay (rail / subway / tram / monorail): per-route board (1 board = 1 route) を導入した。渋谷 subway 等の多 line 駅で銀座線 / 半蔵門線 / 副都心線が個別 board として並ぶようになった (#296, #300)。
