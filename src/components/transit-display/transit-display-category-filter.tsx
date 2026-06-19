@@ -25,8 +25,11 @@ interface CategoryFilterSizeStyle {
   iconClass: string;
   /** Outer filter row: vertical / horizontal padding + gap. */
   filterBoxClass: string;
-  /** Per-button border width. */
-  filterButtonBorder: string;
+  /** Per-button. */
+  button: {
+    padding: string;
+    border: string;
+  };
 }
 
 const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterSizeStyle> = {
@@ -34,31 +37,46 @@ const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterS
     textClass: 'text-[10px]',
     iconClass: 'size-2.5',
     filterBoxClass: 'py-0 px-3 gap-2',
-    filterButtonBorder: 'border',
+    button: {
+      padding: 'px-2 py-0',
+      border: 'border',
+    },
   },
   sm: {
     textClass: 'text-xs',
     iconClass: 'size-3',
     filterBoxClass: 'py-0 px-3 gap-2.5',
-    filterButtonBorder: 'border border-2',
+    button: {
+      padding: 'px-2 py-0',
+      border: 'border border-2',
+    },
   },
   md: {
     textClass: 'text-base',
     iconClass: 'size-4',
     filterBoxClass: 'py-0 px-3 gap-3',
-    filterButtonBorder: 'border border-4',
+    button: {
+      padding: 'px-2 py-0',
+      border: 'border border-4',
+    },
   },
   lg: {
     textClass: 'text-2xl',
     iconClass: 'size-9',
     filterBoxClass: 'py-0 px-8 gap-8',
-    filterButtonBorder: 'border border-6',
+    button: {
+      padding: 'px-2 py-0',
+      border: 'border border-6',
+    },
   },
   xl: {
     textClass: 'text-4xl',
     iconClass: 'size-15',
     filterBoxClass: 'py-0 px-12 gap-12',
-    filterButtonBorder: 'border border-8',
+    button: {
+      padding: 'px-2 py-0',
+      border: 'border border-8',
+    },
   },
 };
 
@@ -138,7 +156,8 @@ export function TransitDisplayCategoryFilter({
             onClick={() => onToggleCategory(category)}
             className={cn(
               FILTER_BUTTON_BASE_CLASS,
-              style.filterButtonBorder,
+              style.button.padding,
+              style.button.border,
               style.textClass,
               isShown ? shownClassName : hiddenClassName,
             )}
