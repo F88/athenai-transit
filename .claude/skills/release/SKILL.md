@@ -36,14 +36,22 @@ When multiple releases occur on the same day, append a sequential suffix:
 
 ## GitHub Release Notes
 
-Release notes are based on CHANGELOG but may need more detail:
+Release notes are a **concise summary of the major user-facing changes — NOT a copy of the
+CHANGELOG.** The CHANGELOG is the exhaustive, detailed record; the release note is the
+highlight reel.
 
-- If CHANGELOG is a **summary** (e.g. "port webapp"), expand with specifics from `git log`
-- If CHANGELOG is **detailed**, use it as-is
+- **First, read the last 1-2 releases** (`gh release view <prev_tag> --json body --jq '.body'`)
+  and match their length and tone. Recent releases run ~15-25 lines / ~1-2KB. If your draft is
+  several KB, you are pasting the CHANGELOG — cut it down.
+- **Summarize, don't transcribe.** One short line per notable change. Drop implementation
+  detail, file/symbol names, and PR refs (`(#296)`) — those live in the CHANGELOG.
+- **Lead with what users see.** Focus on UI / UX / behavior changes. Minor bug fixes,
+  internal refactors, and renames may be omitted entirely when they don't affect users.
 - **Structure**: WebApp (user-facing) と Pipeline/CI (developer-facing) に分けて記載する
-    - `## WebApp` — エンドユーザーに影響する変更 (UI, UX, 表示, バグ修正)
+    - `## WebApp` — エンドユーザーに影響する変更 (UI, UX, 表示)
     - `## Pipeline / CI` — パイプライン、CI/CD、開発ツール等の変更
-    - 各セクション内は `### Added`, `### Fixed`, `### Changed` で分類
+    - 各セクション内は `### Added`, `### Fixed`, `### Changed` で分類。該当が無いセクション
+      (例: Pipeline/CI 変更なし) は丸ごと省く
 - Include link to full diff: `**Full Changelog**: https://github.com/{owner}/{repo}/compare/{prev_tag}...v{version}`
 - If this is the first release (no previous tag), use the initial commit as base
 
