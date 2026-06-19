@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
-import type { TimetableEntriesState } from '@/types/app/transit';
+import type { FilteredTimetableEntriesState } from '@/types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
@@ -20,14 +20,11 @@ const EAGER_RENDER_COUNT = 6;
 interface StopGridProps {
   stopTimes: StopWithContext[];
   /**
-   * Map from stop_id to the per-stop pre-`globalFilter`
-   * `TimetableEntriesState`. Computed once in `app.tsx` from
-   * `routeTypesFilteredNearbyStopTimes` (= settings filter applied,
-   * `globalFilter` not yet) and threaded down so each {@link NearbyStop}
-   * can tell "late-night service ended" apart from "filter-hidden" when
-   * its filtered stop times are empty.
+   * Map from stop_id to the resolved per-stop display state
+   * ({@link FilteredTimetableEntriesState}), computed once in `StopBrowser`.
+   * Forwarded to each {@link NearbyStop} as its `filteredState`.
    */
-  timetableEntriesStateByStopId: ReadonlyMap<string, TimetableEntriesState>;
+  filteredStateByStopId: ReadonlyMap<string, FilteredTimetableEntriesState>;
   selectedStopId: string | null;
   now: Date;
   mapCenter: LatLng | null;
@@ -53,7 +50,7 @@ interface StopGridProps {
 
 export function StopGrid({
   stopTimes,
-  timetableEntriesStateByStopId,
+  filteredStateByStopId,
   selectedStopId,
   now,
   mapCenter,
@@ -94,8 +91,7 @@ export function StopGrid({
             // (shouldn't happen — the Map and this `stopTimes` prop are
             // both derived from the same upstream stops list — but stay
             // defensive in case of race conditions during rerender).
-            timetableEntriesState:
-              timetableEntriesStateByStopId.get(swc.stop.stop_id) ?? 'no-service',
+            filteredState: filteredStateByStopId.get(swc.stop.stop_id) ?? 'no-service',
             isSelected: selectedStopId === swc.stop.stop_id,
             now,
             mapCenter,

@@ -14,6 +14,10 @@ import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../domain/transit/route-type-display-order';
 import { STOP_TIMES_VIEWS, type StopTimeViewId } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
+import {
+  getFilteredTimetableEntriesState,
+  getTimetableEntriesState,
+} from '../domain/transit/timetable-service-state';
 import { reconcileIdSet } from '../lib/reconcile-id-set';
 import { useElementRect } from '../hooks/use-element-rect';
 import type { GlobalFilter } from '../types/app/global-filter';
@@ -21,7 +25,11 @@ import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopsCounts } from '../types/app/stop';
 import type { StopBrowserSharedState } from '../types/app/stop-browser';
-import type { Agency, TimetableEntriesState } from '../types/app/transit';
+import type {
+  Agency,
+  FilteredTimetableEntriesState,
+  TimetableEntriesState,
+} from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
@@ -267,6 +275,29 @@ export function StopBrowser({
     [trimmedStopTimes],
   );
 
+  // Per-stop display state resolved at the view junction (common parent of
+  // both views). Combines the three per-stop signals into a single
+  // `FilteredTimetableEntriesState`:
+  //   - full-day `stopServiceState` (on the stop)
+  //   - pre-filter upcoming state (`timetableEntriesStateByStopId`)
+  //   - post-(surface-filter) upcoming state (from the trimmed `stopTimes`)
+  // Resolving here lets each view consume the resolved state rather than
+  // re-deriving it or depending on the pre-filter map directly.
+  const filteredStateByStopId = useMemo<ReadonlyMap<string, FilteredTimetableEntriesState>>(
+    () =>
+      new Map(
+        trimmedStopTimes.map((swc) => [
+          swc.stop.stop_id,
+          getFilteredTimetableEntriesState(
+            swc.stopServiceState,
+            timetableEntriesStateByStopId.get(swc.stop.stop_id) ?? 'no-service',
+            getTimetableEntriesState(swc.stopTimes),
+          ),
+        ]),
+      ),
+    [trimmedStopTimes, timetableEntriesStateByStopId],
+  );
+
   const stopIdsKey = useMemo(() => stopTimes.map((d) => d.stop.stop_id).join(','), [stopTimes]);
 
   // Scroll behavior when the stop list composition or selection changes:
@@ -360,7 +391,7 @@ export function StopBrowser({
           // (only scroll-to-selected-stop animates). So enabling the key buys nothing
           // and only adds the row re-mount / re-lazy-load work.
           stopTimes={trimmedStopTimes}
-          timetableEntriesStateByStopId={timetableEntriesStateByStopId}
+          filteredStateByStopId={filteredStateByStopId}
           selectedStopId={selectedStopId}
           now={now}
           mapCenter={mapCenter}
