@@ -71,20 +71,20 @@ export function RadiusToggleButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       size="sm"
       aria-label={t('transitDisplay2.radius.label')}
       onClick={onAdvance}
       className={cn(
         'h-auto w-fit shrink-0 cursor-pointer px-2 has-[>svg]:px-2',
-        // 'border-4',
+        // 'border-0',
         style.textClass,
         className,
       )}
       style={{
         color: styleForDistance.textColor,
         backgroundColor: styleForDistance.color,
-        borderColor: styleForDistance.color,
+        // borderColor: styleForDistance.color,
       }}
     >
       <Radio className={style.iconClass} />

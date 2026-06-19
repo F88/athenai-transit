@@ -44,19 +44,19 @@ const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
   TransitDisplayDashboardSizeStyle
 > = {
   xs: {
-    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1 py-0' } },
+    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-1 py-0' } },
   },
   sm: {
-    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1.5 py-0' } },
+    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-1.5 py-0' } },
   },
   md: {
-    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-2 py-0' } },
+    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-2 py-0' } },
   },
   lg: {
-    controls: { padding: 'pb-3', categoryFilter: { padding: 'has-[>svg]:px-4 py-0' } },
+    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-4 py-0' } },
   },
   xl: {
-    controls: { padding: 'pb-4', categoryFilter: { padding: 'has-[>svg]:px-8 py-0' } },
+    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-8 py-0' } },
   },
 };
 
@@ -282,6 +282,25 @@ export function TransitDisplayDashboard({
           // 'bg-orange-400',
         )}
       >
+        <div className="flex items-stretch gap-2 pb-2">
+          <RadiusToggleButton
+            options={coverageRadiusOptions}
+            selected={selectedCoverageRadius}
+            onSelect={onCoverageRadiusChange}
+            size={size}
+          />
+          {presentCategories.length > 0 && (
+            <div className={cn('min-w-0 flex-1', style.controls.categoryFilter.padding)}>
+              <TransitDisplayCategoryFilter
+                categories={presentCategories}
+                shownCategories={shownCategories}
+                size={size}
+                onToggleCategory={toggleCategory}
+              />
+            </div>
+          )}
+        </div>
+
         {enableRouteFilter && routesForRouteGroups.length > 0 && (
           <div
             className={cn(
@@ -300,24 +319,6 @@ export function TransitDisplayDashboard({
             />
           </div>
         )}
-        <div className="flex items-stretch gap-2">
-          <RadiusToggleButton
-            options={coverageRadiusOptions}
-            selected={selectedCoverageRadius}
-            onSelect={onCoverageRadiusChange}
-            size={size}
-          />
-          {presentCategories.length > 0 && (
-            <div className={cn('min-w-0 flex-1', style.controls.categoryFilter.padding)}>
-              <TransitDisplayCategoryFilter
-                categories={presentCategories}
-                shownCategories={shownCategories}
-                size={size}
-                onToggleCategory={toggleCategory}
-              />
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Panels */}
