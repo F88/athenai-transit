@@ -14,7 +14,10 @@ import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
+import {
+  transitDisplayHasContent,
+  type TransitDisplayStatus,
+} from '@/domain/transit/transit-info-display/transit-display-ui';
 import {
   buildTransitDisplayDatumForUi,
   type TransitDisplayDataWithMetaDataForUi,
@@ -251,7 +254,16 @@ export function SplitFlapTransitDisplays({
           {t('transitDisplay.noService')}
         </div>
       )}
-      {status.state === 'ready' &&
+      {status.state === 'service-ended' && (
+        <div
+          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
+        >
+          {t('transitDisplay.serviceEnded')}
+        </div>
+      )}
+
+      {/* status.state:  boardable | drop-off-only | filter-hidden */}
+      {transitDisplayHasContent(status.state) &&
         visibleData.map((dataWithMeta, index) => (
           // Key from the board's identity (category + its route types), with the
           // map index as a disambiguator: a `custom` route grouping can collapse

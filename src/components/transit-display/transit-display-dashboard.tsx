@@ -15,6 +15,7 @@ import {
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
   isMultiRouteDisplay,
+  transitDisplayHasContent,
   type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
 import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
@@ -336,7 +337,12 @@ export function TransitDisplayDashboard({
             {t('transitDisplay2.noService')}
           </div>
         )}
-        {status.state === 'ready' &&
+        {status.state === 'service-ended' && (
+          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
+            {t('transitDisplay2.serviceEnded')}
+          </div>
+        )}
+        {transitDisplayHasContent(status.state) &&
           groupedDisplays.map((item) => {
             if (item.kind === 'single') {
               // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`

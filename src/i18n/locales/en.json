@@ -169,6 +169,7 @@
     "stopCount": "{{count}} stops",
     "noStop": "No stops within {{radius}}m",
     "noService": "No service at stops",
+    "serviceEnded": "No more service today",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS",
     "filter": {
@@ -183,6 +184,7 @@
     "stopCount": "{{count}} stops",
     "noStop": "No stops within {{radius}}m",
     "noService": "No service at stops",
+    "serviceEnded": "No more service today",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS",
     "filter": {

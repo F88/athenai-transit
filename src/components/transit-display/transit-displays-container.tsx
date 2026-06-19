@@ -143,15 +143,12 @@ export function TransitDisplaysContainer({
   // own `nearbyStops`), so a view switch recomputes here -- cheap for the small
   // in-radius dataset and avoids building the inactive policy every render.
   const transitDisplayData = useMemo(() => {
-    if (transitDisplayStatus.state !== 'ready') {
-      return [];
-    }
     const policy = VIEW_POLICY[viewId];
     if (!policy) {
       return [];
     }
     return buildBoardsForPolicy(nearbyStops, coverageRadiusMeters, policy, infoLevel);
-  }, [viewId, nearbyStops, coverageRadiusMeters, infoLevel, transitDisplayStatus.state]);
+  }, [viewId, nearbyStops, coverageRadiusMeters, infoLevel]);
 
   return (
     <div

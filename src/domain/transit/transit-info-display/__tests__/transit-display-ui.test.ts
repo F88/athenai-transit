@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeRoute, makeStop } from '../../../../__tests__/helpers';
+import { makeEntry } from '../../__tests__/make-timetable-entry';
 import type { InfoLevel } from '../../../../types/app/settings';
 import type { AppRouteTypeValue, Route } from '../../../../types/app/transit';
 import type { StopWithContext } from '../../../../types/app/transit-composed';
@@ -325,27 +326,81 @@ describe('sortTransitDisplayDataWithMetaData', () => {
 describe('resolveTransitDisplayState', () => {
   function stop(
     stopServiceState: StopWithContext['stopServiceState'] = 'boardable',
+    stopTimes: StopWithContext['stopTimes'] = [],
   ): StopWithContext {
     return {
       stop: makeStop('s'),
       agencies: [],
       routes: [],
       routeTypes: [],
-      stopTimes: [],
+      stopTimes,
       stopServiceState,
     };
   }
+
+  // Upcoming entries: one boardable, one drop-off-only (no pickup).
+  const serviceDate = new Date('2026-06-19T00:00:00');
+  const boardableEntry: StopWithContext['stopTimes'][number] = { ...makeEntry(), serviceDate };
+  const dropOffEntry: StopWithContext['stopTimes'][number] = {
+    ...makeEntry({ pickupType: 1 }),
+    serviceDate,
+  };
 
   it("returns 'no-stops' for an empty stop set", () => {
     expect(resolveTransitDisplayState([])).toBe('no-stops');
   });
 
-  it("returns 'no-service' when every stop is out of service today", () => {
+  it("returns 'no-service' when every stop has no service at all today", () => {
     expect(resolveTransitDisplayState([stop('no-service'), stop('no-service')])).toBe('no-service');
   });
 
-  it("returns 'ready' when at least one stop has service", () => {
-    expect(resolveTransitDisplayState([stop('no-service'), stop('boardable')])).toBe('ready');
-    expect(resolveTransitDisplayState([stop('boardable')])).toBe('ready');
+  it("returns 'service-ended' when stops ran today but have no upcoming entries", () => {
+    // Full-day boardable / drop-off-only, but empty upcoming: the last trip
+    // already departed. This is the case that previously collapsed to a content
+    // state and rendered blank boards.
+    expect(resolveTransitDisplayState([stop('boardable', [])])).toBe('service-ended');
+    expect(resolveTransitDisplayState([stop('drop-off-only', [])])).toBe('service-ended');
+  });
+
+  it("prefers 'service-ended' over 'no-service' when at least one stop ran today", () => {
+    expect(resolveTransitDisplayState([stop('no-service', []), stop('boardable', [])])).toBe(
+      'service-ended',
+    );
+  });
+
+  it('returns a content state when at least one stop has upcoming entries', () => {
+    expect(resolveTransitDisplayState([stop('boardable', [boardableEntry])])).toBe('boardable');
+    expect(resolveTransitDisplayState([stop('drop-off-only', [dropOffEntry])])).toBe(
+      'drop-off-only',
+    );
+  });
+
+  it("keeps the most-serviceable stop: any boardable upcoming wins -> 'boardable'", () => {
+    expect(
+      resolveTransitDisplayState([stop('no-service', []), stop('boardable', [boardableEntry])]),
+    ).toBe('boardable');
+    expect(
+      resolveTransitDisplayState([
+        stop('drop-off-only', [dropOffEntry]),
+        stop('boardable', [boardableEntry]),
+      ]),
+    ).toBe('boardable');
+  });
+
+  it('does not collapse to service-ended when some stops still have upcoming entries', () => {
+    // 3 stops: two still served (one drop-off-only), one service-ended. The
+    // collection has boards to show, so it must not report service-ended.
+    expect(
+      resolveTransitDisplayState([
+        stop('boardable', [boardableEntry]),
+        stop('drop-off-only', [dropOffEntry]),
+        stop('boardable', []),
+      ]),
+    ).toBe('boardable');
+    // Only drop-off upcoming remains (no boardable) alongside a service-ended
+    // stop -> still a content state (drop-off-only), boards are shown.
+    expect(
+      resolveTransitDisplayState([stop('drop-off-only', [dropOffEntry]), stop('boardable', [])]),
+    ).toBe('drop-off-only');
   });
 });
