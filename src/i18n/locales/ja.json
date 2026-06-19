@@ -169,6 +169,8 @@
     "stopCount": "{{count}} のりば",
     "noStop": "{{radius}}m 以内にのりばがありません",
     "noService": "運行便はありません",
+    "serviceEnded": "本日の運行は終了しました",
+    "allFilteredOut": "フィルターにより表示されていません",
     "departures": "出発 Departures",
     "arrivals": "到着 Arrivals",
     "filter": {
@@ -183,6 +185,8 @@
     "stopCount": "{{count}} のりば",
     "noStop": "{{radius}}m 以内にのりばがありません",
     "noService": "運行便はありません",
+    "serviceEnded": "本日の運行は終了しました",
+    "allFilteredOut": "フィルターにより表示されていません",
     "departures": "出発",
     "arrivals": "到着",
     "filter": {

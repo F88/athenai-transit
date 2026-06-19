@@ -2,15 +2,11 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import type { StopTimeViewId } from '../domain/transit/stop-time-views';
-import {
-  getFilteredTimetableEntriesState,
-  getTimetableEntriesState,
-} from '../domain/transit/timetable-service-state';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { cn } from '../lib/utils';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { TimetableEntriesState } from '../types/app/transit';
+import type { FilteredTimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { NearbyStopFlatView } from './nearby-stop-flat-view';
 import { NearbyStopGroupedView } from './nearby-stop-grouped-view';
@@ -21,15 +17,12 @@ import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary'
 export interface NearbyStopProps {
   data: StopWithContext;
   /**
-   * Per-stop pre-`globalFilter` `TimetableEntriesState`. Computed once
-   * in `app.tsx` from `routeTypesFilteredNearbyStopTimes` (= settings
-   * filter applied, `globalFilter` not yet) and threaded down through
-   * `BottomSheet` / `StopGrid`. Combined with the repo's
-   * full-day `stopServiceState` and the filtered `stopTimes` state to
-   * pick the correct empty-fallback message (no-service / service-ended
-   * / filter-hidden).
+   * Resolved per-stop display state, computed once in `StopBrowser` from the
+   * full-day `stopServiceState`, the pre-filter upcoming state, and the
+   * post-filter `stopTimes` state. Used to pick the empty-fallback message
+   * (no-service / service-ended / filter-hidden) when `stopTimes` is empty.
    */
-  timetableEntriesState: TimetableEntriesState;
+  filteredState: FilteredTimetableEntriesState;
   isSelected: boolean;
   now: Date;
   mapCenter: LatLng | null;
@@ -53,7 +46,7 @@ export interface NearbyStopProps {
 
 export function NearbyStop({
   data: { stop, routeTypes, stopTimes, stopServiceState, agencies, routes, distance, stats, geo },
-  timetableEntriesState,
+  filteredState,
   isSelected,
   now,
   mapCenter,
@@ -86,25 +79,6 @@ export function NearbyStop({
   const hasUnknownHeadsign = useMemo(
     () => stopTimes.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
     [stopTimes],
-  );
-
-  // Unified display state for this stop, combining three levels:
-  //   - `stopServiceState`: full-day state from the repo (all-day scope).
-  //   - `upcomingEntriesState`: pre-filter upcoming entries state (from the
-  //     Map built in BottomSheet before any user filter is applied).
-  //   - `getTimetableEntriesState(stopTimes)`: post-filter state of what
-  //     is actually being rendered right now.
-  //
-  // Used by the fallback branch below to pick between noService /
-  // serviceEnded / allFilteredOut when `stopTimes` is empty.
-  const filteredState = useMemo(
-    () =>
-      getFilteredTimetableEntriesState(
-        stopServiceState,
-        timetableEntriesState,
-        getTimetableEntriesState([...stopTimes]),
-      ),
-    [stopServiceState, timetableEntriesState, stopTimes],
   );
 
   const stopHeader = (

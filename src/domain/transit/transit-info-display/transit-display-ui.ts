@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../../types/app/settings';
-import type { StopWithContext } from '../../../types/app/transit-composed';
+import type { FilteredTimetableEntriesState } from '../../../types/app/transit';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
 import {
   CATEGORIES,
@@ -111,22 +111,57 @@ export function sortTransitDisplayDataWithMetaData(
   });
 }
 
-export type TransitDisplayStopsState = 'ready' | 'no-stops' | 'no-service';
+/**
+ * Combined display state of the nearby-stops collection. Expressed only in
+ * terms of the per-stop {@link FilteredTimetableEntriesState} values; it makes
+ * no assumption about the time period those values were computed over.
+ *
+ * - `no-stops`: no stops at all.
+ * - `some-in-service`: at least one stop is in service (`boardable` /
+ *   `drop-off-only`) -- there are boards to render.
+ * - `all-service-ended`: none in service, but at least one is `service-ended`.
+ * - `all-filtered-out`: none in service or service-ended, but at least one is
+ *   `filter-hidden`.
+ * - `all-no-service`: every stop is `no-service`.
+ */
+export type TransitDisplayStopsState =
+  | 'no-stops'
+  | 'some-in-service'
+  | 'all-service-ended'
+  | 'all-filtered-out'
+  | 'all-no-service';
 export type TransitDisplayStatus = {
   radius: number;
   state: TransitDisplayStopsState;
 };
 
-export function resolveTransitDisplayState(
-  stops: readonly StopWithContext[],
+/**
+ * Derive the collection display state from the per-stop
+ * {@link FilteredTimetableEntriesState} of the in-radius stops. Purely
+ * combinatorial over the per-stop values. Precedence:
+ *
+ * 1. empty -> `no-stops`
+ * 2. any `boardable` / `drop-off-only` -> `some-in-service`
+ * 3. any `service-ended` -> `all-service-ended`
+ * 4. any `filter-hidden` -> `all-filtered-out`
+ * 5. otherwise (all `no-service`) -> `all-no-service`
+ */
+export function deriveTransitDisplayStopsState(
+  states: readonly FilteredTimetableEntriesState[],
 ): TransitDisplayStopsState {
-  if (stops.length === 0) {
+  if (states.length === 0) {
     return 'no-stops';
   }
-  if (stops.every((stop) => stop.stopServiceState === 'no-service')) {
-    return 'no-service';
+  if (states.some((state) => state === 'boardable' || state === 'drop-off-only')) {
+    return 'some-in-service';
   }
-  return 'ready';
+  if (states.some((state) => state === 'service-ended')) {
+    return 'all-service-ended';
+  }
+  if (states.some((state) => state === 'filter-hidden')) {
+    return 'all-filtered-out';
+  }
+  return 'all-no-service';
 }
 
 /**

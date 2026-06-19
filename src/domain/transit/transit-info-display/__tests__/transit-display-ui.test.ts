@@ -7,16 +7,15 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { makeRoute, makeStop } from '../../../../__tests__/helpers';
+import { makeRoute } from '../../../../__tests__/helpers';
 import type { InfoLevel } from '../../../../types/app/settings';
 import type { AppRouteTypeValue, Route } from '../../../../types/app/transit';
-import type { StopWithContext } from '../../../../types/app/transit-composed';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
 } from '../build-transit-display-data';
 import {
-  resolveTransitDisplayState,
+  deriveTransitDisplayStopsState,
   sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
   transitDisplayMaxEntriesPerRouteFor,
@@ -322,30 +321,38 @@ describe('sortTransitDisplayDataWithMetaData', () => {
   });
 });
 
-describe('resolveTransitDisplayState', () => {
-  function stop(
-    stopServiceState: StopWithContext['stopServiceState'] = 'boardable',
-  ): StopWithContext {
-    return {
-      stop: makeStop('s'),
-      agencies: [],
-      routes: [],
-      routeTypes: [],
-      stopTimes: [],
-      stopServiceState,
-    };
-  }
-
-  it("returns 'no-stops' for an empty stop set", () => {
-    expect(resolveTransitDisplayState([])).toBe('no-stops');
+describe('deriveTransitDisplayStopsState', () => {
+  it("returns 'no-stops' for an empty list", () => {
+    expect(deriveTransitDisplayStopsState([])).toBe('no-stops');
   });
 
-  it("returns 'no-service' when every stop is out of service today", () => {
-    expect(resolveTransitDisplayState([stop('no-service'), stop('no-service')])).toBe('no-service');
+  it("returns 'some-in-service' when any stop is boardable or drop-off-only", () => {
+    expect(deriveTransitDisplayStopsState(['boardable'])).toBe('some-in-service');
+    expect(deriveTransitDisplayStopsState(['drop-off-only'])).toBe('some-in-service');
+    // Wins over every other state.
+    expect(
+      deriveTransitDisplayStopsState(['no-service', 'service-ended', 'filter-hidden', 'boardable']),
+    ).toBe('some-in-service');
   });
 
-  it("returns 'ready' when at least one stop has service", () => {
-    expect(resolveTransitDisplayState([stop('no-service'), stop('boardable')])).toBe('ready');
-    expect(resolveTransitDisplayState([stop('boardable')])).toBe('ready');
+  it("returns 'all-service-ended' when none in service but any service-ended", () => {
+    expect(deriveTransitDisplayStopsState(['service-ended'])).toBe('all-service-ended');
+    // Mixed with no-service / filter-hidden (no in-service) still resolves here.
+    expect(deriveTransitDisplayStopsState(['service-ended', 'no-service'])).toBe(
+      'all-service-ended',
+    );
+    expect(deriveTransitDisplayStopsState(['filter-hidden', 'service-ended'])).toBe(
+      'all-service-ended',
+    );
+  });
+
+  it("returns 'all-filtered-out' when none in service / service-ended but any filter-hidden", () => {
+    expect(deriveTransitDisplayStopsState(['filter-hidden'])).toBe('all-filtered-out');
+    expect(deriveTransitDisplayStopsState(['filter-hidden', 'no-service'])).toBe('all-filtered-out');
+  });
+
+  it("returns 'all-no-service' when every stop is no-service", () => {
+    expect(deriveTransitDisplayStopsState(['no-service'])).toBe('all-no-service');
+    expect(deriveTransitDisplayStopsState(['no-service', 'no-service'])).toBe('all-no-service');
   });
 });
