@@ -326,7 +326,12 @@ export function StopBrowser({
         onToggleAgency={toggleAgency}
       />
       {TRANSIT_DISPLAY_VIEW_IDS.includes(viewId) ? (
+        // key={viewId}: remount the container on every view switch so all
+        // in-board state (coverage radius, shown categories, route filter)
+        // resets to the view's defaults. Only viewId / route-type / agency
+        // filters (owned above in stopBrowserState) persist across switches.
         <TransitDisplaysContainer
+          key={viewId}
           stopTimes={trimmedStopTimes}
           viewId={viewId}
           mapCenter={mapCenter}
@@ -340,6 +345,20 @@ export function StopBrowser({
         />
       ) : (
         <StopGrid
+          // Intentionally NOT keyed by viewId: StopGrid holds no per-view state, so
+          // there is nothing to reset, and remounting would re-run each row's lazy
+          // IntersectionObserver and reset scroll to the top on every view switch.
+          //
+          // key={viewId}
+          //
+          // If enabled, every view switch would remount StopGrid and the whole stop
+          // list: each row's LazyNearbyStop resets (isVisible -> false) and re-observes,
+          // so visible rows briefly flash to a placeholder and re-render instead of
+          // being reused/diffed -- pure remount cost with no state to reset. Scroll is
+          // unaffected either way: the non-board branch already does `scrollTop = 0` on
+          // view switch (see the effect above), and that reset is instant, not animated
+          // (only scroll-to-selected-stop animates). So enabling the key buys nothing
+          // and only adds the row re-mount / re-lazy-load work.
           stopTimes={trimmedStopTimes}
           timetableEntriesStateByStopId={timetableEntriesStateByStopId}
           selectedStopId={selectedStopId}

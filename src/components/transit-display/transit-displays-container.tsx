@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -69,22 +69,36 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollOverflow = useScrollOverflow(contentRef, stopIdsKey);
 
-  // Per-view nearby radius (the value this view's boards are filtered within
-  // and the map's highlight circle is drawn at). Container-owned views always
-  // have settings; the fallback is defensive only.
-  const radiusMeters = transitDisplayViewSettings(viewId)?.nearbyRadiusMeters ?? NEARBY_RADIUS_M;
+  // Coverage radius this view's boards are filtered within (and the map's
+  // highlight circle is drawn at). The view's setting is the default; the user
+  // can override it via the in-board radius selector. The container is remounted
+  // per view (`key={viewId}` in StopBrowser), so this resets to the view's
+  // default on every view switch and is retained only while the view stays
+  // active. Container-owned views always have settings; the fallback is defensive.
+  const defaultRadiusMeters =
+    transitDisplayViewSettings(viewId)?.defaultCoverageRadius ?? NEARBY_RADIUS_M;
+  const [coverageRadiusMeters, setCoverageRadiusMeters] = useState<number>(defaultRadiusMeters);
+  // Selectable options for this view (per-view). Falls back to just the default
+  // radius for a view without explicit settings -- defensive, board views always
+  // have them.
+  const coverageRadiusOptions = transitDisplayViewSettings(viewId)?.coverageRadiusOptions ?? [
+    defaultRadiusMeters,
+  ];
+  const handleCoverageRadiusChange = useCallback((next: number) => {
+    setCoverageRadiusMeters(next);
+  }, []);
 
   // Distance filter: stops within `radiusMeters` of the center. Memoized so its
   // reference is stable while stopTimes / radius are unchanged -- otherwise the
   // transitDisplayData useMemo below (which depends on it) would rebuild every render.
   const nearbyStops = useMemo(
-    () => filterStopsWithinDistance(stopTimes, radiusMeters),
-    [stopTimes, radiusMeters],
+    () => filterStopsWithinDistance(stopTimes, coverageRadiusMeters),
+    [stopTimes, coverageRadiusMeters],
   );
 
   const transitDisplayStatus = useMemo(
-    () => ({ radius: radiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
-    [nearbyStops, radiusMeters],
+    () => ({ radius: coverageRadiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
+    [nearbyStops, coverageRadiusMeters],
   );
 
   // Log only when the status value (radius / state) changes, not every render.
@@ -94,18 +108,19 @@ export function TransitDisplaysContainer({
     );
   }, [transitDisplayStatus.radius, transitDisplayStatus.state]);
 
-  // Draw the active view's nearby radius as a highlight circle on the hoisted
+  // Draw the active view's coverage radius as a highlight circle on the hoisted
   // map via the shared store. Anchored to the fetched-stops center
-  // (`mapCenter`); radius + color come from the same per-view settings the
-  // boards are filtered by, so circle and boards agree. The cleanup clears it,
-  // so leaving this view (or unmounting to a non-board view) removes the circle.
+  // (`mapCenter`); the radius is the effective (possibly user-selected) value
+  // the boards are filtered by and the color comes from the view settings, so
+  // circle and boards agree. The cleanup clears it, so leaving this view (or
+  // unmounting to a non-board view) removes the circle.
   useEffect(() => {
     const settings = transitDisplayViewSettings(viewId);
     if (mapCenter != null && settings != null) {
       setHighlightedCircles([
         {
           center: mapCenter,
-          radius: settings.nearbyRadiusMeters,
+          radius: coverageRadiusMeters,
           color: settings.highlightCircleColor,
         },
       ]);
@@ -115,7 +130,14 @@ export function TransitDisplaysContainer({
       clearHighlightedCircles();
       setShowDistanceRings(true);
     };
-  }, [mapCenter, viewId, setHighlightedCircles, clearHighlightedCircles, setShowDistanceRings]);
+  }, [
+    mapCenter,
+    viewId,
+    coverageRadiusMeters,
+    setHighlightedCircles,
+    clearHighlightedCircles,
+    setShowDistanceRings,
+  ]);
 
   // Build only the active view's boards. Each view carries its own radius (= its
   // own `nearbyStops`), so a view switch recomputes here -- cheap for the small
@@ -128,8 +150,8 @@ export function TransitDisplaysContainer({
     if (!policy) {
       return [];
     }
-    return buildBoardsForPolicy(nearbyStops, radiusMeters, policy, infoLevel);
-  }, [viewId, nearbyStops, radiusMeters, infoLevel, transitDisplayStatus.state]);
+    return buildBoardsForPolicy(nearbyStops, coverageRadiusMeters, policy, infoLevel);
+  }, [viewId, nearbyStops, coverageRadiusMeters, infoLevel, transitDisplayStatus.state]);
 
   return (
     <div
@@ -159,6 +181,9 @@ export function TransitDisplaysContainer({
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
                 size={size}
+                coverageRadiusOptions={coverageRadiusOptions}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
               />
@@ -173,9 +198,12 @@ export function TransitDisplaysContainer({
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
                 size={size}
+                enableRouteFilter={false}
+                coverageRadiusOptions={coverageRadiusOptions}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
-                enableRouteFilter={false}
               />
             );
           case 'route':
@@ -188,9 +216,12 @@ export function TransitDisplaysContainer({
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
                 size={size}
+                enableRouteFilter={true}
+                coverageRadiusOptions={coverageRadiusOptions}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
-                enableRouteFilter={true}
               />
             );
           default:
