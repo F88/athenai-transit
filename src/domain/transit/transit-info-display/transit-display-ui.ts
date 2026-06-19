@@ -1,11 +1,6 @@
 import type { InfoLevel } from '../../../types/app/settings';
 import type { FilteredTimetableEntriesState } from '../../../types/app/transit';
-import type { StopWithContext } from '../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
-import {
-  getFilteredTimetableEntriesState,
-  getTimetableEntriesState,
-} from '../timetable-service-state';
 import {
   CATEGORIES,
   DIRECTIONS,
@@ -117,84 +112,56 @@ export function sortTransitDisplayDataWithMetaData(
 }
 
 /**
- * Display state for the nearby-stops collection. `no-stops` is the only
- * collection-specific value; the rest reuse {@link FilteredTimetableEntriesState}
- * so the judgment shares the same vocabulary the nearby-stop list uses
- * (`filter-hidden` cannot arise here -- there is no stop-level UI filter in
- * this path -- but the type keeps the union aligned).
+ * Combined display state of the nearby-stops collection. Expressed only in
+ * terms of the per-stop {@link FilteredTimetableEntriesState} values; it makes
+ * no assumption about the time period those values were computed over.
+ *
+ * - `no-stops`: no stops at all.
+ * - `some-in-service`: at least one stop is in service (`boardable` /
+ *   `drop-off-only`) -- there are boards to render.
+ * - `all-service-ended`: none in service, but at least one is `service-ended`.
+ * - `all-filtered-out`: none in service or service-ended, but at least one is
+ *   `filter-hidden`.
+ * - `all-no-service`: every stop is `no-service`.
  */
-export type TransitDisplayStopsState = 'no-stops' | FilteredTimetableEntriesState;
+export type TransitDisplayStopsState =
+  | 'no-stops'
+  | 'some-in-service'
+  | 'all-service-ended'
+  | 'all-filtered-out'
+  | 'all-no-service';
 export type TransitDisplayStatus = {
   radius: number;
   state: TransitDisplayStopsState;
 };
 
 /**
- * Resolve the display state for the nearby stops.
+ * Derive the collection display state from the per-stop
+ * {@link FilteredTimetableEntriesState} of the in-radius stops. Purely
+ * combinatorial over the per-stop values. Precedence:
  *
- * Per-stop state is derived with the same {@link getFilteredTimetableEntriesState}
- * helper the nearby-stop list uses, then aggregated. This matters because the
- * boards are built from each stop's *upcoming* entries (`stopTimes`) while
- * `stopServiceState` is a *full-day* signal: a stop that ran earlier today but
- * has no upcoming trips is still `boardable` for the day, so without the
- * upcoming axis it would resolve to a content state and render blank boards.
- *
- * There is no stop-level UI filter here, so the post-filter axis equals the
- * pre-filter upcoming axis (no `filter-hidden`). Aggregation keeps the
- * most-serviceable stop, so a single stop with upcoming departures shows
- * boards rather than an empty-state message. Precedence:
- *
- * 1. no stops in radius -> `no-stops`
- * 2. any stop boardable / drop-off-only (has upcoming entries) -> that state
- * 3. any stop `service-ended` (service today but nothing upcoming) -> `service-ended`
- * 4. otherwise (all `no-service`) -> `no-service`
+ * 1. empty -> `no-stops`
+ * 2. any `boardable` / `drop-off-only` -> `some-in-service`
+ * 3. any `service-ended` -> `all-service-ended`
+ * 4. any `filter-hidden` -> `all-filtered-out`
+ * 5. otherwise (all `no-service`) -> `all-no-service`
  */
-export function resolveTransitDisplayState(
-  stops: readonly StopWithContext[],
+export function deriveTransitDisplayStopsState(
+  states: readonly FilteredTimetableEntriesState[],
 ): TransitDisplayStopsState {
-  if (stops.length === 0) {
+  if (states.length === 0) {
     return 'no-stops';
   }
-  const perStopStates = stops.map((stop) => {
-    const upcomingState = getTimetableEntriesState([...stop.stopTimes]);
-    return getFilteredTimetableEntriesState(stop.stopServiceState, upcomingState, upcomingState);
-  });
-  if (perStopStates.includes('boardable')) {
-    return 'boardable';
+  if (states.some((state) => state === 'boardable' || state === 'drop-off-only')) {
+    return 'some-in-service';
   }
-  if (perStopStates.includes('drop-off-only')) {
-    return 'drop-off-only';
+  if (states.some((state) => state === 'service-ended')) {
+    return 'all-service-ended';
   }
-  if (perStopStates.includes('service-ended')) {
-    return 'service-ended';
+  if (states.some((state) => state === 'filter-hidden')) {
+    return 'all-filtered-out';
   }
-  return 'no-service';
-}
-
-/**
- * Whether the resolved state means there are boards to render (vs an
- * empty-state message). True for the content states (`boardable` /
- * `drop-off-only`); false for `no-stops` / `no-service` / `service-ended`.
- */
-export function transitDisplayHasContent(state: TransitDisplayStopsState): boolean {
-  return state === 'boardable' || state === 'drop-off-only';
-}
-
-/**
- * Aggregate the per-stop {@link FilteredTimetableEntriesState} of the in-radius
- * stops into the collection display state.
- *
- * STUB: the aggregation precedence -- in particular `service-ended` vs
- * `filter-hidden` when no stop has content -- is not specified yet. The body is
- * intentionally unimplemented pending that decision; do not wire it into the
- * display until the precedence is fixed.
- */
-export function aggregateTransitDisplayState(
-  perStopStates: readonly FilteredTimetableEntriesState[],
-): TransitDisplayStopsState {
-  throw new Error(
-    `aggregateTransitDisplayState is not implemented yet (received ${perStopStates.length} states)`,
-  );
+  return 'all-no-service';
 }
 
 /**

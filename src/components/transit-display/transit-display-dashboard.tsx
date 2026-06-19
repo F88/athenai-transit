@@ -15,7 +15,6 @@ import {
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import {
   isMultiRouteDisplay,
-  transitDisplayHasContent,
   type TransitDisplayStatus,
 } from '@/domain/transit/transit-info-display/transit-display-ui';
 import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
@@ -332,49 +331,30 @@ export function TransitDisplayDashboard({
             {t('transitDisplay2.noStop', { radius: status.radius })}
           </div>
         )}
-        {status.state === 'no-service' && (
+        {status.state === 'all-no-service' && (
           <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
             {t('transitDisplay2.noService')}
           </div>
         )}
-        {status.state === 'service-ended' && (
+        {status.state === 'all-service-ended' && (
           <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
             {t('transitDisplay2.serviceEnded')}
           </div>
         )}
-        {transitDisplayHasContent(status.state) &&
-          groupedDisplays.map((item) => {
-            if (item.kind === 'single') {
-              // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`
-              // already deduped by route_id when groupedDisplays was built, so this
-              // is unique within the rendered list and stable across filter changes.
-              return (
-                <TransitDisplayPerRoute
-                  key={`single__${item.group.route.route_id}`}
-                  group={item.group}
-                  dataLangs={dataLangs}
-                  now={now}
-                  mapCenter={mapCenter}
-                  infoLevel={infoLevel}
-                  size={size}
-                  onStopSelected={onStopSelected}
-                  onInspectTrip={onInspectTrip}
-                />
-              );
-            }
-            // Multi-route board: keyed by (category, sorted route_id set). Distinct
-            // groupings always carry a distinct route_id set, so this stays unique
-            // even if a `custom` policy collapses two groupings to the same
-            // route_type set. Stable across filter-driven reorderings.
-            const board = item.board;
-            const routeIdsKey = board.meta.routes
-              .map((r) => r.route_id)
-              .sort()
-              .join('-');
+        {status.state === 'all-filtered-out' && (
+          <div className={cn('text-muted-foreground py-6 text-center', style.message.textClass)}>
+            {t('transitDisplay2.allFilteredOut')}
+          </div>
+        )}
+        {groupedDisplays.map((item) => {
+          if (item.kind === 'single') {
+            // Single-route group: keyed by route_id alone. `singleBoardsByRouteId`
+            // already deduped by route_id when groupedDisplays was built, so this
+            // is unique within the rendered list and stable across filter changes.
             return (
-              <TransitDisplayMultiRoutes
-                key={`multi__${board.meta.category}__${routeIdsKey}`}
-                transitDisplayDataWithMetaData={board}
+              <TransitDisplayPerRoute
+                key={`single__${item.group.route.route_id}`}
+                group={item.group}
                 dataLangs={dataLangs}
                 now={now}
                 mapCenter={mapCenter}
@@ -384,7 +364,30 @@ export function TransitDisplayDashboard({
                 onInspectTrip={onInspectTrip}
               />
             );
-          })}
+          }
+          // Multi-route board: keyed by (category, sorted route_id set). Distinct
+          // groupings always carry a distinct route_id set, so this stays unique
+          // even if a `custom` policy collapses two groupings to the same
+          // route_type set. Stable across filter-driven reorderings.
+          const board = item.board;
+          const routeIdsKey = board.meta.routes
+            .map((r) => r.route_id)
+            .sort()
+            .join('-');
+          return (
+            <TransitDisplayMultiRoutes
+              key={`multi__${board.meta.category}__${routeIdsKey}`}
+              transitDisplayDataWithMetaData={board}
+              dataLangs={dataLangs}
+              now={now}
+              mapCenter={mapCenter}
+              infoLevel={infoLevel}
+              size={size}
+              onStopSelected={onStopSelected}
+              onInspectTrip={onInspectTrip}
+            />
+          );
+        })}
       </div>
     </div>
   );

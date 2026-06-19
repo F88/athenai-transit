@@ -14,7 +14,7 @@ import { useScrollOverflow } from '@/hooks/use-scroll-overflow';
 
 import { filterStopsWithinDistance } from '@/domain/transit/stop-meta-filter';
 import type { StopTimeViewId } from '@/domain/transit/stop-time-views';
-import { aggregateTransitDisplayState } from '@/domain/transit/transit-info-display/transit-display-ui';
+import { deriveTransitDisplayStopsState } from '@/domain/transit/transit-info-display/transit-display-ui';
 
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
@@ -103,7 +103,7 @@ export function TransitDisplaysContainer({
   const transitDisplayStatus = useMemo(
     () => ({
       radius: coverageRadiusMeters,
-      state: aggregateTransitDisplayState(
+      state: deriveTransitDisplayStopsState(
         nearbyStops.map((swc) => filteredStateByStopId.get(swc.stop.stop_id) ?? 'no-service'),
       ),
     }),

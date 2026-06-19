@@ -14,10 +14,7 @@ import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
-import {
-  transitDisplayHasContent,
-  type TransitDisplayStatus,
-} from '@/domain/transit/transit-info-display/transit-display-ui';
+import type { TransitDisplayStatus } from '@/domain/transit/transit-info-display/transit-display-ui';
 import {
   buildTransitDisplayDatumForUi,
   type TransitDisplayDataWithMetaDataForUi,
@@ -247,40 +244,45 @@ export function SplitFlapTransitDisplays({
           {t('transitDisplay.noStop', { radius: status.radius })}
         </div>
       )}
-      {status.state === 'no-service' && (
+      {status.state === 'all-no-service' && (
         <div
           className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
         >
           {t('transitDisplay.noService')}
         </div>
       )}
-      {status.state === 'service-ended' && (
+      {status.state === 'all-service-ended' && (
         <div
           className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
         >
           {t('transitDisplay.serviceEnded')}
         </div>
       )}
+      {status.state === 'all-filtered-out' && (
+        <div
+          className={cn('text-muted-foreground py-6 text-center', MESSAGE_TEXT_CLASS_BY_SIZE[size])}
+        >
+          {t('transitDisplay.allFilteredOut')}
+        </div>
+      )}
 
-      {/* status.state:  boardable | drop-off-only | filter-hidden */}
-      {transitDisplayHasContent(status.state) &&
-        visibleData.map((dataWithMeta, index) => (
-          // Key from the board's identity (category + its route types), with the
-          // map index as a disambiguator: a `custom` route grouping can collapse
-          // two groups to the same present route types, so identity alone is not
-          // guaranteed unique.
-          <SplitFlapTransitDisplay
-            key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
-            dataWithMeta={dataWithMeta}
-            emptyMessage={emptyMessage}
-            now={now}
-            mapCenter={mapCenter}
-            infoLevel={infoLevel}
-            size={size}
-            onStopSelected={onStopSelected}
-            onInspectTrip={onInspectTrip}
-          />
-        ))}
+      {visibleData.map((dataWithMeta, index) => (
+        // Key from the board's identity (category + its route types), with the
+        // map index as a disambiguator: a `custom` route grouping can collapse
+        // two groups to the same present route types, so identity alone is not
+        // guaranteed unique.
+        <SplitFlapTransitDisplay
+          key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
+          dataWithMeta={dataWithMeta}
+          emptyMessage={emptyMessage}
+          now={now}
+          mapCenter={mapCenter}
+          infoLevel={infoLevel}
+          size={size}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
+      ))}
     </div>
   );
 }
