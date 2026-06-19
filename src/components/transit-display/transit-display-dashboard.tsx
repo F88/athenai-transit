@@ -44,19 +44,19 @@ const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
   TransitDisplayDashboardSizeStyle
 > = {
   xs: {
-    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-1 py-0' } },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1 py-0' } },
   },
   sm: {
-    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-1.5 py-0' } },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1.5 py-0' } },
   },
   md: {
-    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-2 py-0' } },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-2 py-0' } },
   },
   lg: {
-    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-4 py-0' } },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-4 py-0' } },
   },
   xl: {
-    controls: { padding: 'py-0', categoryFilter: { padding: 'has-[>svg]:px-8 py-0' } },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-8 py-0' } },
   },
 };
 
