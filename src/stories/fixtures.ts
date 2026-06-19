@@ -1417,6 +1417,11 @@ export const routeDirectionHeadsignNeither: RouteDirection = {
   direction: 0,
 };
 
+// Auto-incrementing tripIndex so each createEntry() is a distinct trip (as in
+// real data). Without it, two entries that share (route, headsign, stopIndex,
+// serviceDate) produce the same stop-event key and collide as React keys.
+let nextStoryTripIndex = 0;
+
 export function createEntry(
   overrides: Partial<{
     departureMinutes: number;
@@ -1431,6 +1436,7 @@ export function createEntry(
     isFirstStop: boolean;
     stopIndex: number;
     totalStops: number;
+    tripIndex: number;
     direction: 0 | 1;
   }> = {},
 ): ContextualTimetableEntry {
@@ -1441,7 +1447,7 @@ export function createEntry(
     tripLocator: {
       patternId: `${route.route_id}__${headsign}`,
       serviceId: 'story:default',
-      tripIndex: 0,
+      tripIndex: overrides.tripIndex ?? nextStoryTripIndex++,
     },
     schedule: {
       departureMinutes: depMin,

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { sortTimetableEntriesByDisplayTimeChronologically } from '../domain/transit/sort-timetable-for-ui';
+import { buildStopEventKey } from '../domain/transit/stop-event-key';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
@@ -52,7 +53,7 @@ export function NearbyStopFlatView({
     <>
       {entries.map((entry, i) => (
         <StopTimeItem
-          key={`${entry.tripLocator.patternId}__${entry.tripLocator.serviceId}__${entry.tripLocator.tripIndex}__${entry.patternPosition.stopIndex}`}
+          key={buildStopEventKey(entry)}
           entry={entry}
           now={now}
           forceShowRelativeTime={i === 0}

@@ -6,6 +6,7 @@ import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-entry-schedule';
+import { buildStopEventKey } from '../domain/transit/stop-event-key';
 import { buildTripInspectionTarget } from '../domain/transit/trip-inspection-target';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
@@ -114,11 +115,11 @@ export function StopTimesItem({
               Per Issue #47 / Alt F, each time renders its own per-stop-time
               attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
           {displayEntries.map((entry, i) => {
-            // Issue #47: 6-shape / circular routes can place the same trip
-            // at multiple `stopIndex` values within one route+headsign
-            // bucket, so include `stopIndex` in the key alongside the
-            // tripLocator triple to keep keys unique per stop event.
-            const entryKey = `${entry.tripLocator.patternId}__${entry.tripLocator.serviceId}__${entry.tripLocator.tripIndex}__${entry.patternPosition.stopIndex}`;
+            // Per stop event: keyed by patternId/serviceId/tripIndex plus
+            // stopIndex (Issue #47 -- circular routes place the same trip at
+            // multiple stopIndex values) and the service date (the locator is
+            // per-service, not per-day).
+            const entryKey = buildStopEventKey(entry);
             const content = (
               <>
                 <AbsoluteStopTime
