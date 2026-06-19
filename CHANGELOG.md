@@ -27,6 +27,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Map overlay store `useMapOverlay` を追加した (`useSyncExternalStore` ベース): hoisted な MapView の overlay を任意の component が prop-drill / context なしで制御できる (`useHighlightedCircles` / `useShowDistanceRings` read hook + `useMapOverlayControls` write hook)。 `HighlightedCircle` 型は `types/app/map.ts` へ移動。 `TransitDisplaysContainer` が active view の近接半径を circle として publish (半径 + 色は per-view `TRANSIT_DISPLAY_VIEW_SETTINGS`、 board filter と同一半径)。 `AdditionalCircles` の fill は dark で濃くする (fillOpacity 0.4 / 0.2) (#307)。
 - TransitDisplay: 1 つの multi-route board を card (route-type emoji + `meta.routes` から RouteBadge を 1 route ずつ) + `TransitDisplay` board として描画する `TransitDisplayMultiRoutes` component を追加した。 dashboard の multi-route 分岐を `TransitDisplayPerRoute` と同階層の wrapper 経由で描画する形にし、 将来の multi-route 専用表示の seam とする (#308)。
 - RouteBadge: ラベルを指定文字数で切り詰める `maxLength?: number` と、 切り詰め時の省略記号の有無を制御する `ellipsis?: boolean` (既定 true) を追加した (BaseBadge 経由で BaseLabel へ pass-through)。 切り詰め時も full name は title tooltip で参照可能。 既定は従来挙動を維持する (`maxLength` 未指定 = 切り詰め無し) (#308)。
+- TransitDisplay: のりばを集める対象半径 (coverage radius) を UI から切り替える `RadiusToggleButton` を filter 行に追加した。 押すたびに per-view の候補 (`coverageRadiusOptions`) を循環し、 選択半径で board を再構築し map の highlight circle も追従する。 選択は view ごとに保持 (ephemeral、 reload で per-view 既定に戻る)。 ボタンは選択半径の距離バンド色で着色する (#309)。
 
 ### Changed
 
@@ -48,6 +49,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - TransitDisplayDashboard: filter 群の styles を nested table に集約した (title / filterButton / filterBox)。 category filter と route filter で共通の余白規則を読み込むようになった (#304)。
 - TransitDisplay (build): `TransitDisplayMeta` の flat だった `max` / `radius` を `selection` sub-object (`radiusMeters` / `maxEntries` / `splitByRoute` / `splitByDirection`) に再構成した。 board の build 由来 (route / direction で split したか) を meta に記録し、 renderer の classification を count 依存から policy 依存へ移せるようにした。 meta-cluster の TSDoc 整理と stale な `meta.radius` 参照の修正も併せて実施 (#308)。
 - TransitDisplay: 長い route 名 (例: 渋谷区「ハチ公バス」 の循環ルート) が compact size で route badge から溢れる問題に対し、 RouteBadge の `maxLength` を size 駆動 style table 経由で適用した (xs / sm / md = 10 文字、 lg / xl = 切り詰め無し、 `ellipsis` は on)。 TransitDisplay header badge / `TransitDisplayEntry` / `RouteFilter` の pill に配線した (#308)。
+- TransitDisplay (view 設定): `TransitDisplayViewSettings` の `nearbyRadiusMeters` を `defaultCoverageRadius` (既定の対象半径) にリネームし、 UI の選択肢を per-view で宣言する `coverageRadiusOptions` を追加した。 各 view が自前の既定半径 + 候補配列を持てる (#309)。
+- TransitDisplay: category filter (出発 / 到着トグル) を `TransitDisplayCategoryFilter` として独立ファイルに抽出し、 dashboard / split-flap 両 view で共有する形にした。 色 (背景 / 枠線 / 文字) は `shownClassName` / `hiddenClassName` / `boxClassName` props で view ごとに注入する (既定は dashboard の neutral パレット、 split-flap は amber パレット)。 split-flap の独自実装 `TransitDisplayCategoryFilterXXX` は廃止 (#309)。
 
 ### Fixed
 
