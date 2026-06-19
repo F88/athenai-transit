@@ -88,6 +88,12 @@ interface TransitDisplayCategoryFilterProps {
   /** Display size; scales the toggle label text like the board rows. */
   size: ExtendedDisplaySize;
   onToggleCategory: (category: TransitDisplayCategory) => void;
+  /** Active-state palette (bg / border / text). Defaults to the dashboard's neutral palette. */
+  shownClassName?: string;
+  /** Inactive-state palette. Defaults to the dashboard's neutral palette. */
+  hiddenClassName?: string;
+  /** Extra classes for the outer filter box (e.g. background). */
+  boxClassName?: string;
 }
 
 /**
@@ -100,6 +106,9 @@ export function TransitDisplayCategoryFilter({
   shownCategories,
   size,
   onToggleCategory,
+  shownClassName = FILTER_BUTTON_SHOWN_CLASS,
+  hiddenClassName = FILTER_BUTTON_HIDDEN_CLASS,
+  boxClassName,
 }: TransitDisplayCategoryFilterProps) {
   const { t } = useTranslation();
   const style = CATEGORY_FILTER_STYLE_BY_SIZE[size];
@@ -107,7 +116,13 @@ export function TransitDisplayCategoryFilter({
     <div
       role="group"
       aria-label={t('transitDisplay2.filter.label')}
-      className={cn('flex items-center rounded-sm', style.filterBoxClass, 'bg-yellow-300')}
+      className={cn(
+        'flex items-center rounded-sm',
+        style.filterBoxClass,
+        boxClassName,
+        // debug
+        'bg-yellow-300',
+      )}
     >
       {categories.map((category) => {
         const isShown = shownCategories[category];
@@ -125,7 +140,7 @@ export function TransitDisplayCategoryFilter({
               FILTER_BUTTON_BASE_CLASS,
               style.filterButtonBorder,
               style.textClass,
-              isShown ? FILTER_BUTTON_SHOWN_CLASS : FILTER_BUTTON_HIDDEN_CLASS,
+              isShown ? shownClassName : hiddenClassName,
             )}
           >
             {isArrival ? (

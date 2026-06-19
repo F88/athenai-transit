@@ -9,7 +9,6 @@ import type { TripInspectionTarget } from '@/types/app/transit-composed';
 import { DistanceBadge } from '@/components/badge/distance-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
-import { Button } from '@/components/ui/button';
 import { RadiusToggleButton } from '@/components/transit-display/radius-toggle-button';
 import {
   type TransitDisplayCategory,
@@ -26,6 +25,7 @@ import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
+import { TransitDisplayCategoryFilter } from './transit-display-category-filter';
 
 /**
  * Theme-aware color of the board frame: the thick outer bezel that encloses the
@@ -107,6 +107,16 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   lg: 'max-w-[32ch] min-w-[32ch]',
   xl: 'max-w-[32ch] min-w-[32ch]',
 };
+
+/**
+ * Split-flap board palette for the category filter toggles: amber on the dark
+ * panel face (vs the dashboard's default neutral palette). Passed to the shared
+ * {@link TransitDisplayCategoryFilter} as `shownClassName` / `hiddenClassName`.
+ */
+const SPLIT_FLAP_CATEGORY_FILTER_SHOWN_CLASS =
+  'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700';
+const SPLIT_FLAP_CATEGORY_FILTER_HIDDEN_CLASS =
+  'border-neutral-700 bg-neutral-900 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-400 dark:hover:bg-neutral-800';
 
 export interface SplitFlapTransitDisplaysProps {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
@@ -211,7 +221,7 @@ export function SplitFlapTransitDisplays({
 
   return (
     <div className="font-dotgothic16 px-4 pb-0">
-      <div className="flex items-center gap-2 pb-2">
+      <div className="flex items-stretch gap-2 pb-2">
         <RadiusToggleButton
           options={coverageRadiusOptions}
           selected={selectedCoverageRadius}
@@ -225,6 +235,8 @@ export function SplitFlapTransitDisplays({
               shownCategories={shownCategories}
               size={size}
               onToggleCategory={toggleCategory}
+              shownClassName={SPLIT_FLAP_CATEGORY_FILTER_SHOWN_CLASS}
+              hiddenClassName={SPLIT_FLAP_CATEGORY_FILTER_HIDDEN_CLASS}
             />
           </div>
         )}
@@ -246,111 +258,6 @@ export function SplitFlapTransitDisplays({
           onInspectTrip={onInspectTrip}
         />
       ))}
-    </div>
-  );
-}
-
-/**
- * Filter toggle button box metrics (border width + padding) per display size, so
- * the frame and inset scale with the size-scaled label. The buttons always
- * contain an arrow svg, so horizontal padding uses `has-[>svg]:px-*` to override
- * the ui/button size variant's own `has-[>svg]:px-3`; `py-*` sets the height feel.
- * Border color is applied separately (the shown / hidden state classes).
- */
-const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'border has-[>svg]:px-1 py-0',
-  sm: 'border-2 has-[>svg]:px-1.5 py-0',
-  md: 'border-4 has-[>svg]:px-2 py-0',
-  lg: 'border-6 has-[>svg]:px-4 py-0',
-  xl: 'border-8 has-[>svg]:px-8 py-0',
-};
-
-const FILTER_BOX_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'py-2 px-3 gap-2',
-  sm: 'py-2 px-3 gap-2.5',
-  md: 'py-2 px-3 gap-3',
-  lg: 'py-3 px-8 gap-8',
-  xl: 'py-4 px-12 gap-12',
-};
-
-interface TransitDisplayCategoryFilterProps {
-  /** Categories that have a board, in board order; one toggle is rendered per entry. */
-  categories: readonly TransitDisplayCategory[];
-  /** Current shown / hidden state per category. */
-  shownCategories: Record<TransitDisplayCategory, boolean>;
-  /** Display size; scales the toggle label text like the board rows. */
-  size: ExtendedDisplaySize;
-  onToggleCategory: (category: TransitDisplayCategory) => void;
-}
-
-/**
- * Split-flap-styled filter bar: one flap toggle per category. Styled to match
- * the boards (same frame and panel face, amber text) rather than the generic
- * chip filter. A lit flap means the category is shown; a dimmed one means it is
- * hidden.
- */
-function TransitDisplayCategoryFilter({
-  categories,
-  shownCategories,
-  size,
-  onToggleCategory,
-}: TransitDisplayCategoryFilterProps) {
-  const { t } = useTranslation();
-  return (
-    <div
-      role="group"
-      aria-label={t('transitDisplay.filter.label')}
-      className={cn(
-        'mb-2 flex items-center rounded-sm border-0',
-        FILTER_BOX_SIZE[size],
-        // BOARD_FRAME_COLOR,
-        // BOARD_PANEL_BG,
-      )}
-    >
-      {categories.map((category) => {
-        const isShown = shownCategories[category];
-        const isArrival = category === 'arrivals';
-        return (
-          // Shared ui/button (ghost) reused for structure and focus handling,
-          // restyled to the split-flap palette: a lit flap means the category is
-          // shown, a dimmed one means it is hidden.
-          <Button
-            key={category}
-            variant="ghost"
-            size="default"
-            onClick={() => onToggleCategory(category)}
-            className={cn(
-              // grow + basis-0 makes both buttons equal width so they fill the
-              // bar evenly (basis-0 avoids fighting the Button base `shrink-0`).
-              // min-w-0 lets the label truncate instead of overflowing on narrow screens.
-              // h-auto lets the button grow with the size-scaled label text.
-              'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase',
-              FILTER_BUTTON_BOX_BY_SIZE[size],
-              TITLE_TEXT_CLASS_BY_SIZE[size],
-              isShown
-                ? 'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700'
-                : 'border-neutral-700 bg-neutral-900 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-400 dark:hover:bg-neutral-800',
-            )}
-          >
-            {isArrival ? (
-              <ArrowRight
-                strokeWidth={4}
-                aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
-              />
-            ) : (
-              <ArrowUp
-                strokeWidth={4}
-                aria-hidden
-                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
-              />
-            )}
-            <span className="truncate">
-              {t(isArrival ? 'transitDisplay.filter.arrivals' : 'transitDisplay.filter.departures')}
-            </span>
-          </Button>
-        );
-      })}
     </div>
   );
 }
