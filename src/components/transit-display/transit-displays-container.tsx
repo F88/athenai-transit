@@ -74,19 +74,21 @@ export function TransitDisplaysContainer({
   // default; the user can override it per view via the in-board radius selector.
   // Ephemeral: kept per viewId in memory, so a reload reverts to the default.
   // Container-owned views always have settings; the fallback is defensive only.
-  const [radiusByView, setRadiusByView] = useState<Partial<Record<StopTimeViewId, number>>>({});
+  const [coverageRadiusByView, setCoverageRadiusByView] = useState<
+    Partial<Record<StopTimeViewId, number>>
+  >({});
   const defaultRadiusMeters =
     transitDisplayViewSettings(viewId)?.defaultCoverageRadius ?? NEARBY_RADIUS_M;
-  const radiusMeters = radiusByView[viewId] ?? defaultRadiusMeters;
+  const coverageRadiusMeters = coverageRadiusByView[viewId] ?? defaultRadiusMeters;
   // Selectable options for this view (per-view). Falls back to just the default
   // radius for a view without explicit settings -- defensive, board views always
   // have them.
   const coverageRadiusOptions = transitDisplayViewSettings(viewId)?.coverageRadiusOptions ?? [
     defaultRadiusMeters,
   ];
-  const handleRadiusChange = useCallback(
+  const handleCoverageRadiusChange = useCallback(
     (next: number) => {
-      setRadiusByView((prev) => ({ ...prev, [viewId]: next }));
+      setCoverageRadiusByView((prev) => ({ ...prev, [viewId]: next }));
     },
     [viewId],
   );
@@ -95,13 +97,13 @@ export function TransitDisplaysContainer({
   // reference is stable while stopTimes / radius are unchanged -- otherwise the
   // transitDisplayData useMemo below (which depends on it) would rebuild every render.
   const nearbyStops = useMemo(
-    () => filterStopsWithinDistance(stopTimes, radiusMeters),
-    [stopTimes, radiusMeters],
+    () => filterStopsWithinDistance(stopTimes, coverageRadiusMeters),
+    [stopTimes, coverageRadiusMeters],
   );
 
   const transitDisplayStatus = useMemo(
-    () => ({ radius: radiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
-    [nearbyStops, radiusMeters],
+    () => ({ radius: coverageRadiusMeters, state: resolveTransitDisplayState(nearbyStops) }),
+    [nearbyStops, coverageRadiusMeters],
   );
 
   // Log only when the status value (radius / state) changes, not every render.
@@ -123,7 +125,7 @@ export function TransitDisplaysContainer({
       setHighlightedCircles([
         {
           center: mapCenter,
-          radius: radiusMeters,
+          radius: coverageRadiusMeters,
           color: settings.highlightCircleColor,
         },
       ]);
@@ -136,7 +138,7 @@ export function TransitDisplaysContainer({
   }, [
     mapCenter,
     viewId,
-    radiusMeters,
+    coverageRadiusMeters,
     setHighlightedCircles,
     clearHighlightedCircles,
     setShowDistanceRings,
@@ -153,8 +155,8 @@ export function TransitDisplaysContainer({
     if (!policy) {
       return [];
     }
-    return buildBoardsForPolicy(nearbyStops, radiusMeters, policy, infoLevel);
-  }, [viewId, nearbyStops, radiusMeters, infoLevel, transitDisplayStatus.state]);
+    return buildBoardsForPolicy(nearbyStops, coverageRadiusMeters, policy, infoLevel);
+  }, [viewId, nearbyStops, coverageRadiusMeters, infoLevel, transitDisplayStatus.state]);
 
   return (
     <div
@@ -185,8 +187,8 @@ export function TransitDisplaysContainer({
                 infoLevel={infoLevel}
                 size={size}
                 coverageRadiusOptions={coverageRadiusOptions}
-                selectedCoverageRadius={radiusMeters}
-                onCoverageRadiusChange={handleRadiusChange}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
               />
@@ -203,8 +205,8 @@ export function TransitDisplaysContainer({
                 size={size}
                 enableRouteFilter={false}
                 coverageRadiusOptions={coverageRadiusOptions}
-                selectedCoverageRadius={radiusMeters}
-                onCoverageRadiusChange={handleRadiusChange}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
               />
@@ -221,8 +223,8 @@ export function TransitDisplaysContainer({
                 size={size}
                 enableRouteFilter={true}
                 coverageRadiusOptions={coverageRadiusOptions}
-                selectedCoverageRadius={radiusMeters}
-                onCoverageRadiusChange={handleRadiusChange}
+                selectedCoverageRadius={coverageRadiusMeters}
+                onCoverageRadiusChange={handleCoverageRadiusChange}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
               />

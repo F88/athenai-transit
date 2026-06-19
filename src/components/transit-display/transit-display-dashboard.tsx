@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 
-import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
@@ -10,7 +9,6 @@ import type { TripInspectionTarget } from '@/types/app/transit-composed';
 import { RouteFilter } from '@/components/filter/route-filter';
 import { RadiusToggleButton } from '@/components/transit-display/radius-toggle-button';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
-import { Button } from '@/components/ui/button';
 import {
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
@@ -22,47 +20,21 @@ import {
 import { useReconcileIdSet } from '@/hooks/use-reconcile-id-set';
 import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
+import { TransitDisplayCategoryFilter } from './transit-display-category-filter';
 import { TransitDisplayMultiRoutes } from './transit-display-multi-routes';
 import { TransitDisplayPerRoute, type TransitDisplayRouteGroup } from './transit-display-per-route';
 
-const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
-
 /**
- * Per-`size` style bundle for `TransitDisplayDashboard`. Looked up via
- * {@link TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE}.
+ * Per-`size` style bundle for `TransitDisplayDashboard`: the controls row and
+ * the wrapper around the category filter. Looked up via
+ * {@link TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE}. (The category filter owns its
+ * own size styles in `transit-display-category-filter.tsx`.)
  */
 interface TransitDisplayDashboardSizeStyle {
-  /** Section title (also used by the filter toggles). */
-  title: {
-    /**
-     * Text utility class one step larger than the rows so the title reads
-     * above the data.
-     */
-    textClass: string;
-    /**
-     * Icon size utility class tracking `title.textClass`. A `size-*` class
-     * (not the lucide `size` prop) is required so the icon overrides the
-     * ui/button base rule `[&_svg:not([class*='size-'])]:size-4`.
-     */
-    iconClass: string;
-  };
-  // routeFilter: {
-  //   padding: string;
-  // };
-  categoryFilter: {
-    /** One filter toggle button (the `departures` / `arrivals` chip). */
-    filterButton: {
-      /**
-       * Border / padding utility classes. `has-[>svg]:px-*` overrides the
-       * ui/button size variant's `has-[>svg]:px-3` so the inset scales with the
-       * size-scaled label.
-       */
-      boxClass: string;
-    };
-    /** Outer filter row that holds the filter toggle buttons. */
-    filterBox: {
-      /** Padding + gap utility classes for the row. */
-      boxClass: string;
+  controls: {
+    padding: string;
+    categoryFilter: {
+      padding: string;
     };
   };
 }
@@ -72,39 +44,19 @@ const TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE: Record<
   TransitDisplayDashboardSizeStyle
 > = {
   xs: {
-    title: { textClass: 'text-[10px]', iconClass: 'size-2.5' },
-    categoryFilter: {
-      filterButton: { boxClass: 'border has-[>svg]:px-1 py-0' },
-      filterBox: { boxClass: 'py-2 px-3 gap-2' },
-    },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1 py-0' } },
   },
   sm: {
-    title: { textClass: 'text-xs', iconClass: 'size-3' },
-    categoryFilter: {
-      filterButton: { boxClass: 'border-2 has-[>svg]:px-1.5 py-0' },
-      filterBox: { boxClass: 'py-2 px-3 gap-2.5' },
-    },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-1.5 py-0' } },
   },
   md: {
-    title: { textClass: 'text-base', iconClass: 'size-4' },
-    categoryFilter: {
-      filterButton: { boxClass: 'border-4 has-[>svg]:px-2 py-0' },
-      filterBox: { boxClass: 'py-2 px-3 gap-3' },
-    },
+    controls: { padding: 'pb-2', categoryFilter: { padding: 'has-[>svg]:px-2 py-0' } },
   },
   lg: {
-    title: { textClass: 'text-2xl', iconClass: 'size-9' },
-    categoryFilter: {
-      filterButton: { boxClass: 'border-6 has-[>svg]:px-4 py-0' },
-      filterBox: { boxClass: 'py-3 px-8 gap-8' },
-    },
+    controls: { padding: 'pb-3', categoryFilter: { padding: 'has-[>svg]:px-4 py-0' } },
   },
   xl: {
-    title: { textClass: 'text-4xl', iconClass: 'size-15' },
-    categoryFilter: {
-      filterButton: { boxClass: 'border-8 has-[>svg]:px-8 py-0' },
-      filterBox: { boxClass: 'py-4 px-12 gap-12' },
-    },
+    controls: { padding: 'pb-4', categoryFilter: { padding: 'has-[>svg]:px-8 py-0' } },
   },
 };
 
@@ -311,32 +263,31 @@ export function TransitDisplayDashboard({
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   };
 
+  const style = TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE[size];
+
   return (
     <div
       className={cn(
-        // 'font-dotgothic16',
         'px-4',
+        // debug
+        // 'font-dotgothic16',
       )}
     >
-      {/* Filter */}
+      {/* Controls */}
       <div
         className={cn(
-          //
-          // 'px-0',
-          // 'border-10',
           'space-y-0',
+          style.controls.padding,
+          // debug
           // 'bg-orange-400',
-          'pb-2',
         )}
       >
         {enableRouteFilter && routesForRouteGroups.length > 0 && (
           <div
             className={cn(
-              //
-              // 'bg-green-600',
-              // 'py-4',
               'pb-2',
-              // 'pb-4',
+              // debug
+              // 'bg-green-600',
             )}
           >
             <RouteFilter
@@ -349,7 +300,7 @@ export function TransitDisplayDashboard({
             />
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-stretch gap-2">
           <RadiusToggleButton
             options={coverageRadiusOptions}
             selected={selectedCoverageRadius}
@@ -357,7 +308,7 @@ export function TransitDisplayDashboard({
             size={size}
           />
           {presentCategories.length > 0 && (
-            <div className="flex-1">
+            <div className={cn('min-w-0 flex-1', style.controls.categoryFilter.padding)}>
               <TransitDisplayCategoryFilter
                 categories={presentCategories}
                 shownCategories={shownCategories}
@@ -372,10 +323,8 @@ export function TransitDisplayDashboard({
       {/* Panels */}
       <div
         className={cn(
-          //
-          // 'font-dotgothic16',
           'space-y-4',
-          // 'px-0',
+          // debug
           // 'bg-pink-100',
         )}
       >
@@ -422,104 +371,6 @@ export function TransitDisplayDashboard({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-/**
- * Filter toggle button box metrics (border width + padding) per display size, so
- * the frame and inset scale with the size-scaled label. The buttons always
- * contain an arrow svg, so horizontal padding uses `has-[>svg]:px-*` to override
- * the ui/button size variant's own `has-[>svg]:px-3`; `py-*` sets the height feel.
- * Border color is applied separately (the shown / hidden state classes).
- */
-const FILTER_BUTTON_BASE_CLASS =
-  'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase hover:bg-info/20';
-
-const FILTER_BUTTON_SHOWN_CLASS = cn(
-  BOARD_PANEL_BG,
-  'border-neutral-600 text-neutral-700 hover:text-neutral-900 dark:border-neutral-300 dark:text-neutral-200 dark:hover:text-neutral-100',
-);
-const FILTER_BUTTON_HIDDEN_CLASS = cn(
-  BOARD_PANEL_BG,
-  'border-neutral-300 text-neutral-400 hover:text-neutral-600 dark:border-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300',
-);
-
-interface TransitDisplayCategoryFilterProps {
-  /** Categories that have a board, in board order; one toggle is rendered per entry. */
-  categories: readonly TransitDisplayCategory[];
-  /** Current shown / hidden state per category. */
-  shownCategories: Record<TransitDisplayCategory, boolean>;
-  /** Display size; scales the toggle label text like the board rows. */
-  size: ExtendedDisplaySize;
-  onToggleCategory: (category: TransitDisplayCategory) => void;
-}
-
-/**
- * Filter bar: one toggle per category, styled to match the boards (same
- * theme-aware panel face) rather than the generic chip filter. A prominent
- * toggle means the category is shown; a dimmed one means it is hidden.
- */
-function TransitDisplayCategoryFilter({
-  categories,
-  shownCategories,
-  size,
-  onToggleCategory,
-}: TransitDisplayCategoryFilterProps) {
-  const { t } = useTranslation();
-  const style = TRANSIT_DISPLAY_DASHBOARD_STYLE_BY_SIZE[size];
-  return (
-    <div
-      role="group"
-      aria-label={t('transitDisplay2.filter.label')}
-      className={cn(
-        'flex items-center rounded-sm',
-        // 'border-0',
-        style.categoryFilter.filterBox.boxClass,
-        // BOARD_FRAME_COLOR,
-        // BOARD_PANEL_BG,
-      )}
-    >
-      {categories.map((category) => {
-        const isShown = shownCategories[category];
-        const isArrival = category === 'arrivals';
-        return (
-          // Shared ui/button (ghost) reused for structure and focus handling,
-          // restyled to the board palette: a prominent toggle means the category
-          // is shown, a dimmed one means it is hidden.
-          <Button
-            key={category}
-            variant="ghost"
-            size="default"
-            onClick={() => onToggleCategory(category)}
-            className={cn(
-              FILTER_BUTTON_BASE_CLASS,
-              style.categoryFilter.filterButton.boxClass,
-              style.title.textClass,
-              isShown ? FILTER_BUTTON_SHOWN_CLASS : FILTER_BUTTON_HIDDEN_CLASS,
-            )}
-          >
-            {isArrival ? (
-              <ArrowRight
-                strokeWidth={4}
-                aria-hidden
-                className={cn('shrink-0', style.title.iconClass)}
-              />
-            ) : (
-              <ArrowUp
-                strokeWidth={4}
-                aria-hidden
-                className={cn('shrink-0', style.title.iconClass)}
-              />
-            )}
-            <span className="truncate">
-              {t(
-                isArrival ? 'transitDisplay2.filter.arrivals' : 'transitDisplay2.filter.departures',
-              )}
-            </span>
-          </Button>
-        );
-      })}
     </div>
   );
 }

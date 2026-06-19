@@ -16,66 +16,61 @@ const BOARD_PANEL_BG = 'bg-[#f5f7fa] dark:bg-gray-800';
  * scale and the border width scales with the size-scaled label.
  */
 interface CategoryFilterSizeStyle {
-  /** Toggle label text size (one step larger than the rows, like the board title). */
-  textClass: string;
-  /**
-   * Arrow icon size. A `size-*` class is required so it overrides the ui/button
-   * base `[&_svg:not([class*='size-'])]:size-4`.
-   */
-  iconClass: string;
   /** Outer filter row: vertical / horizontal padding + gap. */
   filterBoxClass: string;
   /** Per-button. */
   button: {
     padding: string;
     border: string;
+    textClass: string;
+    iconClass: string;
   };
 }
 
 const CATEGORY_FILTER_STYLE_BY_SIZE: Record<ExtendedDisplaySize, CategoryFilterSizeStyle> = {
   xs: {
-    textClass: 'text-[10px]',
-    iconClass: 'size-2.5',
     filterBoxClass: 'py-0 px-3 gap-2',
     button: {
       padding: 'px-2 py-0',
       border: 'border',
+      textClass: 'text-[10px]',
+      iconClass: 'size-2.5',
     },
   },
   sm: {
-    textClass: 'text-xs',
-    iconClass: 'size-3',
     filterBoxClass: 'py-0 px-3 gap-2.5',
     button: {
       padding: 'px-2 py-0',
       border: 'border border-2',
+      textClass: 'text-xs',
+      iconClass: 'size-3',
     },
   },
   md: {
-    textClass: 'text-base',
-    iconClass: 'size-4',
     filterBoxClass: 'py-0 px-3 gap-3',
     button: {
       padding: 'px-2 py-0',
       border: 'border border-4',
+      textClass: 'text-base',
+      iconClass: 'size-4',
     },
   },
   lg: {
-    textClass: 'text-2xl',
-    iconClass: 'size-9',
     filterBoxClass: 'py-0 px-8 gap-8',
     button: {
       padding: 'px-2 py-0',
       border: 'border border-6',
+      textClass: 'text-2xl',
+      iconClass: 'size-9',
     },
   },
   xl: {
-    textClass: 'text-4xl',
-    iconClass: 'size-15',
     filterBoxClass: 'py-0 px-12 gap-12',
     button: {
       padding: 'px-2 py-0',
       border: 'border border-8',
+      textClass: 'text-4xl',
+      iconClass: 'size-15',
     },
   },
 };
@@ -139,7 +134,7 @@ export function TransitDisplayCategoryFilter({
         style.filterBoxClass,
         boxClassName,
         // debug
-        'bg-yellow-300',
+        // 'bg-yellow-300',
       )}
     >
       {categories.map((category) => {
@@ -158,16 +153,24 @@ export function TransitDisplayCategoryFilter({
               FILTER_BUTTON_BASE_CLASS,
               style.button.padding,
               style.button.border,
-              style.textClass,
+              style.button.textClass,
               isShown ? shownClassName : hiddenClassName,
             )}
           >
             {isArrival ? (
-              <ArrowRight strokeWidth={4} aria-hidden className={cn('shrink-0', style.iconClass)} />
+              <ArrowRight
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', style.button.iconClass)}
+              />
             ) : (
-              <ArrowUp strokeWidth={4} aria-hidden className={cn('shrink-0', style.iconClass)} />
+              <ArrowUp
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', style.button.iconClass)}
+              />
             )}
-            <span className="truncate">
+            <span className="min-w-0 truncate">
               {t(
                 isArrival ? 'transitDisplay2.filter.arrivals' : 'transitDisplay2.filter.departures',
               )}
