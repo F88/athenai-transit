@@ -348,7 +348,9 @@ describe('deriveTransitDisplayStopsState', () => {
 
   it("returns 'all-filtered-out' when none in service / service-ended but any filter-hidden", () => {
     expect(deriveTransitDisplayStopsState(['filter-hidden'])).toBe('all-filtered-out');
-    expect(deriveTransitDisplayStopsState(['filter-hidden', 'no-service'])).toBe('all-filtered-out');
+    expect(deriveTransitDisplayStopsState(['filter-hidden', 'no-service'])).toBe(
+      'all-filtered-out',
+    );
   });
 
   it("returns 'all-no-service' when every stop is no-service", () => {
