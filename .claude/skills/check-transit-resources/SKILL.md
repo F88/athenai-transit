@@ -95,16 +95,16 @@ the input to the judgment.
 
 Check the cases **in this order** (the first match wins):
 
-| What you see in the block | Category | Note |
-| --- | --- | --- |
-| `Not available in Members Portal API` (no remote table) | **OUT OF SCOPE** | Fixed/latest-URL source, not version-tracked by this Action. NOT critical — exclude from update judgment; if it needs a refresh that is a separate workflow. |
+| What you see in the block                                                                                                                              | Category                     | Note                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Not available in Members Portal API` (no remote table)                                                                                                | **OUT OF SCOPE**             | Fixed/latest-URL source, not version-tracked by this Action. NOT critical — exclude from update judgment; if it needs a refresh that is a separate workflow.                                 |
 | `*** ADOPTED_EXPIRED` / `*** ADOPTED_MISSING` / `*** REMOTE_NO_VALID_DATA` (= `[RESULT:ERROR]`; LOCAL status `after`; header says `0 currently valid`) | **CRITICAL — cannot update** | Adopted feed dead AND no in-period replacement. Decide disable-vs-leave (expired-data UX shows an empty timetable). This is what fails CI (exit 1). Applies even when `<-- LOCAL` is row #1. |
-| LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `in` (or `in-no-end`/`in-no-start`) | **UPDATE CANDIDATE** | A newer revision is valid *now*. Larger `start_at` gap above LOCAL = higher priority. |
-| LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `before` (future `start_at`) | **UPCOMING** | A newer revision exists but has not started; adopt on/after its `start_at`, not now. |
-| LOCAL status is `in`, and every row above it is `after` (or LOCAL is row #1) | **No action** | Adopted is already the newest valid revision. Rows below it are older. |
+| LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `in` (or `in-no-end`/`in-no-start`)                                                   | **UPDATE CANDIDATE**         | A newer revision is valid _now_. Larger `start_at` gap above LOCAL = higher priority.                                                                                                        |
+| LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `before` (future `start_at`)                                                          | **UPCOMING**                 | A newer revision exists but has not started; adopt on/after its `start_at`, not now.                                                                                                         |
+| LOCAL status is `in`, and every row above it is `after` (or LOCAL is row #1)                                                                           | **No action**                | Adopted is already the newest valid revision. Rows below it are older.                                                                                                                       |
 
 Caveat: a candidate whose `feed=` window is very short (e.g. ~5 days — a temporary /
-special-period feed) can *shrink* coverage if adopted. Flag the window; do not treat it as
+special-period feed) can _shrink_ coverage if adopted. Flag the window; do not treat it as
 a routine bump.
 
 Uncertain on a borderline source? Re-run the checker for just that source instead of
