@@ -39,7 +39,7 @@
 コミット前に以下を実行:
 
 ```bash
-npm run typecheck && npm run format && npm run lint:fix && npm run build
+npm run typecheck && npm run format && npm run lint:fix && npm run test && npm run build
 ```
 
 ### コーディング規約
