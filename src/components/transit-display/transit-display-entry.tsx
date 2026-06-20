@@ -22,7 +22,7 @@ import { DistanceBadge } from '@/components/badge/distance-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
-import { StopTimeTimeInfo } from '@/components/stop-time-time-info';
+import { StopTimeTimeInfo, type StopTimeTimeTextSize } from '@/components/stop-time-time-info';
 import { PlatformCodeLabel } from '@/components/stop/platform-code-label';
 
 /**
@@ -30,10 +30,20 @@ import { PlatformCodeLabel } from '@/components/stop/platform-code-label';
  * {@link TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE}.
  */
 interface TransitDisplayEntrySizeStyle {
-  /** Row-level layout. */
-  row: {
-    /** Text size utility class for the row (`text-*`). */
+  /** Text size utility class for the row (`text-*`). */
+  textClass: string;
+  /** `StopTimeTimeInfo` (time column) size. */
+  stopTimeTimeInfoSize: StopTimeTimeTextSize;
+  /** Headsign (destination) line. */
+  headsign: {
+    /** Text size utility class for the headsign (`text-*`). */
     textClass: string;
+  };
+  /** Stop name line. */
+  stop: {
+    /** Text size utility class for the stop name (`text-*`). */
+    textClass: string;
+    platformCodeLabelSize: ExtendedDisplaySize;
   };
   /** `TimetableEntryAttributesLabels` rendering. */
   attributesLabels: {
@@ -54,27 +64,42 @@ const TRANSIT_DISPLAY_ENTRY_STYLE_BY_SIZE: Record<
   TransitDisplayEntrySizeStyle
 > = {
   xs: {
-    row: { textClass: 'text-[10px]' },
+    textClass: 'text-[10px]',
+    stopTimeTimeInfoSize: 'xs',
+    headsign: { textClass: 'text-[10px]' },
+    stop: { textClass: 'text-[10px]', platformCodeLabelSize: 'xs' },
     attributesLabels: { size: 'xs' },
     badge: { size: 'xs', maxLength: 10 },
   },
   sm: {
-    row: { textClass: 'text-xs' },
+    textClass: 'text-xs',
+    stopTimeTimeInfoSize: 'sm',
+    headsign: { textClass: 'text-xs' },
+    stop: { textClass: 'text-xs', platformCodeLabelSize: 'xs' },
     attributesLabels: { size: 'xs' },
     badge: { size: 'xs', maxLength: 10 },
   },
   md: {
-    row: { textClass: 'text-xs' },
+    textClass: 'text-base',
+    stopTimeTimeInfoSize: 'md',
+    headsign: { textClass: 'text-sm' },
+    stop: { textClass: 'text-xs', platformCodeLabelSize: 'sm' },
     attributesLabels: { size: 'xs' },
     badge: { size: 'sm', maxLength: 10 },
   },
   lg: {
-    row: { textClass: 'text-xl' },
+    textClass: 'text-xl',
+    stopTimeTimeInfoSize: 'lg',
+    headsign: { textClass: 'text-xl' },
+    stop: { textClass: 'text-xl', platformCodeLabelSize: 'md' },
     attributesLabels: { size: 'sm' },
     badge: { size: 'md', maxLength: undefined },
   },
   xl: {
-    row: { textClass: 'text-2xl' },
+    textClass: 'text-2xl',
+    stopTimeTimeInfoSize: 'xl',
+    headsign: { textClass: 'text-2xl' },
+    stop: { textClass: 'text-2xl', platformCodeLabelSize: 'lg' },
     attributesLabels: { size: 'md' },
     badge: { size: 'lg', maxLength: undefined },
   },
@@ -185,7 +210,7 @@ export function TransitDisplayEntry({
         'cursor-pointer',
         'hover:bg-info/10',
         'my-0.5',
-        style.row.textClass,
+        style.textClass,
         // 'bg-yellow-200',
         // 'bg-transparent',
       )}
@@ -210,7 +235,7 @@ export function TransitDisplayEntry({
           departureMinutes={timetableEntry.schedule.departureMinutes}
           serviceDate={timetableEntry.serviceDate}
           now={now}
-          size={size}
+          size={style.stopTimeTimeInfoSize}
           align="right"
           showArrivalTime={meta.category === 'arrivals'}
           showDepartureTime={meta.category === 'departures'}
@@ -255,7 +280,7 @@ export function TransitDisplayEntry({
           />
         </div>
         {/* 2nd row: Headsign (destination) */}
-        <div className="">{headsign}</div>
+        <div className={style.headsign.textClass}>{headsign}</div>
       </div>
 
       {/* 3rd column: 2 rows - Route agency / Stop */}
@@ -283,14 +308,14 @@ export function TransitDisplayEntry({
           )}
         </div>
         {/* 2nd row: Stop */}
-        <div className="">
+        <div className={style.stop.textClass}>
           <span className="block min-w-0 leading-tight wrap-break-word whitespace-normal">
             {stopName}
             {stopWithContext.stop.platform_code !== undefined && (
               <PlatformCodeLabel
                 className="ml-1 inline-block align-[0.15em]"
                 code={stopWithContext.stop.platform_code}
-                size={style.badge.size}
+                size={style.stop.platformCodeLabelSize}
               />
             )}
           </span>
