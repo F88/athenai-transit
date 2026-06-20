@@ -2,12 +2,12 @@
   "sourceName": "hankyu-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-19T05:56:09.277Z",
+  "downloadedAt": "2026-06-20T05:42:12.344Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260610",
   "size": 10574,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1148,
-  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20260619-055610.zip",
+  "durationMs": 1427,
+  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20260620-054213.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
