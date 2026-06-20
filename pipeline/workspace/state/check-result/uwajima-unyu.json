@@ -1,10 +1,12 @@
 {
   "sourceName": "uwajima-unyu",
-  "checkedAt": "2026-06-19T06:44:25.667Z",
+  "checkedAt": "2026-06-20T06:29:31.258Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260401"
   ],
-  "result": "ok",
-  "warnings": [],
+  "result": "attention",
+  "warnings": [
+    "ADOPTED_EXPIRING_SOON"
+  ],
   "errors": []
 }
