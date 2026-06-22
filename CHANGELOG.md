@@ -9,6 +9,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Data: nishi-tokyo-bus の GTFS resource を 20260622 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260617 版へ更新。
+- Data: kanto-bus の GTFS resource を 20260507 版へ更新。
+
 ## [2026.06.19]
 
 ### Added

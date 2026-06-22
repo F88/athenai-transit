@@ -17,8 +17,8 @@ const nishiTokyoBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/nishi_tokyo_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/nishi_tokyo_bus_nt_bus',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/nishi_tokyo_bus_nt_bus/resource/557cfca7-c73b-4dd4-9858-488808bff051',
-      resourceId: '557cfca7-c73b-4dd4-9858-488808bff051',
+        'https://ckan.odpt.org/dataset/nishi_tokyo_bus_nt_bus/resource/c2a57a1b-73d5-424f-ac8e-ab05900fad35',
+      resourceId: 'c2a57a1b-73d5-424f-ac8e-ab05900fad35',
     },
     provider: {
       name: {
@@ -41,7 +41,7 @@ const nishiTokyoBus: GtfsSourceDefinition = {
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260324',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260622',
   },
   pipeline: {
     outDir: 'nishi-tokyo-bus',
