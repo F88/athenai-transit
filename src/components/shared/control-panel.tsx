@@ -23,7 +23,7 @@ interface ControlPanelProps {
  * Carries no global z-index of its own: global layering is owned by the
  * MapOverlay corner-panel group (one `z-1000` stacking context); a panel that
  * must stay usable when panels overlap passes a local z via `className`.
- * See docs/map-architecture.md "MapOverlay corner-panel group".
+ * See docs/development/map-architecture.md "MapOverlay corner-panel group".
  *
  * @param side - Which side to place the panel (`"left"` or `"right"`).
  * @param edge - Vertical edge (`"top"` or `"bottom"`). Only `"top"` adds safe-area inset.

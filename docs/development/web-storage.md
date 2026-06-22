@@ -1,6 +1,6 @@
 # Web Storage
 
-ブラウザの `localStorage` (および将来的に `sessionStorage`) を安全に扱うための実装ガイド。 要件定義は [PRD 3.L](../PRD.md) を参照。
+ブラウザの `localStorage` (および将来的に `sessionStorage`) を安全に扱うための実装ガイド。 要件定義は [PRD 3.L](../../PRD.md) を参照。
 
 ## 概要
 

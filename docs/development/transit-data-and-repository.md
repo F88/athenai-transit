@@ -1,6 +1,6 @@
 # Transit Data and Repository
 
-This document collects web app data-access contracts. Pipeline internals remain in [../pipeline/README.md](../pipeline/README.md) and [../pipeline/docs/](../pipeline/docs/).
+This document collects web app data-access contracts. Pipeline internals remain in [../../pipeline/README.md](../../pipeline/README.md) and [../../pipeline/docs/](../../pipeline/docs/).
 
 ## Stop ID lookup
 
@@ -82,6 +82,6 @@ All methods return `Result<T>` or `CollectionResult<T>`. Domain-level errors use
 
 ## Pipeline independence
 
-`pipeline/` builds static data for the web app but is not organized under the web app `src/` placement rules. Pipeline commands, resources, and implementation details are documented in [../pipeline/README.md](../pipeline/README.md) and [../pipeline/docs/](../pipeline/docs/).
+`pipeline/` builds static data for the web app but is not organized under the web app `src/` placement rules. Pipeline commands, resources, and implementation details are documented in [../../pipeline/README.md](../../pipeline/README.md) and [../../pipeline/docs/](../../pipeline/docs/).
 
 When changing pipeline code, follow pipeline docs first. Root docs may describe how the web app consumes generated files, but they should not become the source of truth for pipeline internals.
