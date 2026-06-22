@@ -2,12 +2,12 @@
   "sourceName": "nishi-tokyo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-22T06:03:46.279Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260324",
-  "size": 2155483,
+  "downloadedAt": "2026-06-22T12:05:27.977Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260622",
+  "size": 2155323,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3993,
-  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260622-060350.zip",
+  "durationMs": 3219,
+  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260622-120531.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -23,7 +23,7 @@
     },
     {
       "name": "trips.txt",
-      "size": 792659
+      "size": 792583
     },
     {
       "name": "pattern_jp.txt",
@@ -31,7 +31,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 14966288
+      "size": 14965405
     },
     {
       "name": "fare_attributes.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1040
+      "size": 1124
     },
     {
       "name": "feed_info.txt",
@@ -70,8 +70,8 @@
     "publisherName": "西東京バス株式会社",
     "publisherUrl": "http://www.nisitokyobus.co.jp",
     "lang": "ja",
-    "startDate": "20260413",
-    "endDate": "20260731",
-    "version": "20260413_20260731"
+    "startDate": "20260622",
+    "endDate": "20260831",
+    "version": "20260622_20260831"
   }
 }
