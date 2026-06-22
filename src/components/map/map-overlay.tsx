@@ -148,7 +148,7 @@ export function MapOverlay({
        * Corner-panel group: one deliberate stacking context (z-1000) so the
        * panels' overlap order on short viewports is decided by their local
        * z inside the group, without touching the global chrome layering.
-       * See docs/map-architecture.md "MapOverlay corner-panel group".
+       * See docs/development/map-architecture.md "MapOverlay corner-panel group".
        */}
       <div className="pointer-events-none absolute inset-0 z-1000">
         {map && <MapControlPanel map={map} infoLevel={infoLevel} />}

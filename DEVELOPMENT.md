@@ -11,18 +11,18 @@
 
 ## Documentation Map
 
-| Topic                                              | Document                                                                     |
-| -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| プロジェクト概要                                   | [README.md](./README.md)                                                     |
-| プロダクト要件                                     | [PRD.md](./PRD.md)                                                           |
-| 詳細ドキュメント索引                               | [docs/README.md](./docs/README.md)                                           |
-| Map / Leaflet / z-index / gesture                  | [docs/map-architecture.md](./docs/map-architecture.md)                       |
-| Logger / runtime mode / query params / diagnostics | [docs/runtime-configuration.md](./docs/runtime-configuration.md)             |
-| PWA / platform / iOS safe-area                     | [docs/platform-pwa.md](./docs/platform-pwa.md)                               |
-| Styling / Tailwind / shadcn/ui                     | [docs/frontend-styling.md](./docs/frontend-styling.md)                       |
-| Transit data / repository contracts                | [docs/transit-data-and-repository.md](./docs/transit-data-and-repository.md) |
-| Dependency update notes                            | [docs/dependency-notes.md](./docs/dependency-notes.md)                       |
-| Pipeline                                           | [pipeline/README.md](./pipeline/README.md)                                   |
+| Topic                                              | Document                                                                                             |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| プロジェクト概要                                   | [README.md](./README.md)                                                                             |
+| プロダクト要件                                     | [PRD.md](./PRD.md)                                                                                   |
+| 詳細ドキュメント索引                               | [docs/README.md](./docs/README.md)                                                                   |
+| Map / Leaflet / z-index / gesture                  | [docs/development/map-architecture.md](./docs/development/map-architecture.md)                       |
+| Logger / runtime mode / query params / diagnostics | [docs/development/runtime-configuration.md](./docs/development/runtime-configuration.md)             |
+| PWA / platform / iOS safe-area                     | [docs/development/platform-pwa.md](./docs/development/platform-pwa.md)                               |
+| Styling / Tailwind / shadcn/ui                     | [docs/development/frontend-styling.md](./docs/development/frontend-styling.md)                       |
+| Transit data / repository contracts                | [docs/development/transit-data-and-repository.md](./docs/development/transit-data-and-repository.md) |
+| Dependency update notes                            | [docs/development/dependency-notes.md](./docs/development/dependency-notes.md)                       |
+| Pipeline                                           | [pipeline/README.md](./pipeline/README.md)                                                           |
 
 ## Code Quality
 
@@ -39,7 +39,7 @@
 コミット前に以下を実行:
 
 ```bash
-npm run typecheck && npm run format && npm run lint:fix && npm run build
+npm run typecheck && npm run format && npm run lint:fix && npm run test && npm run build
 ```
 
 ### コーディング規約
@@ -124,7 +124,7 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 
 ## Stop ID Lookup
 
-`stop_id` から `StopWithMeta` を取得する方法は 2 系統ある。出所によって正しい lookup を選ぶこと。詳細は [docs/transit-data-and-repository.md](./docs/transit-data-and-repository.md) を参照。
+`stop_id` から `StopWithMeta` を取得する方法は 2 系統ある。出所によって正しい lookup を選ぶこと。詳細は [docs/development/transit-data-and-repository.md](./docs/development/transit-data-and-repository.md) を参照。
 
 | stop_id の出所                                                     | 使う lookup                                |
 | ------------------------------------------------------------------ | ------------------------------------------ |

@@ -107,7 +107,7 @@ See [PRD.md](./PRD.md) section 3 for detailed UI/UX requirements. Key points for
 
 ## Map / Leaflet
 
-When implementing UI positioning or z-index changes on the map, be aware of Leaflet's pane/stacking context system. Test visibility of all existing UI elements after changes. See [docs/map-architecture.md](./docs/map-architecture.md) for z-index layer assignments, layout mode, and click/tap event control details.
+When implementing UI positioning or z-index changes on the map, be aware of Leaflet's pane/stacking context system. Test visibility of all existing UI elements after changes. See [docs/development/map-architecture.md](./docs/development/map-architecture.md) for z-index layer assignments, layout mode, and click/tap event control details.
 
 ## Code Guidelines
 

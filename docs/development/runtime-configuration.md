@@ -134,6 +134,18 @@ http://localhost:5173/?repo=mock    -> MockRepository
 
 Mock data is around 熊野前駅 and includes stops with multiple route types, including tram, subway, rail, and bus. Edit `STOPS`, `ROUTES`, and `STOP_ROUTES` when a special test pattern is needed. `STOP_ROUTE_TYPES` is derived automatically.
 
+### Parameter resolution
+
+All URL parameters are parsed in `src/lib/query-params.ts` and can be combined.
+
+- Precedence: query params > env variables > random / default.
+- Invalid values (non-numeric, out of range, `Infinity`) are ignored and fall back.
+- `?lat` / `?lng` take effect only when both are given; otherwise coordinates fall back to random selection. `?zm` may be set alone (coordinates random / env, zoom overridden).
+- `?sources`, `?tileIdx`, and `?lang` override the corresponding localStorage value but do not update localStorage (temporary override). With no params, sources are resolved as localStorage > the `enabled` field in `data-source-settings.ts`.
+- `?lang` is normalized via `normalizeLang` (e.g. `zh-TW` -> `zh-Hant`); unsupported values fall back to the default language.
+- `?repo=mock` ignores `?sources`.
+- `?bootstrap=hold` keeps the Bootstrap UI after repository boot completes; advancing to the app requires an explicit action (for Bootstrap UI verification).
+
 ## Diagnostics (`?diag=` mode)
 
 `?diag=<name>` runs a diagnostic tool after repository creation and before React rendering. Diagnostics are dynamically imported and log to the browser console.
