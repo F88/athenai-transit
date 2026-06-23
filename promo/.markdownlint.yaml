@@ -1,0 +1,27 @@
+# markdownlint config for promo/ (Marp slide source materials).
+#
+# Inherits the repository-root .markdownlint.yaml settings and relaxes
+# a few rules that conflict with Marp authoring conventions.
+
+# --- Inherited from repository-root .markdownlint.yaml ---
+MD007:
+  indent: 4
+
+MD013:
+  line_length: 500
+
+MD025:
+  front_matter_title: ''
+  level: 1
+
+# --- Marp-specific relaxations ---
+
+# Marp slides rely on inline HTML for styling (e.g. <span class="tagline">).
+MD033: false
+
+# Adjacent blockquotes separated by a blank line are used intentionally
+# to split quoted lines into distinct visual blocks on a slide.
+MD028: false
+
+# Headings may end with decorative punctuation (e.g. a closing tagline).
+MD026: false
