@@ -2,12 +2,12 @@
   "sourceName": "shinagawa-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-22T12:06:29.759Z",
+  "downloadedAt": "2026-06-23T05:33:32.419Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20260601",
   "size": 15903,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1419,
-  "archivePath": "workspace/_archives/gtfs/shinagawa-c-bus/tokyubus_community_ShinagawaCity_20260622-120631.zip",
+  "durationMs": 1426,
+  "archivePath": "workspace/_archives/gtfs/shinagawa-c-bus/tokyubus_community_ShinagawaCity_20260623-053333.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

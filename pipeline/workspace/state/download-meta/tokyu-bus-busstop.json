@@ -2,10 +2,10 @@
   "sourceName": "tokyu-bus-busstop",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-06-22T12:06:49.110Z",
+  "downloadedAt": "2026-06-23T05:33:50.736Z",
   "url": "https://api.odpt.org/api/v4/odpt:BusstopPole?odpt:operator=odpt.Operator:TokyuBus",
   "size": 3281033,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 1601,
-  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusstopPole_20260622-120650.json"
+  "durationMs": 1733,
+  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusstopPole_20260623-053352.json"
 }
