@@ -55,6 +55,7 @@ function printSummaryGtfs(sources: GtfsSourceDefinition[]): void {
   const rows = sources.map((s) => ({
     name: `${s.pipeline.outDir}`,
     prefix: s.pipeline.prefix,
+    catalog: s.resource.catalog.type,
     nameJa: s.resource.nameJa,
     nameEn: s.resource.nameEn,
     format: formatDataFormat(s.resource),
@@ -65,6 +66,7 @@ function printSummaryGtfs(sources: GtfsSourceDefinition[]): void {
   const colW = {
     name: Math.max(...rows.map((r) => r.name.length), 4),
     prefix: Math.max(...rows.map((r) => r.prefix.length), 6),
+    catalog: Math.max(...rows.map((r) => r.catalog.length), 7),
     label: Math.max(...rows.map((r) => `${r.nameJa} (${r.nameEn})`.length), 4),
     format: Math.max(...rows.map((r) => r.format.length), 6),
     routes: Math.max(...rows.map((r) => r.routes.length), 6),
@@ -73,7 +75,15 @@ function printSummaryGtfs(sources: GtfsSourceDefinition[]): void {
   for (const r of rows) {
     const label = `${r.nameJa} (${r.nameEn})`;
     console.log(
-      `  ${r.name.padEnd(colW.name)}  ${r.prefix.padEnd(colW.prefix)}  ${label.padEnd(colW.label)}  ${r.format.padEnd(colW.format)}  auth:${r.auth}  [${r.routes}]`,
+      formatRow([
+        { text: r.name, width: colW.name },
+        { text: r.prefix, width: colW.prefix },
+        { text: r.catalog, width: colW.catalog },
+        { text: label, width: colW.label },
+        { text: r.format, width: colW.format },
+        { text: `auth:${r.auth}` },
+        { text: `[${r.routes}]` },
+      ]),
     );
   }
 }
@@ -87,6 +97,7 @@ function printSummaryOdptJson(sources: OdptJsonSourceDefinition[]): void {
     nameJa: s.resource.nameJa,
     nameEn: s.resource.nameEn,
     odptType: s.resource.odptType,
+    catalog: s.resource.catalog.type,
     auth: s.resource.authentication.required ? 'yes' : 'no',
   }));
 
@@ -95,12 +106,20 @@ function printSummaryOdptJson(sources: OdptJsonSourceDefinition[]): void {
     prefix: Math.max(...rows.map((r) => r.prefix.length), 6),
     label: Math.max(...rows.map((r) => `${r.nameJa} (${r.nameEn})`.length), 4),
     odptType: Math.max(...rows.map((r) => r.odptType.length), 8),
+    catalog: Math.max(...rows.map((r) => r.catalog.length), 7),
   };
 
   for (const r of rows) {
     const label = `${r.nameJa} (${r.nameEn})`;
     console.log(
-      `  ${r.name.padEnd(colW.name)}  ${r.prefix.padEnd(colW.prefix)}  ${label.padEnd(colW.label)}  ${r.odptType.padEnd(colW.odptType)}  auth:${r.auth}`,
+      formatRow([
+        { text: r.name, width: colW.name },
+        { text: r.prefix, width: colW.prefix },
+        { text: r.catalog, width: colW.catalog },
+        { text: label, width: colW.label },
+        { text: r.odptType, width: colW.odptType },
+        { text: `auth:${r.auth}` },
+      ]),
     );
   }
 }
@@ -176,6 +195,7 @@ function printCommonFields(resource: BaseResource, pipeline: PipelineConfig): vo
     console.log(`  Auth method:    ${resource.authentication.method}`);
     console.log(`  Registration:   ${resource.authentication.registrationUrl}`);
   }
+  console.log(`  Catalog type:   ${resource.catalog.type}`);
   if (resource.catalog.type === 'odpt') {
     console.log(`  Organization:   ${resource.catalog.organizationUrl}`);
     console.log(`  Dataset:        ${resource.catalog.datasetUrl}`);
@@ -207,6 +227,7 @@ function printTsv(
     'format',
     'routeTypes',
     'odptType',
+    'catalog',
     'auth',
     'provider',
   ];
@@ -219,6 +240,7 @@ function printTsv(
       s.pipeline.prefix,
       s.resource.nameJa,
       s.resource.nameEn,
+      s.resource.catalog.type,
       formatDataFormat(s.resource),
       s.resource.routeTypes.join(', '),
       '',
@@ -235,6 +257,7 @@ function printTsv(
       s.pipeline.prefix,
       s.resource.nameJa,
       s.resource.nameEn,
+      s.resource.catalog.type,
       formatDataFormat(s.resource),
       '',
       s.resource.odptType,
@@ -248,6 +271,19 @@ function printTsv(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** A single cell in a summary row. Omit `width` for trailing, non-padded columns. */
+type Cell = { text: string; width?: number };
+
+/**
+ * Build an indented, space-separated summary row from cells.
+ * Reordering columns is a matter of reordering the cells array.
+ */
+function formatRow(cells: Cell[]): string {
+  return (
+    '  ' + cells.map((c) => (c.width !== undefined ? c.text.padEnd(c.width) : c.text)).join('  ')
+  );
+}
 
 function formatDataFormat(resource: BaseResource): string {
   const df = resource.dataFormat;
