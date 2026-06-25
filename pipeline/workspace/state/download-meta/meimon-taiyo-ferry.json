@@ -2,12 +2,12 @@
   "sourceName": "meimon-taiyo-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-24T05:30:45.128Z",
+  "downloadedAt": "2026-06-25T05:32:59.210Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20260401",
   "size": 4233,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1041,
-  "archivePath": "workspace/_archives/gtfs/meimon-taiyo-ferry/AllLines_20260624-053046.zip",
+  "durationMs": 1569,
+  "archivePath": "workspace/_archives/gtfs/meimon-taiyo-ferry/AllLines_20260625-053300.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
