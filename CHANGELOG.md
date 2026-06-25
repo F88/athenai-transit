@@ -9,6 +9,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- PWA: Android アダプティブアイコン用の maskable アイコン `public/icons/icon-512x512-maskable.png` を追加した。ロゴを中央 80% に収めて白余白を付与し、円形 / 角丸マスクで端が切れないようにした。manifest の `purpose: 'maskable'` エントリをこのファイルに差し替えた。
+
+### Changed
+
+- アプリアイコンを新ロゴ (bus / train / ferry / map / clock / walk のモチーフ) に刷新した。`favicon.ico` (16 / 32 / 48 の PNG 埋め込み) / `apple-touch-icon.png` (180) / `icon-192x192.png` (192) / `icon-512x512.png` (512) を更新した。
+
 ## [2026.06.22]
 
 ### Changed
