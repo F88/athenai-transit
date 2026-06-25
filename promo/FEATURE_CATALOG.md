@@ -5,6 +5,12 @@
 「あてのない乗換案内 (Athenai Transit)」が提供する機能を、機能カテゴリ別に分類した一覧です。
 本書は主に App (WebApp) 側の機能を対象とする。データ生成 (Pipeline) の処理は原則として対象外だが、プロダクトの特徴である Insight データの生成のみ例外的に記載する。
 
+App Info:
+
+- Name: Athenai Transit あてのない乗換案内
+- Name-en: Athenai Transit
+- Name-ja: あてのない乗換案内 (あてのない のりかえあんない)
+
 出典: [README.md](../README.md) / [ABOUT.md](../ABOUT.md) / [PRD.md](../PRD.md)
 
 ---
