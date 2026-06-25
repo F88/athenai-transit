@@ -1,15 +1,17 @@
 {
   "sourceName": "kanto-bus",
-  "checkedAt": "2026-06-24T06:19:37.156Z",
+  "checkedAt": "2026-06-25T06:21:45.853Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260401",
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260402",
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260403",
-    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260507"
+    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260507",
+    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260701"
   ],
   "result": "attention",
   "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD"
+    "REMOTE_KNOWN_IN_PERIOD",
+    "REMOTE_NEW_BEFORE_PERIOD"
   ],
   "errors": []
 }
