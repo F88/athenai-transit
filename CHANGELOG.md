@@ -11,11 +11,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- PWA: Android アダプティブアイコン用の maskable アイコン `public/icons/icon-512x512-maskable.png` を追加した。ロゴを中央 80% に収めて白余白を付与し、円形 / 角丸マスクで端が切れないようにした。manifest の `purpose: 'maskable'` エントリをこのファイルに差し替えた。
+- PWA アイコンを単一のソース画像から生成する仕組みを導入した。`@vite-pwa/assets-generator` を追加し、`pwa-assets.config.ts` と `npm run generate-pwa-assets` で全サイズ / favicon / apple-touch / maskable を 1 コマンドで生成する。アイコンはリビジョンごとに `public/icons/v1`, `public/icons/v2` フォルダへソース画像とまとめて配置する。
+- PWA: Android アダプティブアイコン用の maskable アイコン (`maskable-icon-512x512.png`) を追加した。ロゴを安全圏に収めた余白付きで、円形 / 角丸マスクでも端が切れない。manifest の `purpose: 'maskable'` エントリで参照する。
 
 ### Changed
 
-- アプリアイコンを新ロゴ (bus / train / ferry / map / clock / walk のモチーフ) に刷新した。`favicon.ico` (16 / 32 / 48 の PNG 埋め込み) / `apple-touch-icon.png` (180) / `icon-192x192.png` (192) / `icon-512x512.png` (512) を更新した。
+- アプリアイコンを新ロゴ (bus / train / ferry / map / clock / walk のモチーフ) に刷新した。generator 出力 (`pwa-64x64.png` / `pwa-192x192.png` / `pwa-512x512.png` / `maskable-icon-512x512.png` / `apple-touch-icon-180x180.png` / `favicon.ico`) を採用し、アプリは `public/icons/v1/` を参照する。
+- アイコンのソース画像と非アクティブなリビジョンを Service Worker の precache 対象から除外した (`vite.config.ts` の `globIgnores`)。
 
 ## [2026.06.22]
 

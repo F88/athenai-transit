@@ -30,6 +30,7 @@
     "contracts/**/*.ts",
     "vite.config.ts",
     "vitest.config.ts",
+    "pwa-assets.config.ts",
     "scripts/**/*.ts",
     "pipeline/config/**/*.ts",
     "pipeline/src/**/*.ts",
