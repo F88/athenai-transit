@@ -31,6 +31,9 @@ export default defineConfig({
                 'data-v2/**',
                 'icons/v1/icon-v1-1024x1024.png',
                 'icons/v2/**',
+                // Screenshots are only used by the install UI (fetched on
+                // demand), so keep them out of the precache.
+                'screenshots/**',
               ],
               runtimeCaching: [
                 {
