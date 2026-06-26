@@ -24,7 +24,14 @@ export default defineConfig({
             registerType: 'autoUpdate',
             workbox: {
               globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
-              globIgnores: ['data/**', 'data-v2/**'],
+              // icon-v*-1024x1024.png are source images for the PWA asset
+              // generator (npm run generate-pwa-assets), not served icons.
+              globIgnores: [
+                'data/**',
+                'data-v2/**',
+                'icons/v1/icon-v1-1024x1024.png',
+                'icons/v2/**',
+              ],
               runtimeCaching: [
                 {
                   urlPattern: /\/data-v2\/.*\.json$/,
@@ -76,17 +83,22 @@ export default defineConfig({
               },
               icons: [
                 {
-                  src: '/icons/icon-192x192.png',
+                  src: '/icons/v1/pwa-64x64.png',
+                  sizes: '64x64',
+                  type: 'image/png',
+                },
+                {
+                  src: '/icons/v1/pwa-192x192.png',
                   sizes: '192x192',
                   type: 'image/png',
                 },
                 {
-                  src: '/icons/icon-512x512.png',
+                  src: '/icons/v1/pwa-512x512.png',
                   sizes: '512x512',
                   type: 'image/png',
                 },
                 {
-                  src: '/icons/icon-512x512-maskable.png',
+                  src: '/icons/v1/maskable-icon-512x512.png',
                   sizes: '512x512',
                   type: 'image/png',
                   purpose: 'maskable',
