@@ -1,13 +1,15 @@
 {
   "sourceName": "kawasaki-city-bus",
-  "checkedAt": "2026-06-28T06:28:36.710Z",
+  "checkedAt": "2026-06-29T06:31:55.696Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260528",
     "https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260701"
   ],
-  "result": "attention",
+  "result": "critical",
   "warnings": [
     "REMOTE_KNOWN_BEFORE_PERIOD"
   ],
-  "errors": []
+  "errors": [
+    "ADOPTED_MISSING",
+    "REMOTE_NO_VALID_DATA"
+  ]
 }
