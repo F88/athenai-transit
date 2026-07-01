@@ -1,6 +1,24 @@
 import type { VitePWAOptions } from 'vite-plugin-pwa';
 
 /**
+ * Web App Manifest localization members (`*_localized`) are standard
+ * (https://www.w3.org/TR/appmanifest/#dfn-localizable-member) but not yet
+ * typed by vite-plugin-pwa's ManifestOptions, so declare them here. Values
+ * are language maps keyed by BCP47 language tag. The plugin passes unknown
+ * manifest keys through to the generated manifest.webmanifest as-is.
+ *
+ * Remove this augmentation once vite-plugin-pwa types these members
+ * natively (tracked upstream: vite-pwa/vite-plugin-pwa#773).
+ */
+declare module 'vite-plugin-pwa' {
+  interface ManifestOptions {
+    name_localized?: Record<string, string>;
+    short_name_localized?: Record<string, string>;
+    description_localized?: Record<string, string>;
+  }
+}
+
+/**
  * vite-plugin-pwa options (workbox + web app manifest).
  *
  * Extracted from vite.config.ts to keep the Vite config readable and to
@@ -57,6 +75,29 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     short_name: 'アテナイ',
     description:
       '行き先はまだ決めない。バス停や駅から次の便を眺めて、気の向くままに街を歩く。あてのない乗換案内 Athenai Transit',
+
+    // _localized members
+    //
+    // Manifest localization (`*_localized`) is implemented below but kept
+    // DISABLED (commented out) because it did not work as expected in testing:
+    // on Chrome for macOS 149.0.7827.201 the install name never resolved to the
+    // user's language (the `ja` entry was not selected; it fell back to the
+    // base `name`). It is a standard manifest feature
+    // (https://www.w3.org/TR/appmanifest/#dfn-localizable-member) shipped on
+    // all Blink platforms per the Chromium intent, so the cause here is
+    // unclear. Re-enable once the behavior is confirmed working.
+    //
+    // name_localized: {
+    //   en: 'Athenai Transit',
+    //   ja: 'あてのない乗換案内',
+    // },
+    // short_name_localized: {
+    //   en: 'Athenai',
+    // },
+    // description_localized: {
+    //   en: "Don't pick a destination. Watch the next departures from the stops around you and wander the city on a whim. Athenai Transit",
+    // },
+
     theme_color: '#ffffff',
     background_color: '#ffffff',
     lang: 'ja',
