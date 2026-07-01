@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.07.01]
+
 ### Added
 
 - PWA アイコンを単一のソース画像から生成する仕組みを導入した。`@vite-pwa/assets-generator` を追加し、`pwa-assets.config.ts` と `npm run generate-pwa-assets` で全サイズ / favicon / apple-touch / maskable を 1 コマンドで生成する。アイコンはリビジョンごとに `public/icons/v1`, `public/icons/v2` フォルダへソース画像とまとめて配置する。
