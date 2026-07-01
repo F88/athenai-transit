@@ -93,6 +93,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     // },
     // short_name_localized: {
     //   en: 'Athenai',
+    //   ja: 'アテナイ',
     // },
     // description_localized: {
     //   en: "Don't pick a destination. Watch the next departures from the stops around you and wander the city on a whim. Athenai Transit",
