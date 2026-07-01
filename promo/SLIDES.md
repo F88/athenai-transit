@@ -9,71 +9,71 @@ class: lead
 backgroundColor: #fafaf8
 color: #1f2933
 style: |
-  :root {
-    --accent: #0f766e;
-    --accent-soft: #14b8a6;
-    --muted: #52606d;
-  }
-  section {
-    font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
-    font-size: 28px;
-    line-height: 1.6;
-    padding: 56px 72px;
-    text-align: left;
-    justify-content: flex-start;
-  }
-  section.lead {
-    text-align: center;
-    justify-content: center;
-  }
-  h1 {
-    color: var(--accent);
-    font-size: 1.7em;
-    letter-spacing: 0.02em;
-  }
-  h2 {
-    color: var(--accent);
-    border-bottom: 3px solid var(--accent-soft);
-    padding-bottom: 0.2em;
-    font-size: 1.2em;
-  }
-  h3 {
-    color: var(--muted);
-    font-size: 0.95em;
-  }
-  strong {
-    color: var(--accent);
-  }
-  ul {
-    margin-top: 0.4em;
-  }
-  li {
-    margin-bottom: 0.45em;
-  }
-  table {
-    font-size: 0.82em;
-  }
-  th {
-    background: var(--accent);
-    color: #fff;
-  }
-  blockquote {
-    border-left: 5px solid var(--accent-soft);
-    color: var(--muted);
-    font-style: normal;
-  }
-  section.lead h1 {
-    font-size: 2.1em;
-  }
-  .tagline {
-    color: var(--muted);
-    font-size: 0.9em;
-  }
-  footer {
-    color: var(--muted);
-    font-size: 0.6em;
-  }
-footer: "Athenai Transit -- あてのない乗換案内"
+    :root {
+      --accent: #0f766e;
+      --accent-soft: #14b8a6;
+      --muted: #52606d;
+    }
+    section {
+      font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+      font-size: 28px;
+      line-height: 1.6;
+      padding: 56px 72px;
+      text-align: left;
+      justify-content: flex-start;
+    }
+    section.lead {
+      text-align: center;
+      justify-content: center;
+    }
+    h1 {
+      color: var(--accent);
+      font-size: 1.7em;
+      letter-spacing: 0.02em;
+    }
+    h2 {
+      color: var(--accent);
+      border-bottom: 3px solid var(--accent-soft);
+      padding-bottom: 0.2em;
+      font-size: 1.2em;
+    }
+    h3 {
+      color: var(--muted);
+      font-size: 0.95em;
+    }
+    strong {
+      color: var(--accent);
+    }
+    ul {
+      margin-top: 0.4em;
+    }
+    li {
+      margin-bottom: 0.45em;
+    }
+    table {
+      font-size: 0.82em;
+    }
+    th {
+      background: var(--accent);
+      color: #fff;
+    }
+    blockquote {
+      border-left: 5px solid var(--accent-soft);
+      color: var(--muted);
+      font-style: normal;
+    }
+    section.lead h1 {
+      font-size: 2.1em;
+    }
+    .tagline {
+      color: var(--muted);
+      font-size: 0.9em;
+    }
+    footer {
+      color: var(--muted);
+      font-size: 0.6em;
+    }
+footer: 'Athenai Transit -- あてのない乗換案内'
 ---
 
 <!-- _paginate: false -->

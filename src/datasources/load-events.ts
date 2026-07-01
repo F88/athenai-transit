@@ -1,10 +1,5 @@
 export type BundleLoadKind =
-  | 'data'
-  | 'shapes'
-  | 'insights'
-  | 'global-insights'
-  | 'data-source-catalog'
-  | 'unknown';
+  'data' | 'shapes' | 'insights' | 'global-insights' | 'data-source-catalog' | 'unknown';
 
 export type BundleLoadFailureReason =
   | 'timeout'

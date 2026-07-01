@@ -54,22 +54,20 @@ function createLookups(
   return {
     getStopMeta: vi.fn((_stopId: string): StopWithMeta | undefined => undefined),
     getStopRouteTypes: vi.fn((_stopId: string): AppRouteTypeValue[] => []),
-    resolveRouteDirection: vi.fn(
-      (_stopIndex: number): RouteDirection => ({
-        route: {
-          route_id: 'test:r1',
-          route_type: 3,
-          agency_id: 'test:a1',
-          route_short_name: 'R1',
-          route_short_names: {},
-          route_long_name: '',
-          route_long_names: {},
-          route_color: '',
-          route_text_color: '',
-        },
-        tripHeadsign: { name: '', names: {} },
-      }),
-    ),
+    resolveRouteDirection: vi.fn((_stopIndex: number): RouteDirection => ({
+      route: {
+        route_id: 'test:r1',
+        route_type: 3,
+        agency_id: 'test:a1',
+        route_short_name: 'R1',
+        route_short_names: {},
+        route_long_name: '',
+        route_long_names: {},
+        route_color: '',
+        route_text_color: '',
+      },
+      tripHeadsign: { name: '', names: {} },
+    })),
     ...overrides,
   };
 }

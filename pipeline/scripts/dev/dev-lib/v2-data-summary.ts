@@ -1149,14 +1149,7 @@ function formatDirectionCountsByRouteType(s: TripPatternsSummary): string {
 }
 
 type DirectionMode =
-  | 'no-patterns'
-  | '0-only'
-  | '1-only'
-  | 'none-only'
-  | '0+1'
-  | '0+none'
-  | '1+none'
-  | '0+1+none';
+  'no-patterns' | '0-only' | '1-only' | 'none-only' | '0+1' | '0+none' | '1+none' | '0+1+none';
 
 const DIRECTION_MODE_ORDER: readonly DirectionMode[] = [
   '0-only',

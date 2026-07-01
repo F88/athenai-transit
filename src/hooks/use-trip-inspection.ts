@@ -39,9 +39,7 @@ type TripInspectionOpenOutcome =
     };
 
 export type TripInspectionTransitionSource =
-  | 'direct-open'
-  | 'trip-stops-time-select'
-  | 'pager-step';
+  'direct-open' | 'trip-stops-time-select' | 'pager-step';
 
 interface UseTripInspectionReturn {
   tripInspectionSnapshot: SelectedTripSnapshot | null;

@@ -32,12 +32,10 @@ function makeMockRepo(initialHistory: StopHistoryEntry[] = []): StopSelectionRep
   let history = [...initialHistory];
 
   return {
-    getHistory: vi.fn(
-      async (): Promise<Result<StopHistoryEntry[]>> => ({
-        success: true,
-        data: [...history],
-      }),
-    ),
+    getHistory: vi.fn(async (): Promise<Result<StopHistoryEntry[]>> => ({
+      success: true,
+      data: [...history],
+    })),
     saveHistory: vi.fn(async (entries: StopHistoryEntry[]): Promise<Result<void>> => {
       history = [...entries];
       return { success: true, data: undefined };
@@ -86,12 +84,10 @@ describe('useStopHistory', () => {
     it('keeps empty history and exposes repo error when initial load fails', async () => {
       const repo: StopSelectionRepository = {
         ...makeMockRepo(),
-        getHistory: vi.fn(
-          async (): Promise<Result<StopHistoryEntry[]>> => ({
-            success: false,
-            error: 'load failed',
-          }),
-        ),
+        getHistory: vi.fn(async (): Promise<Result<StopHistoryEntry[]>> => ({
+          success: false,
+          error: 'load failed',
+        })),
       };
       const { result } = renderHook(() => useStopHistory(repo));
 
@@ -158,12 +154,10 @@ describe('useStopHistory', () => {
     it('keeps existing state and exposes repo error when persistence fails', async () => {
       const repo: StopSelectionRepository = {
         ...makeMockRepo([makeHistoryEntry('A')]),
-        saveHistory: vi.fn(
-          async (): Promise<Result<void>> => ({
-            success: false,
-            error: 'persist failed',
-          }),
-        ),
+        saveHistory: vi.fn(async (): Promise<Result<void>> => ({
+          success: false,
+          error: 'persist failed',
+        })),
       };
       const { result } = renderHook(() => useStopHistory(repo));
 
@@ -195,9 +189,10 @@ describe('useStopHistory', () => {
           storedHistory = [...entries];
           return { success: true, data: undefined };
         }),
-        clearHistory: vi.fn(
-          async (): Promise<Result<void>> => ({ success: true, data: undefined }),
-        ),
+        clearHistory: vi.fn(async (): Promise<Result<void>> => ({
+          success: true,
+          data: undefined,
+        })),
       };
       const { result } = renderHook(() => useStopHistory(repo));
 

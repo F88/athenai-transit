@@ -27,8 +27,7 @@ interface OpenRouteHeadsignTimetableParams extends OpenStopTimetableParams {
 }
 
 type TimetableFilter =
-  | { type: 'route-headsign'; routeId: string; headsign: string }
-  | { type: 'stop' };
+  { type: 'route-headsign'; routeId: string; headsign: string } | { type: 'stop' };
 
 export type TimetableOpenOutcome =
   | { status: 'opened' }

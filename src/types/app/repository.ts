@@ -30,8 +30,7 @@ export type Result<T> = { success: true; data: T } | { success: false; error: st
  * - `success: false` — a domain-level error occurred.
  */
 export type CollectionResult<T> =
-  | { success: true; data: T[]; truncated: boolean }
-  | { success: false; error: string };
+  { success: true; data: T[]; truncated: boolean } | { success: false; error: string };
 
 /** Entries omitted by pre-filter (e.g. drop-off-only entries hidden in simple/normal). */
 export interface TimetableOmitted {
@@ -119,9 +118,7 @@ export type TripInspectionTargetsEmptyReason = 'no-stop-data' | 'no-service-on-t
  * with reasons unique to the hook layer (snapshot/target lookup).
  */
 export type TripInspectionNoDataReason =
-  | TripInspectionTargetsEmptyReason
-  | 'snapshot-unavailable'
-  | 'target-missing';
+  TripInspectionTargetsEmptyReason | 'snapshot-unavailable' | 'target-missing';
 
 /** Non-empty trip-inspection target list. */
 type NonEmptyTripInspectionTargets = [TripInspectionTarget, ...TripInspectionTarget[]];

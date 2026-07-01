@@ -83,8 +83,7 @@ export type JourneyTimeFailureReason = 'no-total' | 'invalid-total';
 
 /** Result of {@link computeJourneyTime}. */
 export type JourneyTimeResult =
-  | { ok: true; value: ComputedJourneyTime }
-  | { ok: false; reason: JourneyTimeFailureReason };
+  { ok: true; value: ComputedJourneyTime } | { ok: false; reason: JourneyTimeFailureReason };
 
 /**
  * Compute journey-time values for display.

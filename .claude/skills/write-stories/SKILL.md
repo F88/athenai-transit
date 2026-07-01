@@ -109,9 +109,7 @@ When the component does not accept `infoLevel`, a single `KitchenSink` story is 
 
 ```tsx
 export const KitchenSink: Story = {
-    args: {
-        /* maximum-content scenario */
-    },
+    args: {/* maximum-content scenario */},
 };
 ```
 

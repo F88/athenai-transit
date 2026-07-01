@@ -125,11 +125,7 @@ export function sortTransitDisplayDataWithMetaData(
  * - `all-no-service`: every stop is `no-service`.
  */
 export type TransitDisplayStopsState =
-  | 'no-stops'
-  | 'some-in-service'
-  | 'all-service-ended'
-  | 'all-filtered-out'
-  | 'all-no-service';
+  'no-stops' | 'some-in-service' | 'all-service-ended' | 'all-filtered-out' | 'all-no-service';
 export type TransitDisplayStatus = {
   radius: number;
   state: TransitDisplayStopsState;
