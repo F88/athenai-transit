@@ -2,12 +2,12 @@
   "sourceName": "tokai-kisen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-26T05:37:52.386Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260401",
-  "size": 15708,
+  "downloadedAt": "2026-07-01T06:07:35.294Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260701",
+  "size": 15727,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1440,
-  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20260626-053753.zip",
+  "durationMs": 986,
+  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20260701-060736.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,11 +15,11 @@
     },
     {
       "name": "calendar.txt",
-      "size": 2610
+      "size": 2497
     },
     {
       "name": "calendar_dates.txt",
-      "size": 30958
+      "size": 26353
     },
     {
       "name": "fare_attributes.txt",
@@ -35,11 +35,11 @@
     },
     {
       "name": "payload.txt",
-      "size": 4255
+      "size": 3999
     },
     {
       "name": "payload_fare_attributes.txt",
-      "size": 2258
+      "size": 2257
     },
     {
       "name": "payload_fare_rules.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "routes.txt",
-      "size": 2661
+      "size": 2697
     },
     {
       "name": "ships.txt",
@@ -59,23 +59,23 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 46268
+      "size": 39743
     },
     {
       "name": "translations.txt",
-      "size": 1512
+      "size": 6796
     },
     {
       "name": "trips.txt",
-      "size": 43498
+      "size": 31424
     }
   ],
   "feedInfo": {
     "publisherName": "東海汽船",
     "publisherUrl": "https://www.tokaikisen.co.jp/",
     "lang": "ja",
-    "startDate": "20260401",
-    "endDate": "20260630",
+    "startDate": "20260701",
+    "endDate": "20260930",
     "version": "2.0"
   }
 }

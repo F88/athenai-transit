@@ -2,17 +2,13 @@
   "sourceName": "oshima-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-26T05:37:14.331Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328",
-  "size": 156247,
+  "downloadedAt": "2026-07-01T06:07:03.199Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260701",
+  "size": 155559,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1896,
-  "archivePath": "workspace/_archives/gtfs/oshima-bus/AllLines_20260626-053716.zip",
+  "durationMs": 1302,
+  "archivePath": "workspace/_archives/gtfs/oshima-bus/AllLines_20260701-060704.zip",
   "extractedFiles": [
-    {
-      "name": "shapes.txt",
-      "size": 594956
-    },
     {
       "name": "agency.txt",
       "size": 202
@@ -23,19 +19,19 @@
     },
     {
       "name": "calendar.txt",
-      "size": 360
+      "size": 413
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1205
+      "size": 5720
     },
     {
       "name": "fare_attributes.txt",
-      "size": 1282
+      "size": 1212
     },
     {
       "name": "fare_rules.txt",
-      "size": 120301
+      "size": 110601
     },
     {
       "name": "feed_info.txt",
@@ -43,15 +39,19 @@
     },
     {
       "name": "routes.txt",
-      "size": 2152
+      "size": 2029
+    },
+    {
+      "name": "shapes.txt",
+      "size": 594956
     },
     {
       "name": "stop_times.txt",
-      "size": 106935
+      "size": 111113
     },
     {
       "name": "stops.txt",
-      "size": 7778
+      "size": 7434
     },
     {
       "name": "transfers.txt",
@@ -59,19 +59,19 @@
     },
     {
       "name": "translations.txt",
-      "size": 14369
+      "size": 13656
     },
     {
       "name": "trips.txt",
-      "size": 4388
+      "size": 5004
     }
   ],
   "feedInfo": {
     "publisherName": "大島旅客自動車株式会社",
     "publisherUrl": "http://www.oshima-bus.com/rosen-bus.html",
     "lang": "ja",
-    "startDate": "20260328",
-    "endDate": "20260630",
-    "version": "2026/03/28改正-見える化ver2.6e"
+    "startDate": "20260701",
+    "endDate": "20260930",
+    "version": "2026/07/01改正-見える化ver2.6e"
   }
 }

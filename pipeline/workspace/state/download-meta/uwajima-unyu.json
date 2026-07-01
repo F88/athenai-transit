@@ -2,12 +2,12 @@
   "sourceName": "uwajima-unyu",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-26T05:38:02.179Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260401",
-  "size": 6915,
+  "downloadedAt": "2026-07-01T06:07:42.788Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260701",
+  "size": 6633,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1409,
-  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20260626-053803.zip",
+  "durationMs": 1007,
+  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20260701-060743.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 5338
+      "size": 5383
     },
     {
       "name": "fare_attributes.txt",
@@ -59,7 +59,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 22036
+      "size": 18761
     },
     {
       "name": "translations.txt",
@@ -67,15 +67,15 @@
     },
     {
       "name": "trips.txt",
-      "size": 18318
+      "size": 15584
     }
   ],
   "feedInfo": {
     "publisherName": "宇和島運輸",
     "publisherUrl": "https://www.uwajimaunyu.co.jp/",
     "lang": "ja",
-    "startDate": "20260401",
-    "endDate": "20260630",
+    "startDate": "20260701",
+    "endDate": "20260930",
     "version": "2.0"
   }
 }
