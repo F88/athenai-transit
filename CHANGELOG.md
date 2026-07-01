@@ -18,6 +18,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - アプリアイコンを新ロゴ (bus / train / ferry / map / clock / walk のモチーフ) に刷新した。generator 出力 (`pwa-64x64.png` / `pwa-192x192.png` / `pwa-512x512.png` / `maskable-icon-512x512.png` / `apple-touch-icon-180x180.png` / `favicon.ico`) を採用し、アプリは `public/icons/v1/` を参照する。
 - アイコンのソース画像と非アクティブなリビジョンを Service Worker の precache 対象から除外した (`vite.config.ts` の `globIgnores`)。
+- Data: kanto-bus の GTFS resource を 20260701 版へ更新。
+- Data: kawasaki-city-bus の GTFS resource を 20260701 版へ更新。
+- Data: oshima-bus の GTFS resource を 20260701 版へ更新。
+- Data: uwajima-unyu の GTFS resource を 20260701 版へ更新。
+- Data: tokai-kisen の GTFS resource を 20260701 版へ更新。
+- Data: kyoto-city-bus の GTFS resource を 20260630 版へ更新。
+- Data: meimon-taiyo-ferry の GTFS resource を 20260701 版へ更新。
+- Data: nishi-tokyo-bus の GTFS resource を 20260626 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260701 版へ更新。
 
 ## [2026.06.22]
 

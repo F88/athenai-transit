@@ -16,8 +16,8 @@ const kantoBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/kanto_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/kanto_bus_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/kanto_bus_all_lines/resource/982b26b9-c57d-4d2a-beca-4b88e6fb2c81',
-      resourceId: '982b26b9-c57d-4d2a-beca-4b88e6fb2c81',
+        'https://ckan.odpt.org/dataset/kanto_bus_all_lines/resource/f3a5465c-1994-482b-8393-2adeb785fac4',
+      resourceId: 'f3a5465c-1994-482b-8393-2adeb785fac4',
     },
     provider: {
       name: {
@@ -43,7 +43,7 @@ const kantoBus: GtfsSourceDefinition = {
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260507',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260701',
   },
   pipeline: {
     outDir: 'kanto-bus',

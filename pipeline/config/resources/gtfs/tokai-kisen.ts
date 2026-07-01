@@ -17,8 +17,8 @@ const tokaiKisen: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokai_kisen',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokai_kisen_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokai_kisen_all_lines/resource/30516ce5-9fcc-4bc3-ac9b-baa3e6f531ee',
-      resourceId: '30516ce5-9fcc-4bc3-ac9b-baa3e6f531ee',
+        'https://ckan.odpt.org/dataset/tokai_kisen_all_lines/resource/f579de09-8c4d-40c7-82a7-344c7f8ed5fe',
+      resourceId: 'f579de09-8c4d-40c7-82a7-344c7f8ed5fe',
     },
     provider: {
       name: {
@@ -41,7 +41,7 @@ const tokaiKisen: GtfsSourceDefinition = {
     routeTypes: ['ferry'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260401',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260701',
     // All 15 routes have empty route_color in the source GTFS — fallback applied.
     routeColorFallbacks: {
       '*': '294DA5',
