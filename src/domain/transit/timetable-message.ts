@@ -4,11 +4,7 @@ export interface TimetableOpenOutcomeMessage {
 }
 
 export type TimetableOpenOutcomeStatus =
-  | 'opened'
-  | 'cancelled'
-  | 'not-found'
-  | 'route-not-found'
-  | 'error';
+  'opened' | 'cancelled' | 'not-found' | 'route-not-found' | 'error';
 
 /**
  * Convert a timetable open outcome status into the toast message that should be

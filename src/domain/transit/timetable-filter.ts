@@ -173,10 +173,7 @@ type PatternPosition = 'first' | 'middle' | 'last' | 'firstAndLast' | 'unknown';
  * - `'mustCoordinateWithDriver'` — `pickup_type === 3` (Must coordinate with driver to arrange pickup).
  */
 type PickUpState =
-  | 'regularlyScheduledPickup'
-  | 'noPickupAvailable'
-  | 'mustPhoneAgency'
-  | 'mustCoordinateWithDriver';
+  'regularlyScheduledPickup' | 'noPickupAvailable' | 'mustPhoneAgency' | 'mustCoordinateWithDriver';
 
 /**
  * Schedule range filter for departure / arrival times.

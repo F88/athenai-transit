@@ -9,8 +9,7 @@ const LOCATE_NEAR_THRESHOLD_METERS = 10;
 const logger = createLogger('map-locate');
 
 export type LocateAction =
-  | { kind: 'move'; distanceToLocation: number }
-  | { kind: 'near'; distanceToLocation: number };
+  { kind: 'move'; distanceToLocation: number } | { kind: 'near'; distanceToLocation: number };
 
 /**
  * Subset of {@link LocateAction} that requests an actual map move.

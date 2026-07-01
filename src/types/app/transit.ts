@@ -82,11 +82,7 @@ export type StopServiceState = TimetableEntriesState;
  * {@link TimetableEntriesState}.
  */
 export type FilteredTimetableEntriesState =
-  | 'boardable'
-  | 'drop-off-only'
-  | 'no-service'
-  | 'service-ended'
-  | 'filter-hidden';
+  'boardable' | 'drop-off-only' | 'no-service' | 'service-ended' | 'filter-hidden';
 
 /**
  * Display-relevant boolean attributes of a single timetable entry at

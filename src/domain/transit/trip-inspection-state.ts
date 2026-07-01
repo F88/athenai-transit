@@ -53,8 +53,7 @@ export interface LoadedTripInspectionSnapshot {
 
 /** Result of {@link loadTripInspectionSnapshot}. */
 export type LoadedTripInspectionSnapshotResult =
-  | { ok: true; data: LoadedTripInspectionSnapshot }
-  | { ok: false; reason: 'no-data' };
+  { ok: true; data: LoadedTripInspectionSnapshot } | { ok: false; reason: 'no-data' };
 
 /** State derived for trip-inspection prev/next navigation. */
 export interface RefinedTripInspectionState {
@@ -65,8 +64,7 @@ export interface RefinedTripInspectionState {
 
 /** Result of {@link refineTripInspectionState}. */
 export type RefinedTripInspectionStateResult =
-  | { ok: true; data: RefinedTripInspectionState }
-  | { ok: false; reason: 'no-data' };
+  { ok: true; data: RefinedTripInspectionState } | { ok: false; reason: 'no-data' };
 
 /**
  * Map a {@link TripInspectionTargetsEmptyReason} to a human-readable note

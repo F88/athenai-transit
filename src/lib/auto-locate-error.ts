@@ -12,8 +12,7 @@
  *   fix, so we just log a warning and stay enabled.
  */
 export type AutoLocateErrorAction =
-  | { kind: 'disable'; logMessage: string }
-  | { kind: 'transient'; logMessage: string };
+  { kind: 'disable'; logMessage: string } | { kind: 'transient'; logMessage: string };
 
 /**
  * Classify a Geolocation API error into an {@link AutoLocateErrorAction}.

@@ -46,9 +46,7 @@ type AppBootstrapErrorState = {
 };
 
 export type AppBootstrapState =
-  | AppBootstrapLoadingState
-  | AppBootstrapReadyState
-  | AppBootstrapErrorState;
+  AppBootstrapLoadingState | AppBootstrapReadyState | AppBootstrapErrorState;
 
 let bootstrapPromise: Promise<AppBootstrapReadyState> | null = null;
 let bootstrapProgress: RepositoryLoadProgressSummary | null = null;

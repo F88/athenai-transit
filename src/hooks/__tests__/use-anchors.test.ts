@@ -36,12 +36,11 @@ function makeAnchorEntry(
 function makeMockRepo(initialAnchors: AnchorEntry[] = []) {
   let anchors = [...initialAnchors];
   return {
-    getAnchors: vi.fn(
-      (): Promise<Result<AnchorEntry[]>> =>
-        Promise.resolve({
-          success: true,
-          data: anchors,
-        }),
+    getAnchors: vi.fn((): Promise<Result<AnchorEntry[]>> =>
+      Promise.resolve({
+        success: true,
+        data: anchors,
+      }),
     ),
     addAnchor: vi.fn((entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
       if (anchors.some((a) => a.snapshot.stopId === entry.snapshot.stopId)) {
@@ -121,12 +120,11 @@ describe('useAnchors', () => {
     });
 
     it('keeps empty anchors when initial repository load fails', async () => {
-      const getAnchors = vi.fn(
-        (): Promise<Result<AnchorEntry[]>> =>
-          Promise.resolve({
-            success: false,
-            error: 'load failed',
-          }),
+      const getAnchors = vi.fn((): Promise<Result<AnchorEntry[]>> =>
+        Promise.resolve({
+          success: false,
+          error: 'load failed',
+        }),
       );
       const repo: AnchorRepository = {
         ...makeMockRepo(),
@@ -419,12 +417,11 @@ describe('useAnchors', () => {
     it('sets lastError when repo returns failure', async () => {
       const repo: AnchorRepository = {
         ...makeMockRepo([makeAnchorEntry('A')]),
-        batchUpdateAnchors: vi.fn(
-          (): Promise<Result<AnchorEntry[]>> =>
-            Promise.resolve({
-              success: false,
-              error: 'Failed to persist',
-            }),
+        batchUpdateAnchors: vi.fn((): Promise<Result<AnchorEntry[]>> =>
+          Promise.resolve({
+            success: false,
+            error: 'Failed to persist',
+          }),
         ),
       };
       const { result } = renderHook(() => useAnchors(repo));
