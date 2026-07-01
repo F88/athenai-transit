@@ -28,7 +28,7 @@ jobs:
     steps:
       # ── Setup ──────────────────────────────────────────────
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Required: actions/checkout checks out the commit that triggered
       # the run. On rerun, this is the OLD commit — the previous run's
