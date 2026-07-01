@@ -78,14 +78,23 @@ export const pwaOptions: Partial<VitePWAOptions> = {
 
     // _localized members
     //
-    // Manifest localization (`*_localized`) is implemented below but kept
-    // DISABLED (commented out) because it did not work as expected in testing:
-    // on Chrome for macOS 149.0.7827.201 the install name never resolved to the
-    // user's language (the `ja` entry was not selected; it fell back to the
-    // base `name`). It is a standard manifest feature
-    // (https://www.w3.org/TR/appmanifest/#dfn-localizable-member) shipped on
-    // all Blink platforms per the Chromium intent, so the cause here is
-    // unclear. Re-enable once the behavior is confirmed working.
+    // Manifest localization (`*_localized`) is a standard feature
+    // (https://www.w3.org/TR/appmanifest/#dfn-localizable-member). It is
+    // implemented below but kept DISABLED (commented out) because it did not
+    // behave as expected for this app when tested on Chrome for macOS
+    // 149.0.7827.201:
+    //   - The pre-install, in-browser display (name / description shown in the
+    //     browser and the DevTools Application > Manifest panel) does not
+    //     localize; it always stays the base value regardless of language.
+    //   - `_localized` only affects the install-time / installed-app name, and
+    //     selection appears to follow the browser DISPLAY (UI) language, not
+    //     `Accept-Language` (changing Accept-Language to `ja` did not select the
+    //     `ja` entry). The display-language behavior was not fully verified.
+    // We expected multilingual support BEFORE install (in the browser), but the
+    // manifest does not provide that. Localizing only the installed app's name
+    // (and only after the display language changes) has low value on its own,
+    // so this is left disabled. Re-enable if/when there is a clear need and the
+    // behavior, target languages, and strings are decided.
     //
     // name_localized: {
     //   en: 'Athenai Transit',
