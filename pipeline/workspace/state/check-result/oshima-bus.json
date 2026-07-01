@@ -1,6 +1,6 @@
 {
   "sourceName": "oshima-bus",
-  "checkedAt": "2026-06-30T06:24:47.608Z",
+  "checkedAt": "2026-07-01T06:18:16.850Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20231002",
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20240215",
@@ -16,10 +16,7 @@
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328",
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260701"
   ],
-  "result": "attention",
-  "warnings": [
-    "ADOPTED_EXPIRING_SOON",
-    "REMOTE_KNOWN_BEFORE_PERIOD"
-  ],
+  "result": "ok",
+  "warnings": [],
   "errors": []
 }

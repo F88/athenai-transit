@@ -1,15 +1,13 @@
 {
   "sourceName": "bunkyo-c-bus",
-  "checkedAt": "2026-06-30T06:24:47.605Z",
+  "checkedAt": "2026-07-01T06:18:16.847Z",
   "resourceUrls": [
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/AllLines.zip?date=20240220",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/AllLines.zip?date=20241227",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/AllLines.zip?date=20251105",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/AllLines.zip?date=20260401"
   ],
-  "result": "attention",
-  "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD"
-  ],
+  "result": "ok",
+  "warnings": [],
   "errors": []
 }
