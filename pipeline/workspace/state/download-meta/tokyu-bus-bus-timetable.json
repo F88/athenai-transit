@@ -2,10 +2,10 @@
   "sourceName": "tokyu-bus-bus-timetable",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-07-02T05:29:59.289Z",
+  "downloadedAt": "2026-07-03T05:26:26.727Z",
   "url": "https://api.odpt.org/api/v4/odpt:BusTimetable?odpt:operator=odpt.Operator:TokyuBus",
   "size": 1965415,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 2203,
-  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusTimetable_20260702-053001.json"
+  "durationMs": 1186,
+  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusTimetable_20260703-052627.json"
 }
