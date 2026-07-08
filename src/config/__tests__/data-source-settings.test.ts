@@ -16,6 +16,7 @@ const expectedIds = [
   'iyotetsu-bus',
   'kita-bus',
   'kyoto-city-bus',
+  'kyoto-city-subway',
   'kyoto-bus',
   'odakyu-bus',
   'oshima-bus',

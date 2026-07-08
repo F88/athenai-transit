@@ -107,6 +107,12 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '138060', text: 'FFFFFF' }],
   },
 
+  'kcsub:2000020261009': {
+    shortName: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' },
+    longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
+    colors: [{ bg: '138060', text: 'FFFFFF' }],
+  },
+
   // --- Kagoshima City Maritime Bureau (Sakurajima Ferry) ---
   'kcmb:1000020462012': {
     shortName: { ja: '鹿児島市船舶局', en: 'Kagoshima City Maritime Bureau' },
