@@ -106,12 +106,12 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
     colors: [{ bg: '138060', text: 'FFFFFF' }],
   },
-
-  'kcsub:2000020261009': {
-    shortName: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' },
-    longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
-    colors: [{ bg: '138060', text: 'FFFFFF' }],
-  },
+  // // --- Kyoto City Subway ---
+  // 'kcsub:2000020261009': {
+  //   shortName: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' },
+  //   longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
+  //   colors: [{ bg: '138060', text: 'FFFFFF' }],
+  // },
 
   // --- Kagoshima City Maritime Bureau (Sakurajima Ferry) ---
   'kcmb:1000020462012': {
@@ -163,6 +163,23 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: '首都圏新都市鉄道株式会社', en: 'Metropolitan Intercity Railway Company' },
     colors: [{ bg: '003B83', text: 'FFFFFF' }],
   },
+
+  // // --- Keio Railway ---
+  // 'kotr:keio': {
+  //   shortName: { ja: '京王電鉄', en: 'Keio Railway' },
+  //   longName: { ja: '京王電鉄株式会社', en: 'Keio Corporation' },
+  //   colors: [
+  //     { bg: '00377E', text: 'FFFFFF' },
+  //     { bg: 'C8006B', text: 'FFFFFF' },
+  //   ],
+  // },
+
+  // // --- Tobu Railway ---
+  // 'tobutr:tobu': {
+  //   shortName: { ja: '東武鉄道', en: 'Tobu Railway' },
+  //   longName: { ja: '東武鉄道株式会社', en: 'Tobu Railway Co., Ltd.' },
+  //   colors: [{ bg: '00458F', text: 'FFFFFF' }],
+  // },
 
   // --- Meimon Taiyo Ferry ---
   'mtfry:6120001047907': {

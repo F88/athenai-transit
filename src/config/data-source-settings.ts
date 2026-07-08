@@ -166,15 +166,16 @@ const singlePrefixStandardGroupInputs: SinglePrefixSourceGroupInput[] = [
     name: { name: 'Kyoto City Bus', names: { ja: '京都市バス', en: 'Kyoto City Bus' } },
     countries: ['JP'],
   },
-  {
-    id: 'kyoto-city-subway',
-    prefix: 'kcsub',
-    routeTypes: [1],
-    systemEnabledByDefault: true,
-    userEnabledByDefault: true,
-    name: { name: 'Kyoto City Subway', names: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' } },
-    countries: ['JP'],
-  },
+  // {
+  //   // Resources for preliminary research
+  //   id: 'kyoto-city-subway',
+  //   prefix: 'kcsub',
+  //   routeTypes: [1],
+  //   systemEnabledByDefault: false,
+  //   userEnabledByDefault: false,
+  //   name: { name: 'Kyoto City Subway', names: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' } },
+  //   countries: ['JP'],
+  // },
   {
     id: 'mir-train',
     prefix: 'mir',
@@ -184,6 +185,26 @@ const singlePrefixStandardGroupInputs: SinglePrefixSourceGroupInput[] = [
     name: { name: 'Tsukuba Express', names: { ja: 'TX', en: 'Tsukuba Express' } },
     countries: ['JP'],
   },
+  // {
+  //   // Resources for preliminary research
+  //   id: 'keio-train',
+  //   prefix: 'kotr',
+  //   routeTypes: [2],
+  //   systemEnabledByDefault: false,
+  //   userEnabledByDefault: false,
+  //   name: { name: 'Keio Railway', names: { ja: '京王電鉄', en: 'Keio Railway' } },
+  //   countries: ['JP'],
+  // },
+  // {
+  //   // Resources for preliminary research
+  //   id: 'tobu-train',
+  //   prefix: 'tobutr',
+  //   routeTypes: [2],
+  //   systemEnabledByDefault: false,
+  //   userEnabledByDefault: false,
+  //   name: { name: 'Tobu Railway', names: { ja: '東武鉄道', en: 'Tobu Railway' } },
+  //   countries: ['JP'],
+  // },
   {
     id: 'tokyometro',
     prefix: 'tome',

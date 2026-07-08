@@ -7,12 +7,12 @@ const keioTrain: GtfsSourceDefinition = {
     nameJa: '京王電鉄',
     description: 'GTFS-JP static data for Keio Railway (train) operated by Keio Corporation',
     dataFormat: { type: 'GTFS/GTFS-JP' },
-    // NOTE: provisional -- one of data_challenge_license.html / data_challenge2026_license.html.
     license: {
       name: '公共交通オープンデータチャレンジ限定ライセンス',
-      url: 'https://developer.odpt.org/terms/data_challenge_license.html',
+      url: 'https://developer.odpt.org/challenge_license',
     },
     notes: [
+      'Preliminary survey only',
       'Provided under the Public Transport Open Data Challenge Limited License.',
       'Served from api-challenge.odpt.org, not the regular ODPT host.',
       "Requires the Challenge 2026 access token (credential 'odpt-challenge-2026'), not ODPT_ACCESS_TOKEN.",
@@ -44,6 +44,20 @@ const keioTrain: GtfsSourceDefinition = {
     },
     /** GtfsResource */
     routeTypes: ['rail'],
+    // Route shapes generated from MLIT/KSJ railway data (no shapes.txt in GTFS).
+    // 京王新線 (route 2) has no distinct KSJ line, so it is left unmapped.
+    mlitShapeMapping: {
+      operator: '京王電鉄',
+      lineToRouteId: {
+        京王線: 'kotr:1',
+        井の頭線: 'kotr:3',
+        相模原線: 'kotr:4',
+        競馬場線: 'kotr:5',
+        動物園線: 'kotr:6',
+        高尾線: 'kotr:7',
+        // Unmapped (no shape): kotr:2 京王新線 -- no matching KSJ line.
+      },
+    },
     downloadUrl: 'https://api-challenge.odpt.org/api/v4/files/Keio/data/Keio-Train-GTFS.zip',
     /**
      * Forward-looking metadata for future extensions (per-URL validity,

@@ -7,12 +7,12 @@ const tobuTrain: GtfsSourceDefinition = {
     nameJa: '東武鉄道',
     description: 'GTFS-JP static data for Tobu Railway (train) operated by Tobu Railway Co., Ltd.',
     dataFormat: { type: 'GTFS/GTFS-JP' },
-    // NOTE: provisional -- one of data_challenge_license.html / data_challenge2026_license.html.
     license: {
       name: '公共交通オープンデータチャレンジ限定ライセンス',
-      url: 'https://developer.odpt.org/terms/data_challenge_license.html',
+      url: 'https://developer.odpt.org/challenge_license',
     },
     notes: [
+      'Preliminary survey only',
       'Provided under the Public Transport Open Data Challenge Limited License.',
       'Served from api-challenge.odpt.org, not the regular ODPT host.',
       "Requires the Challenge 2026 access token (credential 'odpt-challenge-2026'), not ODPT_ACCESS_TOKEN.",
@@ -41,6 +41,28 @@ const tobuTrain: GtfsSourceDefinition = {
     },
     /** GtfsResource */
     routeTypes: ['rail'],
+    // Route shapes generated from MLIT/KSJ railway data (no shapes.txt in GTFS).
+    // KSJ has a single 伊勢崎線 (Asakusa-Isesaki, full line). It is assigned to
+    // route 10 (Skytree Line), so route 11 (伊勢崎線 north section) is unmapped.
+    mlitShapeMapping: {
+      operator: '東武鉄道',
+      lineToRouteId: {
+        伊勢崎線: 'tobutr:10',
+        大師線: 'tobutr:12',
+        亀戸線: 'tobutr:13',
+        佐野線: 'tobutr:14',
+        小泉線: 'tobutr:15',
+        桐生線: 'tobutr:16',
+        日光線: 'tobutr:17',
+        宇都宮線: 'tobutr:18',
+        鬼怒川線: 'tobutr:19',
+        野田線: 'tobutr:20',
+        東上本線: 'tobutr:21',
+        越生線: 'tobutr:22',
+        // Unmapped (no shape): tobutr:11 伊勢崎線 (north) -- KSJ's single 伊勢崎線
+        // is assigned to route 10 (Skytree Line) above.
+      },
+    },
     downloadUrl: 'https://api-challenge.odpt.org/api/v4/files/Tobu/data/Tobu-Train-GTFS.zip',
     /**
      * Forward-looking metadata for future extensions (per-URL validity,

@@ -15,3 +15,11 @@ export default [
   'twr-rinkai',
   'tokyometro',
 ];
+
+// /**
+//  * Resources for preliminary research
+//  */
+// const preliminaryResearchTargets = [
+//   'keio-train', // (ODPT Challenge 2026)
+//   'tobu-train', // (ODPT Challenge 2026)
+// ];

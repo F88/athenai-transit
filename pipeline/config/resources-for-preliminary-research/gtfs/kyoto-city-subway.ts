@@ -13,6 +13,7 @@ const kyotoCitySubway: GtfsSourceDefinition = {
       url: 'https://developer.odpt.org/terms/data_basic_license.html',
     },
     notes: [
+      'Preliminary survey only',
       "Published exclusively for the '公共交通オープンデータチャレンジ2026' (Public Transportation Open Data Challenge 2026), available only during the challenge period 2026-07-01 to 2027-03-12.",
     ],
     catalog: {
