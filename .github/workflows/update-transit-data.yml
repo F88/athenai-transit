@@ -115,6 +115,8 @@ jobs:
           exit 1
 
       # ── Transform v2 (DB → v2 JSON bundles) ─────────────────
+      # Exit codes: 0=OK, 1=partial failure, 2=all failed.
+      # Continue on partial failure (exit 1), stop on all failed (exit 2).
       - name: Build v2 data from GTFS
         id: build-v2-data
         run: |
@@ -167,8 +169,26 @@ jobs:
           exit 1
 
       - name: Build v2 route shapes from KSJ railway
-        run: npm run pipeline:build:v2-shapes:ksj
+        id: build-v2-shapes-ksj
+        run: |
+          set +e
+          npm run pipeline:build:v2-shapes:ksj
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Warn on v2 KSJ shapes build partial failure
+        if: steps.build-v2-shapes-ksj.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 KSJ shapes builds failed (partial failure)."
+
+      - name: Fail on v2 KSJ shapes build failure
+        if: steps.build-v2-shapes-ksj.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 KSJ shapes builds failed."
+          exit 1
+
+      # Per-source batch step: builds each source's insights.json
+      # (InsightsBundle) from its data.json. NOTE: the global insights step
+      # below does NOT consume this output -- it derives independently from
+      # data.json, despite the similar name.
       - name: Build v2 insights
         id: build-v2-insights
         run: |
@@ -186,6 +206,10 @@ jobs:
           echo "::error::All v2 insights builds failed."
           exit 1
 
+      # Global aggregate step: exit code comes from determineAggregateExitCode,
+      # not the per-source batch runner above. exit 1 = some inputs skipped but
+      # >=1 succeeded; exit 2 = all inputs missing or failed. Hence the
+      # "inputs skipped / missing or failed" wording (not "builds failed") below.
       - name: Build v2 global insights
         id: build-v2-global-insights
         run: |
@@ -203,6 +227,11 @@ jobs:
           echo "::error::All v2 global insights inputs were missing or failed."
           exit 1
 
+      # Global aggregate step (same as above): exit code from
+      # determineAggregateExitCode. exit 1 = some entries skipped but >=1
+      # succeeded; exit 2 = all entries failed, or its required global-insights
+      # input is missing. Hence the "entries skipped / global insights missing"
+      # wording below.
       - name: Build v2 data source catalog
         id: build-v2-data-source-catalog
         run: |
@@ -221,6 +250,8 @@ jobs:
           exit 1
 
       # ── Validate ───────────────────────────────────────────
+      # Exit codes: 0=OK, 1=warnings, 2=errors.
+      # Continue on warnings (exit 1), stop on errors (exit 2).
       - name: Validate v2 bundles
         id: validate-v2
         run: |
@@ -301,6 +332,7 @@ jobs:
           if [ "${{ steps.build-v2-data.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data, "; fi
           if [ "${{ steps.build-v2-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 ODPT Train, "; fi
           if [ "${{ steps.build-v2-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 GTFS shapes, "; fi
+          if [ "${{ steps.build-v2-shapes-ksj.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 KSJ shapes, "; fi
           if [ "${{ steps.build-v2-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 insights, "; fi
           if [ "${{ steps.build-v2-global-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 global insights, "; fi
           if [ "${{ steps.build-v2-data-source-catalog.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data source catalog, "; fi
