@@ -18,7 +18,6 @@ export default [
   'iyotetsu-bus',
   'kita-bus',
   'kyoto-city-bus',
-  'kyoto-city-subway',
   'oshima-bus',
   'miyake-bus',
   'keisei-transit-bus',
@@ -55,3 +54,12 @@ export default [
   'taito-c-bus',
   'itabashi-rin2-bus',
 ];
+
+// /**
+//  * Resources for preliminary research
+//  */
+// const preliminaryResearchTargets = [
+//   'kyoto-city-subway', // (ODPT Challenge 2026)
+//   'keio-train', // (ODPT Challenge 2026)
+//   'tobu-train', // (ODPT Challenge 2026)
+// ];

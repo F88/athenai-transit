@@ -39,6 +39,17 @@ export type Catalog = CatalogOdpt | CatalogMunicipal | CatalogDirect;
 // Authentication — discriminated union
 // ---------------------------------------------------------------------------
 
+/**
+ * Access-token credential to use for authenticated downloads.
+ *
+ * Maps to the environment variable holding the token (resolved by the
+ * pipeline download step): `'odpt'` -> `ODPT_ACCESS_TOKEN`,
+ * `'odpt-challenge-2026'` -> `ODPT_CHALLENGE_2026_ACCESS_TOKEN`
+ * (Public Transportation Open Data Challenge 2026, served from
+ * `api-challenge.odpt.org`).
+ */
+export type AuthCredential = 'odpt' | 'odpt-challenge-2026';
+
 /** Authentication is required to access this resource. */
 export interface AuthenticationRequired {
   required: true;
@@ -46,6 +57,8 @@ export interface AuthenticationRequired {
   method: string;
   /** URL where developers can register for API access. */
   registrationUrl: string;
+  /** Which access-token credential to use. Defaults to `'odpt'`. */
+  credential?: AuthCredential;
 }
 
 /** No authentication required. */
