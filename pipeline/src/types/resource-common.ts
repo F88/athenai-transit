@@ -83,6 +83,12 @@ export interface BaseResource {
   provider: Provider;
   /** Authentication requirements for accessing this resource. */
   authentication: Authentication;
+  /**
+   * Free-text annotations about this resource (licensing caveats,
+   * availability quirks, data notes, ...). Each entry is one short note.
+   * Human-readable metadata; not enforced by the pipeline or the app.
+   */
+  notes?: string[];
 }
 
 // ---------------------------------------------------------------------------
