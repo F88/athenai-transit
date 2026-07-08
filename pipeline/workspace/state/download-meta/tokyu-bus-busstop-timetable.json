@@ -2,10 +2,10 @@
   "sourceName": "tokyu-bus-busstop-timetable",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-07-07T05:29:12.430Z",
+  "downloadedAt": "2026-07-08T05:13:43.657Z",
   "url": "https://api.odpt.org/api/v4/odpt:BusstopPoleTimetable?odpt:operator=odpt.Operator:TokyuBus",
   "size": 14711678,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 2332,
-  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusstopPoleTimetable_20260707-052914.json"
+  "durationMs": 2387,
+  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusstopPoleTimetable_20260708-051346.json"
 }
