@@ -21,6 +21,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import {
+  accessTokenEnvVar,
   archiveFilename,
   buildAuthenticatedUrl,
   downloadWithRetry,
@@ -135,9 +136,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  const accessToken = process.env['ODPT_ACCESS_TOKEN'];
   const { outDir, prefix } = source.pipeline;
   const { downloadUrl, nameJa, nameEn, provider, license, authentication } = source.resource;
+  const accessToken = process.env[accessTokenEnvVar(authentication)];
 
   const gtfsDir = join(GTFS_DATA_DIR, outDir);
   const archiveDir = join(ARCHIVES_DIR, 'gtfs', outDir);

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   FETCH_TIMEOUT_MS,
+  accessTokenEnvVar,
   archiveFilename,
   buildAuthenticatedUrl,
   withRetry,
@@ -49,6 +50,38 @@ describe('archiveFilename', () => {
   it('handles JSON files', () => {
     const result = archiveFilename('odpt_Station.json');
     expect(result).toBe('odpt_Station_20260312-143045.json');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// accessTokenEnvVar
+// ---------------------------------------------------------------------------
+
+describe('accessTokenEnvVar', () => {
+  const authRequiredBase = {
+    required: true as const,
+    method: 'acl:consumerKey query parameter',
+    registrationUrl: 'https://developer.odpt.org/',
+  };
+
+  it('defaults to ODPT_ACCESS_TOKEN when no credential is set', () => {
+    expect(accessTokenEnvVar(authRequiredBase)).toBe('ODPT_ACCESS_TOKEN');
+  });
+
+  it("returns ODPT_ACCESS_TOKEN for credential 'odpt'", () => {
+    expect(accessTokenEnvVar({ ...authRequiredBase, credential: 'odpt' })).toBe(
+      'ODPT_ACCESS_TOKEN',
+    );
+  });
+
+  it("returns ODPT_CHALLENGE_2026_ACCESS_TOKEN for credential 'odpt-challenge-2026'", () => {
+    expect(accessTokenEnvVar({ ...authRequiredBase, credential: 'odpt-challenge-2026' })).toBe(
+      'ODPT_CHALLENGE_2026_ACCESS_TOKEN',
+    );
+  });
+
+  it('defaults to ODPT_ACCESS_TOKEN when authentication is not required', () => {
+    expect(accessTokenEnvVar({ required: false })).toBe('ODPT_ACCESS_TOKEN');
   });
 });
 

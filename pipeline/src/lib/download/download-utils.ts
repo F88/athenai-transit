@@ -90,6 +90,24 @@ export function wrapTimeoutError(err: unknown, url: string): Error {
 // ---------------------------------------------------------------------------
 
 /**
+ * Resolve the environment variable name that holds the access token for the
+ * given authentication requirement.
+ *
+ * Maps `authentication.credential` to its token env var; defaults to
+ * `ODPT_ACCESS_TOKEN` (including for `AuthenticationNone`, where the token is
+ * unused).
+ */
+export function accessTokenEnvVar(authentication: Authentication): string {
+  const credential = authentication.required ? authentication.credential : undefined;
+  switch (credential) {
+    case 'odpt-challenge-2026':
+      return 'ODPT_CHALLENGE_2026_ACCESS_TOKEN';
+    default:
+      return 'ODPT_ACCESS_TOKEN';
+  }
+}
+
+/**
  * Append `acl:consumerKey` to a URL when authentication is required.
  *
  * @param url - Base URL (may already contain query parameters).
@@ -110,7 +128,7 @@ export function buildAuthenticatedUrl(
   if (!accessToken) {
     const prefix = context ? `[${context}] ` : '';
     throw new Error(
-      `${prefix}ODPT_ACCESS_TOKEN environment variable is required. ` +
+      `${prefix}${accessTokenEnvVar(authentication)} environment variable is required. ` +
         `Register at ${authentication.registrationUrl}`,
     );
   }
