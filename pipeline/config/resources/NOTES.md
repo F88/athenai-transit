@@ -166,6 +166,24 @@ stop_name の差異パターン (渋66 の調査結果):
 
 route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1), FFC0CB (1)
 
+## kyoto-city-subway (京都市営地下鉄)
+
+- Resource definition: `pipeline/config/resources/gtfs/kyoto-city-subway.ts`
+- CKAN: <https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_subway_gtfs>
+- Resource ID: `e5ad5273-fd1f-4c80-b5c8-cdfcde2c4bd8`
+
+### 期間限定公開
+
+「公共交通オープンデータチャレンジ2026」期間中 (2026-07-01 から 2027-03-12) のみの限定公開。期間外は入手不可となる想定。
+
+### データ品質
+
+- GTFS-JP。烏丸線 (KAR) / 東西線 (TOZ) の2路線 (route_type=1)。
+- route_color あり (烏丸線 44a497 / 東西線 ff675b) のため routeColorFallbacks 不要。
+- shapes.txt + trips.shape_id あり、路線図対応 (2 routes, 29 shapes)。
+- translations.txt 7言語 (ja, ja-Hrkt, ja-Latn, en, zh-Hans, zh-Hant, ko)。
+- 直通運転の行先 (近鉄奈良・新田辺・びわ湖浜大津 等) は headsign にのみ現れ、自線外の駅は stops に含まれない (竹田・御陵がデータ境界)。
+
 ## tama-monorail (多摩モノレール)
 
 - Resource definition: `pipeline/config/resources/gtfs/tama-monorail.ts`

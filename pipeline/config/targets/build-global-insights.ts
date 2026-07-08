@@ -17,6 +17,7 @@ export default [
   'iyt2', // iyotetsu-bus
   'kbus', // kita-bus (community)
   'kcbus', // kyoto-city-bus
+  'kcsub', // kyoto-city-subway
   'osmbus', // oshima-bus
   'mykbus', // miyake-bus
   'kseiw', // keisei-transit-bus

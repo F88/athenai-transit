@@ -167,6 +167,15 @@ const singlePrefixStandardGroupInputs: SinglePrefixSourceGroupInput[] = [
     countries: ['JP'],
   },
   {
+    id: 'kyoto-city-subway',
+    prefix: 'kcsub',
+    routeTypes: [1],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: { name: 'Kyoto City Subway', names: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' } },
+    countries: ['JP'],
+  },
+  {
     id: 'mir-train',
     prefix: 'mir',
     routeTypes: [2],

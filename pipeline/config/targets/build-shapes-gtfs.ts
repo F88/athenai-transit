@@ -17,6 +17,7 @@ export default [
   'chuo-bus',
   'kita-bus',
   'kyoto-city-bus',
+  'kyoto-city-subway',
   'oshima-bus',
   'keisei-transit-bus',
   'nagoya-srt',

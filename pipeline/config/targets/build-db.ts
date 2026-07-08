@@ -18,6 +18,7 @@ export default [
   'iyotetsu-bus',
   'kita-bus',
   'kyoto-city-bus',
+  'kyoto-city-subway',
   'oshima-bus',
   'miyake-bus',
   'keisei-transit-bus',

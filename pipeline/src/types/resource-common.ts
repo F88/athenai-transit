@@ -57,6 +57,31 @@ export interface AuthenticationNone {
 export type Authentication = AuthenticationRequired | AuthenticationNone;
 
 // ---------------------------------------------------------------------------
+// DataUrl
+// ---------------------------------------------------------------------------
+
+/**
+ * A single data URL with an optional validity period and notes.
+ *
+ * `url` is the download / endpoint URL for the data. `validity` scopes the
+ * period during which this URL is valid; `notes` holds human-readable
+ * annotations about this URL / version.
+ */
+export interface DataUrl {
+  /** Download / endpoint URL for the data. */
+  url: string;
+  /** Period during which this URL is valid. Omit = always valid. */
+  validity?: {
+    /** Valid from this date, inclusive ('YYYY-MM-DD'). Omit = no lower bound. */
+    from?: string;
+    /** Valid until this date, inclusive ('YYYY-MM-DD'). Omit = no upper bound. */
+    until?: string;
+  };
+  /** Human-readable notes about this URL / version. Not enforced. */
+  notes?: string[];
+}
+
+// ---------------------------------------------------------------------------
 // BaseResource
 // ---------------------------------------------------------------------------
 
@@ -83,6 +108,14 @@ export interface BaseResource {
   provider: Provider;
   /** Authentication requirements for accessing this resource. */
   authentication: Authentication;
+  /**
+   * Free-text annotations about this resource (licensing caveats,
+   * availability quirks, data notes, ...). Each entry is one short note.
+   * Human-readable metadata; not enforced by the pipeline or the app.
+   */
+  notes?: string[];
+  /** Data URLs for this resource (with optional per-URL validity and notes). */
+  dataUrls?: DataUrl[];
 }
 
 // ---------------------------------------------------------------------------
