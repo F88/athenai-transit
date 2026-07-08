@@ -8,13 +8,13 @@ const kyotoCitySubway: GtfsSourceDefinition = {
     description:
       'GTFS-JP static data for Kyoto City Subway operated by Kyoto Municipal Transportation',
     dataFormat: { type: 'GTFS/GTFS-JP' },
-    notes: [
-      "Published exclusively for the '公共交通オープンデータチャレンジ2026' (Public Transportation Open Data Challenge 2026), available only during the challenge period 2026-07-01 to 2027-03-12.",
-    ],
     license: {
       name: '公共交通オープンデータ基本ライセンス',
       url: 'https://developer.odpt.org/terms/data_basic_license.html',
     },
+    notes: [
+      "Published exclusively for the '公共交通オープンデータチャレンジ2026' (Public Transportation Open Data Challenge 2026), available only during the challenge period 2026-07-01 to 2027-03-12.",
+    ],
     catalog: {
       type: 'odpt',
       organizationUrl: 'https://ckan.odpt.org/organization/kyoto_municipal_transportation',
