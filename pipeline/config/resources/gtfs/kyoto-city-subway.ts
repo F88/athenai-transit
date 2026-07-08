@@ -8,6 +8,9 @@ const kyotoCitySubway: GtfsSourceDefinition = {
     description:
       'GTFS-JP static data for Kyoto City Subway operated by Kyoto Municipal Transportation',
     dataFormat: { type: 'GTFS/GTFS-JP' },
+    notes: [
+      "Published exclusively for the '公共交通オープンデータチャレンジ2026' (Public Transportation Open Data Challenge 2026), available only during the challenge period 2026-07-01 to 2027-03-12.",
+    ],
     license: {
       name: '公共交通オープンデータ基本ライセンス',
       url: 'https://developer.odpt.org/terms/data_basic_license.html',
@@ -34,13 +37,22 @@ const kyotoCitySubway: GtfsSourceDefinition = {
       method: 'acl:consumerKey query parameter',
       registrationUrl: 'https://developer.odpt.org/',
     },
-    notes: [
-      "Published exclusively for the '公共交通オープンデータチャレンジ2026' (Public Transportation Open Data Challenge 2026), available only during the challenge period 2026-07-01 to 2027-03-12.",
-    ],
     /** GtfsResource */
     routeTypes: ['subway'],
     downloadUrl:
       'https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Subway_GTFS.zip?date=20260703',
+    /**
+     * Forward-looking metadata for future extensions (per-URL validity,
+     * multiple versions across timetable revisions, deferred availability).
+     * Not consumed by the pipeline or the app yet; retained as data only.
+     */
+    dataUrls: [
+      {
+        url: 'https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Subway_GTFS.zip?date=20260703',
+        validity: { from: '2026-07-01', until: '2027-03-12' },
+        notes: ['Available only during the Public Transport Open Data Challenge 2026.'],
+      },
+    ],
   },
   pipeline: {
     outDir: 'kyoto-city-subway',
