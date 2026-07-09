@@ -38,7 +38,7 @@ import {
 } from './lib/parse-bundle-json';
 import { validateBundleEnvelope as assertBundleEnvelope } from './lib/validate-bundle-envelope';
 import { createLogger } from '../lib/logger';
-import { sanitizeDirName } from '../utils/sanitize-dir-name';
+import { validatePathSegments } from '../utils/validate-path-segments';
 import type { SourceDataV2, TransitDataSourceV2 } from './transit-data-source-v2';
 
 const logger = createLogger('FetchDataSourceV2');
@@ -47,15 +47,90 @@ const logger = createLogger('FetchDataSourceV2');
  * Base path for transit data files.
  * Configurable via `VITE_TRANSIT_DATA_PATH` environment variable.
  * Defaults to `/data-v2` when not set.
- * The value must be `/<simple-dir-name>` (e.g. `/data-v2`, `/next-dev`).
+ * May be a nested path (e.g. `/data-v2`, `/next-dev`, `/a/data-v3`); see
+ * {@link validateBasePath}.
  */
 const BASE_PATH = validateBasePath(import.meta.env.VITE_TRANSIT_DATA_PATH ?? '/data-v2');
 
-/** @internal Exported for testing. */
+/**
+ * Origin that serves the transit data. Configurable via
+ * `VITE_TRANSIT_DATA_ORIGIN`.
+ *
+ * Empty (the default) means same-origin: the data is served from the app's own
+ * origin. When set, it must be a bare absolute origin (scheme + host, no path
+ * or trailing slash), e.g. `https://athenai-transit.vercel.app`, to serve the
+ * data from a different origin (e.g. a deployed proxy, for local testing).
+ */
+const BASE_ORIGIN = validateOrigin(import.meta.env.VITE_TRANSIT_DATA_ORIGIN ?? '');
+
+/**
+ * Validate and normalize the base path for transit data files
+ * (`VITE_TRANSIT_DATA_PATH`), e.g. `/data-v2` or `/a/data-v3`.
+ *
+ * The path may be nested: {@link validatePathSegments} allows slash-separated
+ * segments and rejects directory traversal. A trailing slash is tolerated. `/`
+ * (or an empty value) means the data is served at the origin root and yields an
+ * empty base path.
+ *
+ * @internal Exported for testing.
+ */
 export function validateBasePath(value: string): string {
-  const dir = value.startsWith('/') ? value.slice(1) : value;
-  sanitizeDirName(dir, 'VITE_TRANSIT_DATA_PATH');
-  return value.startsWith('/') ? value : `/${value}`;
+  let path = value.startsWith('/') ? value.slice(1) : value;
+  // Tolerate a single trailing slash (e.g. "/data-v3/").
+  if (path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+  // `/` (or empty) means the data is served at the origin root (no subdirectory).
+  if (path === '') {
+    return '';
+  }
+  validatePathSegments(path, 'VITE_TRANSIT_DATA_PATH');
+  return `/${path}`;
+}
+
+/**
+ * Validate an optional data origin (`VITE_TRANSIT_DATA_ORIGIN`).
+ *
+ * An empty string means same-origin (relative fetch) and is returned as-is.
+ * A non-empty value must be an http(s) URL with no path, query, fragment, or
+ * credentials (e.g. `https://athenai-transit.vercel.app`); the path portion
+ * belongs to `VITE_TRANSIT_DATA_PATH` and is kept separate. The parsed,
+ * normalized origin is returned (host lowercased, default port dropped), so
+ * inputs like `https://HOST` or `https://host:443` are accepted.
+ *
+ * @throws When the value is not an http(s) URL, or carries a path, query,
+ *   fragment, or credentials.
+ * @internal Exported for testing.
+ */
+export function validateOrigin(value: string): string {
+  if (value === '') {
+    return '';
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be an absolute http(s) URL or empty)`,
+    );
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must use http or https)`);
+  }
+  // A bare origin has no path/query/fragment/credentials. Everything else (host
+  // case, default ports, etc.) is normalized by `URL.origin`.
+  if (
+    parsed.pathname !== '/' ||
+    parsed.search !== '' ||
+    parsed.hash !== '' ||
+    parsed.username !== '' ||
+    parsed.password !== ''
+  ) {
+    throw new Error(
+      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be a bare origin like "https://host", with no path)`,
+    );
+  }
+  return parsed.origin;
 }
 
 /**
@@ -332,10 +407,21 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
    *                   Override in tests to point to a fixture directory.
    * @param timeoutMs - Per-request timeout in milliseconds.
    *                    Defaults to {@link DEFAULT_TIMEOUT_MS} (30s).
+   * @param origin - Optional origin to prepend to `basePath`. Defaults to
+   *                 {@link BASE_ORIGIN} (empty = same-origin relative fetch).
    */
-  constructor(basePath: string = BASE_PATH, timeoutMs: number = DEFAULT_TIMEOUT_MS) {
-    // Normalize trailing slash to prevent double-slash in URLs
-    this.basePath = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+  constructor(
+    basePath: string = BASE_PATH,
+    timeoutMs: number = DEFAULT_TIMEOUT_MS,
+    origin: string = BASE_ORIGIN,
+  ) {
+    // Prepend the optional origin (empty = same-origin), then normalize the
+    // trailing slash to prevent double-slash in URLs.
+    let combined = basePath;
+    if (origin !== '') {
+      combined = `${origin}${basePath.startsWith('/') ? basePath : `/${basePath}`}`;
+    }
+    this.basePath = combined.endsWith('/') ? combined.slice(0, -1) : combined;
     this.timeoutMs = timeoutMs;
   }
 
