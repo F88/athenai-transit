@@ -24,8 +24,9 @@ describe('sanitizeDirName', () => {
     expect(() => sanitizeDirName('/etc/passwd', 'TEST')).toThrow('Invalid TEST');
   });
 
-  it('rejects paths with slashes', () => {
-    expect(() => sanitizeDirName('foo/bar', 'TEST')).toThrow('Invalid TEST');
+  it('accepts nested (slash-separated) paths', () => {
+    expect(sanitizeDirName('foo/bar', 'TEST')).toBe('foo/bar');
+    expect(sanitizeDirName('a/data-v3', 'TEST')).toBe('a/data-v3');
   });
 
   it('rejects empty string', () => {

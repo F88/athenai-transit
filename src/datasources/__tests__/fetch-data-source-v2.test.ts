@@ -4,6 +4,7 @@ import {
   formatTransferSummary,
   selectResourceTimingEntry,
   validateBasePath,
+  validateOrigin,
 } from '../fetch-data-source-v2';
 import { configureLogger, getLoggerConfig } from '../../lib/logger';
 
@@ -146,6 +147,28 @@ describe('FetchDataSourceV2', () => {
 
       expect(fetchMock).toHaveBeenCalledWith(
         '/custom/path/tobus/data.json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
+      );
+    });
+
+    it('prepends origin to the fetch URL when set', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
+      const ds = new FetchDataSourceV2('/data-v3', 30_000, 'https://data.example.com');
+      await ds.loadData('tobus');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://data.example.com/data-v3/tobus/data.json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
+      );
+    });
+
+    it('serves from the origin root when the base path is empty', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
+      const ds = new FetchDataSourceV2('', 30_000, 'https://data.example.com');
+      await ds.loadData('tobus');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://data.example.com/tobus/data.json',
         expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
       );
     });
@@ -545,12 +568,48 @@ describe('validateBasePath', () => {
     expect(() => validateBasePath('../foo')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
   });
 
-  it('throws on absolute path with subdirectories', () => {
-    expect(() => validateBasePath('/foo/bar')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
+  it('accepts a nested path', () => {
+    expect(validateBasePath('/a/data-v3')).toBe('/a/data-v3');
+    expect(validateBasePath('a/data-v3')).toBe('/a/data-v3');
   });
 
-  it('throws on empty string', () => {
-    expect(() => validateBasePath('/')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
+  it('treats "/" (and "") as the origin root (empty base path)', () => {
+    expect(validateBasePath('/')).toBe('');
+    expect(validateBasePath('')).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateOrigin
+// ---------------------------------------------------------------------------
+
+describe('validateOrigin', () => {
+  it('returns empty string unchanged (same-origin)', () => {
+    expect(validateOrigin('')).toBe('');
+  });
+
+  it('accepts a bare https origin', () => {
+    expect(validateOrigin('https://athenai-transit.vercel.app')).toBe(
+      'https://athenai-transit.vercel.app',
+    );
+  });
+
+  it('accepts an origin with a port', () => {
+    expect(validateOrigin('http://localhost:5173')).toBe('http://localhost:5173');
+  });
+
+  it('throws when the value carries a path', () => {
+    expect(() => validateOrigin('https://host/data-v3')).toThrow(
+      'Invalid VITE_TRANSIT_DATA_ORIGIN',
+    );
+  });
+
+  it('throws on a trailing slash', () => {
+    expect(() => validateOrigin('https://host/')).toThrow('Invalid VITE_TRANSIT_DATA_ORIGIN');
+  });
+
+  it('throws on a malformed URL', () => {
+    expect(() => validateOrigin('not-a-url')).toThrow('Invalid VITE_TRANSIT_DATA_ORIGIN');
   });
 });
 

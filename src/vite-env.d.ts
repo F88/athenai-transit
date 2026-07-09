@@ -14,6 +14,12 @@ interface ImportMetaEnv {
   readonly VITE_INITIAL_ZOOM_LEVEL?: string;
   /** Base path for transit data files (e.g. "/data-v3"). Defaults to "/data-v2". */
   readonly VITE_TRANSIT_DATA_PATH?: string;
+  /**
+   * Origin that serves the transit data, e.g.
+   * "https://athenai-transit.vercel.app". Empty/unset = same-origin (the app's
+   * own origin).
+   */
+  readonly VITE_TRANSIT_DATA_ORIGIN?: string;
 }
 
 interface ImportMeta {
