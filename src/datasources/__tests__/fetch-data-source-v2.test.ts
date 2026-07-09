@@ -573,6 +573,11 @@ describe('validateBasePath', () => {
     expect(validateBasePath('a/data-v3')).toBe('/a/data-v3');
   });
 
+  it('tolerates a trailing slash', () => {
+    expect(validateBasePath('/data-v3/')).toBe('/data-v3');
+    expect(validateBasePath('/a/data-v3/')).toBe('/a/data-v3');
+  });
+
   it('treats "/" (and "") as the origin root (empty base path)', () => {
     expect(validateBasePath('/')).toBe('');
     expect(validateBasePath('')).toBe('');

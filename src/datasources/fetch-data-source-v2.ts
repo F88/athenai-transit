@@ -68,13 +68,18 @@ const BASE_ORIGIN = validateOrigin(import.meta.env.VITE_TRANSIT_DATA_ORIGIN ?? '
  * (`VITE_TRANSIT_DATA_PATH`), e.g. `/data-v2` or `/a/data-v3`.
  *
  * The path may be nested: {@link validatePathSegments} allows slash-separated
- * segments and rejects directory traversal. `/` (or an empty value) means the
- * data is served at the origin root and yields an empty base path.
+ * segments and rejects directory traversal. A trailing slash is tolerated. `/`
+ * (or an empty value) means the data is served at the origin root and yields an
+ * empty base path.
  *
  * @internal Exported for testing.
  */
 export function validateBasePath(value: string): string {
-  const path = value.startsWith('/') ? value.slice(1) : value;
+  let path = value.startsWith('/') ? value.slice(1) : value;
+  // Tolerate a single trailing slash (e.g. "/data-v3/").
+  if (path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
   // `/` (or empty) means the data is served at the origin root (no subdirectory).
   if (path === '') {
     return '';
