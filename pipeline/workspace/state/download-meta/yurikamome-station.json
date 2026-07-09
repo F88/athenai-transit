@@ -2,10 +2,10 @@
   "sourceName": "yurikamome-station",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-07-09T05:29:00.232Z",
+  "downloadedAt": "2026-07-09T09:08:30.182Z",
   "url": "https://api.odpt.org/api/v4/odpt:Station?odpt:operator=odpt.Operator:Yurikamome",
   "size": 15822,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 1263,
-  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_Station_20260709-052901.json"
+  "durationMs": 795,
+  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_Station_20260709-090830.json"
 }
