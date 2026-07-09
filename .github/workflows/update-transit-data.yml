@@ -1,4 +1,7 @@
-name: Update Transit Data
+name: Update Transit Data (git)
+
+# Build the latest Athenai Transit data from upstream open data (GTFS / ODPT)
+# and publish it by committing public/<PIPELINE_TRANSIT_DATA_DIR> to git.
 
 on:
   schedule:

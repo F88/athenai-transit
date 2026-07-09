@@ -1,18 +1,13 @@
-name: Upload Transit Data (Vercel Blob)
+name: Update Transit Data (Vercel Blob)
 
-# Same pipeline as update-transit-data.yml, except the built data-v2 is
-# uploaded to Vercel Blob instead of being committed to git. Only the small
-# download metadata under pipeline/workspace/state/ is still committed. The app
-# fetches the data via the same-origin /data-v3/* rewrite in vercel.json.
-#
-# Manual trigger for now (schedule commented out); enable at cutover.
-#
-# Required secrets: ODPT_ACCESS_TOKEN, VERCEL_V3_BLOB_READ_WRITE_TOKEN
+# Build the latest Athenai Transit data from upstream open data (GTFS / ODPT)
+# and publish it by uploading to Vercel Blob (served to the app via /data-v3).
+# Same pipeline as update-transit-data.yml; only the publish destination differs.
 
 on:
-  # schedule:
-  #   # JST 13:00 (UTC 04:00)
-  #   - cron: '0 4 * * *'
+  schedule:
+    # JST 09:00 (UTC 00:00)
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       skip_download:
