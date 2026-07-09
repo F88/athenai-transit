@@ -269,7 +269,7 @@ jobs:
       - name: Sync to public/
         run: npm run data:sync
 
-      # ── Report & Deploy ────────────────────────────────────
+      # ── Report & Commit ────────────────────────────────────
       - name: Detect changes
         id: changes
         run: |

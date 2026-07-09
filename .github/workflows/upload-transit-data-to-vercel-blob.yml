@@ -273,6 +273,10 @@ jobs:
           echo "::error::V2 bundle validation failed. See Job Summary for details."
           exit 1
 
+      #  disabled: replaced by Vercel Blob upload below
+      # - name: Sync to public/
+      #   run: npm run data:sync
+
       # ── Upload to Vercel Blob ──────────────────────────────
       # Replaces "Sync to public/" and committing public/<data dir> to git:
       # instead, upload the build output straight to a Vercel Blob store. The
