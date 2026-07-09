@@ -49,6 +49,9 @@
     "pipeline:build:v2-global-insights": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts --targets pipeline/config/targets/build-global-insights.ts",
     "pipeline:build:v2-data-source-catalog": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-data-source-catalog.ts --targets pipeline/config/targets/build-data-source-catalog.ts",
     "pipeline:validate:v2": "npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets pipeline/config/targets/validate.ts",
+    "pipeline:upload:blob": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/vercel-blob/upload-data-to-blob.ts",
+    "pipeline:delete:blob": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/vercel-blob/delete-data-from-blob.ts",
+    "pipeline:list:blob": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/vercel-blob/list-data-in-blob.ts",
     "pipeline:check:odpt-resources": "npx tsx pipeline/scripts/pipeline/check-odpt-resources.ts",
     "pipeline:describe": "npx tsx pipeline/scripts/dev/describe-resources.ts",
     "pipeline:dev-tools": "npx tsx pipeline/scripts/dev/dev-tools.ts",
@@ -93,6 +96,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@vercel/blob": "^2.6.1",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/browser-playwright": "^4.1.9",
@@ -117,6 +121,7 @@
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",
     "vite-plugin-pwa": "^1.3.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "zod": "^4.4.3"
   }
 }

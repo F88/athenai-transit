@@ -1,9 +1,18 @@
-name: Update Transit Data
+name: Upload Transit Data (Vercel Blob)
+
+# Same pipeline as update-transit-data.yml, except the built data-v2 is
+# uploaded to Vercel Blob instead of being committed to git. Only the small
+# download metadata under pipeline/workspace/state/ is still committed. The app
+# fetches the data via the same-origin /data-v3/* rewrite in vercel.json.
+#
+# Manual trigger for now (schedule commented out); enable at cutover.
+#
+# Required secrets: ODPT_ACCESS_TOKEN, VERCEL_V3_BLOB_READ_WRITE_TOKEN
 
 on:
-  schedule:
-    # JST 13:00 (UTC 04:00)
-    - cron: '0 4 * * *'
+  # schedule:
+  #   # JST 13:00 (UTC 04:00)
+  #   - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       skip_download:
@@ -22,8 +31,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-    env:
-      PIPELINE_TRANSIT_DATA_DIR: ${{ vars.PIPELINE_TRANSIT_DATA_DIR || 'data-v2' }}
 
     steps:
       # ── Setup ──────────────────────────────────────────────
@@ -266,22 +273,52 @@ jobs:
           echo "::error::V2 bundle validation failed. See Job Summary for details."
           exit 1
 
-      - name: Sync to public/
-        run: npm run data:sync
+      #  disabled: replaced by Vercel Blob upload below
+      # - name: Sync to public/
+      #   run: npm run data:sync
+
+      # ── Upload to Vercel Blob ──────────────────────────────
+      # Replaces "Sync to public/" and committing public/<data dir> to git:
+      # instead, upload the build output straight to a Vercel Blob store. The
+      # app fetches it via the same-origin /data-v3/* rewrite in vercel.json.
+      # Reads the build output directly, so no data:sync is needed.
+      #
+      # Exit codes: 0=OK, 1=partial failure or other error, 2=all failed.
+      # npx tsx direct: the npm script contains --env-file-if-exists which could
+      # load a local .env and override CI secrets.
+      - name: Upload v2 data to Vercel Blob
+        id: upload-blob
+        env:
+          VERCEL_V3_BLOB_READ_WRITE_TOKEN: ${{ secrets.VERCEL_V3_BLOB_READ_WRITE_TOKEN }}
+        run: |
+          set +e
+          npx tsx pipeline/scripts/pipeline/vercel-blob/upload-data-to-blob.ts --dir pipeline/workspace/_build/data-v2 --all
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on Blob upload partial failure
+        if: steps.upload-blob.outputs.exit_code == '1'
+        run: echo "::warning::Some data files failed to upload to Blob (partial failure or other error)."
+
+      - name: Fail on Blob upload failure
+        if: steps.upload-blob.outputs.exit_code == '2'
+        run: |
+          echo "::error::All Blob uploads failed."
+          exit 1
 
       # ── Report & Commit ────────────────────────────────────
       - name: Detect changes
         id: changes
         run: |
-          # Commit targets: the generated data (public/<PIPELINE_TRANSIT_DATA_DIR>)
-          # and the pipeline state (download metadata under workspace/state/).
-          git add "public/${PIPELINE_TRANSIT_DATA_DIR}/" pipeline/workspace/state/
+          # Commit target: only the pipeline state (download metadata under
+          # workspace/state/). The data itself is uploaded to Vercel Blob, not
+          # committed to git.
+          git add pipeline/workspace/state/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No data changes detected."
+            echo "::notice::No metadata changes detected."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Data changes detected. Will commit and push."
+            echo "::notice::Metadata changes detected. Will commit and push."
           fi
 
       - name: Job Summary
@@ -307,10 +344,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Commit targets: the generated data (public/<PIPELINE_TRANSIT_DATA_DIR>)
-          # and the pipeline state (download metadata under workspace/state/).
-          git add "public/${PIPELINE_TRANSIT_DATA_DIR}/" pipeline/workspace/state/
-          git commit -m "chore(data): update transit data"
+          # Commit target: only the pipeline state (download metadata under
+          # workspace/state/). The data itself is uploaded to Vercel Blob, not
+          # committed to git.
+          git add pipeline/workspace/state/
+          git commit -m "chore(pipeline): update download metadata"
           git push
 
       # ── Notify ────────────────────────────────────────────
@@ -321,13 +359,8 @@ jobs:
         run: |
           PARTS=()
           HAS_WARN=false
-          # Data change status
-          CHANGED="${{ steps.changes.outputs.changed }}"
-          if [ "$CHANGED" = "true" ]; then
-            PARTS+=("Data updated")
-          elif [ "$CHANGED" = "false" ]; then
-            PARTS+=("No data changes")
-          fi
+          # Primary action
+          PARTS+=("Uploaded to Vercel Blob")
           # Partial failures (exit code 1)
           WARN=""
           if [ "${{ steps.download-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS download, "; fi
@@ -340,6 +373,7 @@ jobs:
           if [ "${{ steps.build-v2-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 insights, "; fi
           if [ "${{ steps.build-v2-global-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 global insights, "; fi
           if [ "${{ steps.build-v2-data-source-catalog.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data source catalog, "; fi
+          if [ "${{ steps.upload-blob.outputs.exit_code }}" = "1" ]; then WARN="${WARN}Blob upload, "; fi
           if [ -n "$WARN" ]; then
             PARTS+=("Partial failure: ${WARN%, }")
             HAS_WARN=true
