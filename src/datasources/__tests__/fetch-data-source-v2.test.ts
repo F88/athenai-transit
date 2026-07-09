@@ -594,8 +594,18 @@ describe('validateOrigin', () => {
     );
   });
 
-  it('accepts an origin with a port', () => {
+  it('accepts an origin with a non-default port', () => {
     expect(validateOrigin('http://localhost:5173')).toBe('http://localhost:5173');
+  });
+
+  it('normalizes host case and default ports', () => {
+    expect(validateOrigin('https://HOST')).toBe('https://host');
+    expect(validateOrigin('https://host:443')).toBe('https://host');
+    expect(validateOrigin('http://host:80')).toBe('http://host');
+  });
+
+  it('normalizes a trailing slash on the root', () => {
+    expect(validateOrigin('https://host/')).toBe('https://host');
   });
 
   it('throws when the value carries a path', () => {
@@ -604,8 +614,9 @@ describe('validateOrigin', () => {
     );
   });
 
-  it('throws on a trailing slash', () => {
-    expect(() => validateOrigin('https://host/')).toThrow('Invalid VITE_TRANSIT_DATA_ORIGIN');
+  it('throws on a non-http(s) scheme', () => {
+    expect(() => validateOrigin('ws://host')).toThrow('Invalid VITE_TRANSIT_DATA_ORIGIN');
+    expect(() => validateOrigin('ftp://host')).toThrow('Invalid VITE_TRANSIT_DATA_ORIGIN');
   });
 
   it('throws on a malformed URL', () => {

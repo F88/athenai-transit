@@ -38,7 +38,7 @@ import {
 } from './lib/parse-bundle-json';
 import { validateBundleEnvelope as assertBundleEnvelope } from './lib/validate-bundle-envelope';
 import { createLogger } from '../lib/logger';
-import { sanitizeDirName } from '../utils/sanitize-dir-name';
+import { validatePathSegments } from '../utils/validate-path-segments';
 import type { SourceDataV2, TransitDataSourceV2 } from './transit-data-source-v2';
 
 const logger = createLogger('FetchDataSourceV2');
@@ -67,7 +67,7 @@ const BASE_ORIGIN = validateOrigin(import.meta.env.VITE_TRANSIT_DATA_ORIGIN ?? '
  * Validate and normalize the base path for transit data files
  * (`VITE_TRANSIT_DATA_PATH`), e.g. `/data-v2` or `/a/data-v3`.
  *
- * The path may be nested: {@link sanitizeDirName} allows slash-separated
+ * The path may be nested: {@link validatePathSegments} allows slash-separated
  * segments and rejects directory traversal. `/` (or an empty value) means the
  * data is served at the origin root and yields an empty base path.
  *
@@ -79,7 +79,7 @@ export function validateBasePath(value: string): string {
   if (path === '') {
     return '';
   }
-  sanitizeDirName(path, 'VITE_TRANSIT_DATA_PATH');
+  validatePathSegments(path, 'VITE_TRANSIT_DATA_PATH');
   return `/${path}`;
 }
 
@@ -87,12 +87,14 @@ export function validateBasePath(value: string): string {
  * Validate an optional data origin (`VITE_TRANSIT_DATA_ORIGIN`).
  *
  * An empty string means same-origin (relative fetch) and is returned as-is.
- * A non-empty value must be a bare absolute origin -- scheme + host (+ port)
- * only, with no path and no trailing slash (e.g.
- * `https://athenai-transit.vercel.app`). The path portion belongs to
- * `VITE_TRANSIT_DATA_PATH` and is kept separate.
+ * A non-empty value must be an http(s) URL with no path, query, fragment, or
+ * credentials (e.g. `https://athenai-transit.vercel.app`); the path portion
+ * belongs to `VITE_TRANSIT_DATA_PATH` and is kept separate. The parsed,
+ * normalized origin is returned (host lowercased, default port dropped), so
+ * inputs like `https://HOST` or `https://host:443` are accepted.
  *
- * @throws When the value is a malformed URL or carries a path / trailing slash.
+ * @throws When the value is not an http(s) URL, or carries a path, query,
+ *   fragment, or credentials.
  * @internal Exported for testing.
  */
 export function validateOrigin(value: string): string {
@@ -104,18 +106,26 @@ export function validateOrigin(value: string): string {
     parsed = new URL(value);
   } catch {
     throw new Error(
-      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be an absolute URL or empty)`,
+      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be an absolute http(s) URL or empty)`,
     );
   }
-  // `URL.origin` is scheme + host (+ port) with no path or trailing slash, so
-  // requiring value === origin rejects paths and trailing slashes.
-  if (parsed.origin !== value) {
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must use http or https)`);
+  }
+  // A bare origin has no path/query/fragment/credentials. Everything else (host
+  // case, default ports, etc.) is normalized by `URL.origin`.
+  if (
+    parsed.pathname !== '/' ||
+    parsed.search !== '' ||
+    parsed.hash !== '' ||
+    parsed.username !== '' ||
+    parsed.password !== ''
+  ) {
     throw new Error(
-      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be a bare origin like ` +
-        `"https://host" with no path or trailing slash)`,
+      `Invalid VITE_TRANSIT_DATA_ORIGIN: "${value}" (must be a bare origin like "https://host", with no path)`,
     );
   }
-  return value;
+  return parsed.origin;
 }
 
 /**
