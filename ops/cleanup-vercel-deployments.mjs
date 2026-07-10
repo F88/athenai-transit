@@ -11,7 +11,7 @@
  * Usage:
  *   node ops/cleanup-vercel-deployments.js
  *   node ops/cleanup-vercel-deployments.js --dry-run
- *   npm run cleanup:vercel
+ *   npm run vercel:deployment:cleanup
  */
 
 import { exec } from 'node:child_process';

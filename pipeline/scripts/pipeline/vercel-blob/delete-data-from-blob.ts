@@ -39,7 +39,7 @@ Safe by default: without --yes this is a dry run (lists matches, deletes nothing
 There is no "delete everything" option.
 
 Usage:
-  npm run pipeline:delete:blob -- (--source <name> | --prefix <path>) [--yes]
+  npm run vercel:blob:delete -- (--source <name> | --prefix <path>) [--yes]
 
 Target (exactly one required):
   --source <name>    Delete keys under <name>/ (e.g. --source kotr)

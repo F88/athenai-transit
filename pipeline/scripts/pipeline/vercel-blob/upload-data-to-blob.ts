@@ -44,7 +44,7 @@ import {
 const HELP = `Upload built v2 data files to Vercel Blob.
 
 Usage:
-  npm run pipeline:upload:blob -- --dir <path> (--source <name>... | --all) [options]
+  npm run vercel:blob:upload -- --dir <path> (--source <name>... | --all) [options]
 
 Required:
   --dir <path>              Base directory to upload from (must be inside the build

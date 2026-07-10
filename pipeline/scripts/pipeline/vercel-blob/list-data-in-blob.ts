@@ -26,7 +26,7 @@ import {
 const HELP = `List data files in Vercel Blob (read-only).
 
 Usage:
-  npm run pipeline:list:blob -- [--source <name> | --prefix <path>]
+  npm run vercel:blob:list -- [--source <name> | --prefix <path>]
 
 Filter (optional; omit to list the entire store):
   --source <name>    List keys under <name>/ (e.g. --source kotr)
