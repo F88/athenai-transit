@@ -16,6 +16,19 @@
 | `analyze-v2-global-insights.ts`     | `public/data-v2/global/insights.json` (GlobalInsightsBundle) | GlobalInsightsBundle の `stopGeo` を source 別に集計する (stop 件数、`wp`/`cn` カバレッジ、`nr` 分布)                                 |
 | `summarize-v2-outputs.ts`           | `public/data-v2/<source>/{data,insights,shapes}.json`        | V2 pipeline 出力を bundle 横断で source 別に要約する (file size / gzip size / DataBundle 件数 / InsightsBundle tripsTotal / tripsMax) |
 
+## `describe-resources.ts`
+
+全リソース定義 (GTFS / ODPT JSON) を読み込み、人間可読な一覧を出力する。データの変換や検証は行わない。
+
+- 入力: `pipeline/config/resources/{gtfs,odpt-json}/*.ts`
+- 出力形式: text (summary / verbose) / TSV
+- 引数: 引数なし (= `--summary`)、`--summary`、`--verbose`、`--format tsv`、`--help`
+- 出力モード:
+    - `--summary` (デフォルト): source ごとの 1 行サマリ (name / prefix / nameJa (nameEn) / format / auth / route_type)
+    - `--verbose`: 各ソースの詳細 (名前 / prefix / format / provider / license / URL 等)
+    - `--format tsv`: ヘッダー付きタブ区切り (スプレッドシート等への連携用)
+- exit code: 0 = 成功、1 = エラー (不正引数 / fatal)
+
 ## `analyze-v2-name-fields.ts`
 
 生成済み V2 DataBundle を読み、定義済みの名称系調査対象について source ごとの件数を出力する。
@@ -86,14 +99,14 @@ ODPT Train source ごとの `StationTimetable` JSON を読み、時刻 field / c
 生成済み V2 pipeline 出力 (`public/data-v2/<source>/`) を bundle 横断で source 別に要約する text report を出す。
 構造は **entry → main lib → sub libs** の 3 層:
 
-- entry: `pipeline/scripts/dev/summarize-v2-outputs.ts` (I/O のみ)
-- main lib: `pipeline/scripts/dev/dev-lib/v2-outputs-summary.ts` (section dispatch、 union 化、 全体整形)
+- entry: `pipeline/scripts-for-dev/summarize-v2-outputs.ts` (I/O のみ)
+- main lib: `pipeline/scripts-for-dev/dev-lib/v2-outputs-summary.ts` (section dispatch、 union 化、 全体整形)
 - sub libs (per data source):
-    - `pipeline/scripts/dev/dev-lib/v2-data-summary.ts` (DataBundle + file-sizes / gzip-sizes)
-    - `pipeline/scripts/dev/dev-lib/v2-insights-summary.ts` (InsightsBundle 由来の trip-volume)
-    - `pipeline/scripts/dev/dev-lib/v2-shapes-summary.ts` (ShapesBundle 由来の geometry 件数)
+    - `pipeline/scripts-for-dev/dev-lib/v2-data-summary.ts` (DataBundle + file-sizes / gzip-sizes)
+    - `pipeline/scripts-for-dev/dev-lib/v2-insights-summary.ts` (InsightsBundle 由来の trip-volume)
+    - `pipeline/scripts-for-dev/dev-lib/v2-shapes-summary.ts` (ShapesBundle 由来の geometry 件数)
 - sub lib (per all data sources):
-    - `pipeline/scripts/dev/dev-lib/v2-global-insights-summary.ts` (GlobalInsightsBundle 由来、 single artifact)
+    - `pipeline/scripts-for-dev/dev-lib/v2-global-insights-summary.ts` (GlobalInsightsBundle 由来、 single artifact)
 
 各 sub lib は 1 bundle に責務を持ち、 main lib は sub lib を組み合わせて section を直列出力する。 global-insights は per-source ではない単一 artifact なので main lib の dispatch が分岐 (rows ではなく単一値オブジェクトを受ける render を呼ぶ)。 sub libs だけでは作れない合成派生指標 (例: bytes-per-trip) は main lib に置ける。
 
@@ -125,13 +138,13 @@ ODPT Train source ごとの `StationTimetable` JSON を読み、時刻 field / c
 npm run pipeline:dev-tools
 
 # 個別実行
-npx tsx pipeline/scripts/dev/describe-resources.ts
-npx tsx pipeline/scripts/dev/find-joint-routes.ts
-npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts
-npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts
-npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts
-npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts
-npx tsx pipeline/scripts/dev/analyze-v2-insights.ts
-npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts
-npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts
+npx tsx pipeline/scripts-for-dev/describe-resources.ts
+npx tsx pipeline/scripts-for-dev/find-joint-routes.ts
+npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts
+npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts
+npx tsx pipeline/scripts-for-dev/analyze-odpt-station-timetable.ts
+npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts
+npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts
+npx tsx pipeline/scripts-for-dev/analyze-v2-global-insights.ts
+npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts
 ```

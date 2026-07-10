@@ -7,12 +7,12 @@
  * inventory of name-related investigation targets.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --json       # all sources as JSON
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --field-counts-tsv
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts <source> --json
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --list       # list sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --json       # all sources as JSON
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --field-counts-tsv
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts <source> --json
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --list       # list sources
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -20,8 +20,8 @@ import { join } from 'node:path';
 
 import type { DataBundle } from '@contracts/data/transit-v2-json';
 
-import { PIPELINE_ROOT, V2_OUTPUT_DIR } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { PIPELINE_ROOT, V2_OUTPUT_DIR } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import type { NameFieldAnalysisReport, SourceAnalysis } from './dev-lib/v2-name-fields-analysis';
 import * as nameFieldAnalysisModule from './dev-lib/v2-name-fields-analysis';
 

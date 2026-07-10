@@ -4,18 +4,18 @@
  * Describe all resource definitions in a human-readable format.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/describe-resources.ts              # summary (default)
- *   npx tsx pipeline/scripts/dev/describe-resources.ts --summary     # summary table
- *   npx tsx pipeline/scripts/dev/describe-resources.ts --verbose     # detailed view
- *   npx tsx pipeline/scripts/dev/describe-resources.ts --format tsv  # tab-separated values
+ *   npx tsx pipeline/scripts-for-dev/describe-resources.ts              # summary (default)
+ *   npx tsx pipeline/scripts-for-dev/describe-resources.ts --summary     # summary table
+ *   npx tsx pipeline/scripts-for-dev/describe-resources.ts --verbose     # detailed view
+ *   npx tsx pipeline/scripts-for-dev/describe-resources.ts --format tsv  # tab-separated values
  */
 
-import { loadAllGtfsSources } from '../../src/lib/resources/load-gtfs-sources';
-import { loadAllOdptJsonSources } from '../../src/lib/resources/load-odpt-json-sources';
+import { loadAllGtfsSources } from '../src/lib/resources/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../src/lib/resources/load-odpt-json-sources';
 
-import type { GtfsSourceDefinition } from '../../src/types/gtfs-resource';
-import type { OdptJsonSourceDefinition } from '../../src/types/odpt-json-resource';
-import type { BaseResource, PipelineConfig } from '../../src/types/resource-common';
+import type { GtfsSourceDefinition } from '../src/types/gtfs-resource';
+import type { OdptJsonSourceDefinition } from '../src/types/odpt-json-resource';
+import type { BaseResource, PipelineConfig } from '../src/types/resource-common';
 
 // ---------------------------------------------------------------------------
 // CLI

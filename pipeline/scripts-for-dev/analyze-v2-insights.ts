@@ -8,11 +8,11 @@
  * each source, in both per-pattern and per-trip (freq-weighted) views.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <a> <b>      # selected sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --list-sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --help       # show usage
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts <a> <b>      # selected sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts --help       # show usage
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -32,14 +32,14 @@ import {
   listGtfsSourceNames,
   loadAllGtfsSources,
   loadGtfsSource,
-} from '../../src/lib/resources/load-gtfs-sources';
+} from '../src/lib/resources/load-gtfs-sources';
 import {
   listOdptJsonSourceNames,
   loadAllOdptJsonSources,
   loadOdptJsonSource,
-} from '../../src/lib/resources/load-odpt-json-sources';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+} from '../src/lib/resources/load-odpt-json-sources';
+import { PIPELINE_ROOT } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');

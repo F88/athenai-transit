@@ -15,7 +15,7 @@ v2 パイプラインが生成済みの bundle 群を集約し、`data-source-ca
 
 DataSourceCatalogBundle は per-source transit payload ではない。既に生成された v2 bundle 群から、generic consumer 向けの discovery-oriented facts を安定 schema として再構成する単一 artifact である。
 
-`pipeline/scripts/dev/summarize-v2-outputs.ts` の監査用 text report とは目的が異なる。catalog は人手調査用の ad hoc report ではなく、他 consumer が機械的に読める wire-format bundle として扱う。
+`pipeline/scripts-for-dev/summarize-v2-outputs.ts` の監査用 text report とは目的が異なる。catalog は人手調査用の ad hoc report ではなく、他 consumer が機械的に読める wire-format bundle として扱う。
 
 ## 目的
 

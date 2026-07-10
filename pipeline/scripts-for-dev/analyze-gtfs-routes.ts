@@ -8,20 +8,20 @@
  * and optional presentation / operational fields.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts           # all GTFS sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts <source>  # single source
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts <a> <b>   # selected sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts --list-sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts --list-sections
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-routes.ts --section route-types
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts           # all GTFS sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts <source>  # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts <a> <b>   # selected sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts --list-sections
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-routes.ts --section route-types
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
-import { GTFS_DATA_DIR } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../src/lib/resources/load-gtfs-sources';
+import { GTFS_DATA_DIR } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import {
   analyzeGtfsRoutesCsv,
   formatGtfsRoutesAnalysis,

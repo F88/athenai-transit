@@ -8,10 +8,10 @@
  * `nr` (nearest different-route distance) metric.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts
- *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --list-sections
- *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --section summary
- *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --help
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-global-insights.ts
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-global-insights.ts --list-sections
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-global-insights.ts --section summary
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-global-insights.ts --help
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -19,8 +19,8 @@ import { join } from 'node:path';
 
 import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
 
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { PIPELINE_ROOT } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
 import {

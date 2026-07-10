@@ -15,12 +15,12 @@
  * v2-insights-summary.ts, ...).
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts                # all sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts <source>       # single source
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts <a> <b>        # selected sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --list-sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --list-sections
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --section file-sizes
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts                # all sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts <source>       # single source
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts <a> <b>        # selected sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --list-sections
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --section file-sizes
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -33,18 +33,18 @@ import type {
   InsightsBundle,
   ShapesBundle,
 } from '@contracts/data/transit-v2-json';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { PIPELINE_ROOT } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import {
   listGtfsSourceNames,
   loadAllGtfsSources,
   loadGtfsSource,
-} from '../../src/lib/resources/load-gtfs-sources';
+} from '../src/lib/resources/load-gtfs-sources';
 import {
   listOdptJsonSourceNames,
   loadAllOdptJsonSources,
   loadOdptJsonSource,
-} from '../../src/lib/resources/load-odpt-json-sources';
+} from '../src/lib/resources/load-odpt-json-sources';
 import { truncateSectionDescription } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 import type { FileSizeStats } from './dev-lib/v2-data-summary';

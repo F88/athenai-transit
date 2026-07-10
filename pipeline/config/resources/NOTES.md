@@ -19,7 +19,7 @@ Data source に関する注意事項や問題点をまとめるドキュメン�
 
 異なる事業者が同一路線を共同運行している場合、同じ物理的バス停が各ソースに別々の stop として存在する。地図上に同一地点が2つ表示され、stop_name も事業者間で異なる場合がある。
 
-確認済みの共同運行路線 (`pipeline/scripts/dev/find-joint-routes.ts` で検出):
+確認済みの共同運行路線 (`pipeline/scripts-for-dev/find-joint-routes.ts` で検出):
 
 | route_short_name | ソース                              |
 | ---------------- | ----------------------------------- |

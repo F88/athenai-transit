@@ -39,7 +39,6 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 | 4     | GlobalInsightsBundle を生成    | `scripts/pipeline/app-data-v2/build-global-insights.ts`         | `npm run pipeline:build:v2-global-insights`     |
 | 4     | DataSourceCatalogBundle を生成 | `scripts/pipeline/app-data-v2/build-data-source-catalog.ts`     | `npm run pipeline:build:v2-data-source-catalog` |
 | 5     | バンドルの検証                 | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`           | `npm run pipeline:validate:v2`                  |
-| -     | 全リソース定義の一覧表示       | `scripts/dev/describe-resources.ts`                             | `npm run pipeline:describe`                     |
 | -     | ODPT リソース更新チェック      | `scripts/pipeline/check-odpt-resources.ts`                      | `npm run pipeline:check:odpt-resources`         |
 
 **Note**: v1 スクリプト (`scripts/pipeline/app-data-v1/`) は残存しているが、v1 出力を消費する WebApp コードは削除済みのため、実行しても意味がない。
@@ -182,7 +181,6 @@ pipeline/config/resources/
 | [V2_BUILD_DATA_SOURCE_CATALOG.md](./docs/V2_BUILD_DATA_SOURCE_CATALOG.md) | (v2) DataSourceCatalogBundle ビルド仕様                       |
 | [V2_VALIDATE.md](./docs/V2_VALIDATE.md)                                   | (v2) バンドル検証仕様                                         |
 | [PIPELINE-BENCHMARKS.md](./docs/PIPELINE-BENCHMARKS.md)                   | パイプライン実行時間計測                                      |
-| [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)                     | リソース定義一覧表示の仕様                                    |
 | [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md)                 | リソース定義の型構造と追加手順                                |
 
 ### 運用ツール
@@ -208,13 +206,13 @@ pipeline/
 │   │   ├── pipeline/    Pipeline-specific libs (CLI utils, GTFS schema, v2 builders, shape extractors)
 │   │   └── *.ts         Common utilities (paths, format, fs, time, calendar)
 │   └── types/           Type definitions (resource-common, gtfs-resource, odpt-train)
-├── scripts/             Entry points (thin scripts)
-│   ├── pipeline/        CI/production pipeline
-│   │   ├── app-data-v1/ v1 JSON builders + shapes + validate (unused, archive)
-│   │   ├── app-data-v2/ v2 JSON builders + shapes
-│   │   └── *.ts         Download, build-db, check-resources
-│   └── dev/             Development/analysis tools (manual execution only)
-│       └── dev-lib/     Dev-only libraries (analysis, normalize)
+├── scripts/             Entry points (thin scripts, CI/production)
+│   └── pipeline/        CI/production pipeline
+│       ├── app-data-v1/ v1 JSON builders + shapes + validate (unused, archive)
+│       ├── app-data-v2/ v2 JSON builders + shapes
+│       └── *.ts         Download, build-db, check-resources
+├── scripts-for-dev/     Development/analysis tools (manual execution only)
+│   └── dev-lib/         Dev-only libraries (analysis, normalize)
 ├── workspace/           Pipeline I/O data
 │   ├── data/            Downloaded raw data (re-downloadable, gitignored)
 │   ├── _build/          Build output (generated, gitignored)

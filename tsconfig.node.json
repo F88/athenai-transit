@@ -35,6 +35,7 @@
     "scripts/**/*.ts",
     "pipeline/config/**/*.ts",
     "pipeline/src/**/*.ts",
-    "pipeline/scripts/**/*.ts"
+    "pipeline/scripts/**/*.ts",
+    "pipeline/scripts-for-dev/**/*.ts"
   ]
 }

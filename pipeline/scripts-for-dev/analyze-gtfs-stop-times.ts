@@ -8,20 +8,20 @@
  * quality and identifying stops that should be excluded from timetables.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts <a> <b>      # selected sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts --list-sources
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts --list-sections
- *   npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts --section interpolation
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts <a> <b>      # selected sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts --list-sections
+ *   npx tsx pipeline/scripts-for-dev/analyze-gtfs-stop-times.ts --section interpolation
  */
 
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../src/lib/resources/load-gtfs-sources';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import {
   analyzeStopTimes,
   formatAnalysis,
@@ -32,7 +32,7 @@ import {
 import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
-import { DB_DIR } from '../../src/lib/paths';
+import { DB_DIR } from '../src/lib/paths';
 
 function isGtfsStopTimesSectionName(value: string): value is GtfsStopTimesSectionName {
   return (GTFS_STOP_TIMES_SECTION_NAMES as readonly string[]).includes(value);

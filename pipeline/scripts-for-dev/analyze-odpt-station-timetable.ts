@@ -8,21 +8,21 @@
  * Useful for understanding ODPT data quality and planning timetable extraction.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts <a> <b>      # selected sources
- *   npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-odpt-station-timetable.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-odpt-station-timetable.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-odpt-station-timetable.ts <a> <b>      # selected sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-odpt-station-timetable.ts --list-sources
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { OdptRailway, OdptStationTimetable } from '../../src/types/odpt-train';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import type { OdptRailway, OdptStationTimetable } from '../src/types/odpt-train';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import {
   listOdptTrainSourceNames as listSourceNames,
   loadOdptTrainSource as loadSource,
-} from '../../src/lib/resources/load-odpt-train-sources';
+} from '../src/lib/resources/load-odpt-train-sources';
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,

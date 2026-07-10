@@ -13,7 +13,7 @@ import type {
   OdptRailway,
   OdptStationTimetable,
   OdptStationTimetableObject,
-} from '../../../../src/types/odpt-train';
+} from '../../../src/types/odpt-train';
 import {
   ODPT_STATION_TIMETABLE_SECTION_NAMES,
   analyzeOdptStationTimetable,
