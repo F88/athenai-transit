@@ -16,8 +16,7 @@ const REPO_ROOT = path.dirname(fileURLToPath(import.meta.url));
  * across src/ scripts/ pipeline/). Keep this value in sync with the pipeline
  * copy: `public` (default / CI) or `__AT_DATA__` (local dev).
  */
-const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
-// const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
 
 /**
  * Root directory holding the transit data delivery directories produced by

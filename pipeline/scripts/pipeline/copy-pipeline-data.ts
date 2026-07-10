@@ -29,8 +29,7 @@ interface SyncTarget {
   dest: string;
 }
 
-export const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
-// export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
 
 const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
 
