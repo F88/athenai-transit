@@ -20,7 +20,7 @@ The app uses `vite-plugin-pwa` (`generateSW` + `autoUpdate`). Standalone install
 - `StaleWhileRevalidate` returns cached data immediately and updates in the background.
 - A single source `data.json` ranges from a few KB to about 18 MB (`snws` about 3 KB, `minkuru` about 18 MB, measured 2026-05-12).
 - Default all-enabled `data.json` totals about 91 MB; including `shapes.json` / `insights.json`, the full data-v2 bundle set totals about 132 MB (measured 2026-05-12).
-- The transit data bundles are not precached (`globIgnores: ['data/**', 'data-v2/**']`). `data/**` remains for legacy v1.
+- The transit data bundles are not precached (`globIgnores: ['data/**', 'data-v2/**']`). `data/**` covers the current `/data/v2` path; `data-v2/**` is kept defensively for the retired hyphenated path.
 - App-shell precache uses `globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}']`.
 
 ### Map tile cache
