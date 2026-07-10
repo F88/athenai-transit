@@ -9,7 +9,7 @@
  * TODO: Empty headsign does not always mean "unknown destination".
  * Circular routes (e.g. community buses like Kazaguruma) intentionally
  * have no destination because the route loops back to the origin.
- * To distinguish these cases, add a `circular` flag to RouteJson
+ * To distinguish these cases, add a `circular` flag to RouteV2Json
  * (determined by whether the first and last stop_id in stop_times
  * are the same) and use it here to show different annotations:
  * - circular route → "巡回" or no annotation

@@ -1,9 +1,10 @@
 /**
  * Wire-format types for the next-generation pipeline output (v2).
  *
- * This file defines the target schema for the data JSON redesign.
- * The v1 types in transit-json.ts remain in use until the pipeline
- * and repository are migrated.
+ * This is the current wire format produced by the v2 pipeline. Sections
+ * unchanged from v1 (calendar / feed info / translations) are reused from
+ * transit-json.ts; the deprecated v1-only bundle types live in
+ * transit-v1-json.ts.
  *
  * ## v1 → v2 Summary
  *

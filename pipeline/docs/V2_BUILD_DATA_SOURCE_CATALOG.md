@@ -282,7 +282,7 @@ catalog builder は per-source 入力の欠損を **skip + warn** として扱�
 
 ## CI 組み込み方針
 
-`Update Transit Data` 系 workflow では、少なくとも次の順序で実行する想定:
+transit データ更新 workflow (`upload-transit-data-to-vercel-blob.yml`) では、少なくとも次の順序で実行する想定:
 
 ```bash
 npm run pipeline:build:v2-data
