@@ -7,21 +7,22 @@ import type { Plugin } from 'vite';
 const REPO_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Delivery base dir under the repo root (`public/` or `__AT_DATA__/`).
+ * Delivery base dir under the repo root: `__LOCAL_AT_DATA__/` (out of git).
  *
  * Intentionally duplicated from `pipeline/scripts/pipeline/copy-pipeline-data.ts`.
  * A repo-root file cannot import from `pipeline/`: `.vercelignore` excludes
  * `pipeline/` from the production build, so a Vercel build would fail to resolve
  * the import (same cross-boundary constraint that duplicates `sanitizeDirName`
  * across src/ scripts/ pipeline/). Keep this value in sync with the pipeline
- * copy: `public` (default / CI) or `__AT_DATA__` (local dev).
+ * copy. Production data is served from Vercel Blob, so this delivery dir is
+ * local-only and kept out of git.
  */
-const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+const TRANSIT_DATA_DELIVERY_BASE_DIR = '__LOCAL_AT_DATA__';
 
 /**
  * Root directory holding the transit data delivery directories produced by
- * `npm run pipeline:deliver:local` (e.g. `__AT_DATA__/data-v2`,
- * `__AT_DATA__/next-dev`). The transit data path's last segment selects which
+ * `npm run pipeline:deliver:local` (e.g. `__LOCAL_AT_DATA__/data-v2`,
+ * `__LOCAL_AT_DATA__/next-dev`). The transit data path's last segment selects which
  * dataset to serve (e.g. `/data-v2` -> `<deliveryRoot>/data-v2`), so switching
  * `VITE_TRANSIT_DATA_PATH` picks among the delivered datasets.
  */
