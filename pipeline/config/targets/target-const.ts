@@ -47,25 +47,6 @@ export const CONFIG_GTFS_ALL_TARGETS = [
   'yokohama-municipal-subway', // Yokohama Municipal Subway
 ];
 
-// /**
-//  * Resources for preliminary research
-//  */
-// const preliminaryResearchTargets = [
-//   'kyoto-city-subway', // (ODPT Challenge 2026)
-//   'keio-train', // (ODPT Challenge 2026)
-//   'tobu-train', // (ODPT Challenge 2026)
-// ];
-
-export const CONFIG_ODPT_TRAIN_TARGETS = [
-  'yurikamome', // Yurikamome
-];
-
-export const CONFIG_ODPT_BUS_TARGETS = [
-  //
-  // not implemented yet
-  // 'tokyu-bus', // Tokyu Bus Timetable
-];
-
 export const PREFIX_ALL_TARGETS = [
   '13103b', // Chii Bus (Minato Community Bus)
   '85b', // Hachiko Bus (Shibuya City community bus)

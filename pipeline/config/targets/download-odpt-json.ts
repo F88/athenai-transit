@@ -12,8 +12,8 @@ export default [
   'yurikamome-railway',
   'yurikamome-station-timetable',
   // Tokyu Bus ODPT JSON sources
-  'tokyu-bus-busstop',
-  'tokyu-bus-busroute',
-  'tokyu-bus-busstop-timetable',
-  'tokyu-bus-bus-timetable',
+  // 'tokyu-bus-busstop',
+  // 'tokyu-bus-busroute',
+  // 'tokyu-bus-busstop-timetable',
+  // 'tokyu-bus-bus-timetable',
 ];

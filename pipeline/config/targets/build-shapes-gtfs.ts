@@ -2,38 +2,17 @@
  * Target list for batch GTFS route shape builds.
  *
  * Each entry is a source-name (filename without .ts extension)
- * from pipeline/config/resources/gtfs/ that has shapes.txt data.
+ * from pipeline/config/resources/gtfs/.
  *
- * Sources without shapes.txt (e.g. kanto-bus, keio-bus) are
- * safely skipped by the script, but listing only relevant sources
- * avoids unnecessary DB opens.
+ * The build script always writes a shapes.json for every listed source:
+ * real geometry when shapes.txt is present, otherwise an empty bundle
+ * ({ shapes: { v: 2, data: {} } }). Emitting an empty bundle turns the
+ * app's per-source shapes.json request into a cacheable 200 JSON instead
+ * of a 404 / SPA index.html miss (see Issue #329).
  *
  * Comment out entries to temporarily skip them.
  */
-export default [
-  'toei-bus',
-  'suginami-gsm',
-  'chiyoda-bus',
-  'chuo-bus',
-  'kita-bus',
-  'kyoto-city-bus',
-  'kyoto-city-subway',
-  'oshima-bus',
-  'keisei-transit-bus',
-  'nagoya-srt',
-  'vag-freiburg',
-  'actv-nav',
-  'sanwa-shosen',
-  'kagoshima-maritime-bureau',
-  'okushiri-ferry',
-  'yokohama-municipal-subway',
-  'yokohama-municipal-bus',
-  'chii-bus',
-  'hankyu-ferry',
-  'bunkyo-c-bus',
-  'taito-c-bus',
-  // itabashi-rin2-bus: shapes.txt has geometry but trips lack shape_id, so no
-  // shapes are emitted today. Kept registered to auto-generate if a future feed
-  // adds the trips.shape_id linkage.
-  'itabashi-rin2-bus',
-];
+import { CONFIG_GTFS_ALL_TARGETS } from './target-const';
+
+const TARGETS = CONFIG_GTFS_ALL_TARGETS;
+export default TARGETS;

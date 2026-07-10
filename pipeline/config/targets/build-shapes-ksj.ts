@@ -7,19 +7,10 @@
  * Comment out entries to temporarily skip them.
  */
 export default [
-  //
-  'toei-train',
-  'yurikamome',
-  'mir-train',
-  'tama-monorail',
-  'twr-rinkai',
-  'tokyometro',
+  'toei-train', // Toei Train
+  'yurikamome', // Yurikamome
+  'mir-train', // Tsukuba Express
+  'tama-monorail', // Tama Monorail
+  'twr-rinkai', // TWR Rinkai Line
+  'tokyometro', // Tokyo Metro
 ];
-
-// /**
-//  * Resources for preliminary research
-//  */
-// const preliminaryResearchTargets = [
-//   'keio-train', // (ODPT Challenge 2026)
-//   'tobu-train', // (ODPT Challenge 2026)
-// ];
