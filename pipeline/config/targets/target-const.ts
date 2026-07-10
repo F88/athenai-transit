@@ -1,15 +1,28 @@
-export const CONFIG_GTFS_ALL_TARGETS = [
+const CONFIG_GTFS_FERRY_TARGETS = [
   'actv-nav', // ACTV Navigazione
+  'hankyu-ferry', // Hankyu Ferry
+  'itsukishima-kisen', // Itsukishima Kisen
+  'kagoshima-maritime-bureau', // Sakurajima Ferry
+  'meimon-taiyo-ferry', // Meimon Taiyo Ferry
+  'okushiri-ferry', // Okushiri Island Ferry
+  'orange-ferry', // Orange Ferry
+  'sanwa-shosen', // Sanwa Shosen
+  'tokai-kisen', // Tokai Kisen
+  'tokyo-cruise-ship', // Tokyo Cruise Ship
+  'uwajima-unyu', // Uwajima Unyu Ferries
+];
+
+/**
+ * Data size: Many large-sized data
+ */
+const CONFIG_GTFS_BUS_TARGETS = [
   'bunkyo-c-bus', // Bunkyo Community Bus (B-GURU)
   'chii-bus', // Chii Bus (Minato Community Bus)
   'chiyoda-bus', // Kazaguruma (Chiyoda Community Bus)
   'chuo-bus', // Edo Bus (Chuo City Community Bus)
   'hachiko-bus', // Hachiko Bus (Shibuya City community bus)
-  'hankyu-ferry', // Hankyu Ferry
   'itabashi-rin2-bus', // Rinrin-GO (Itabashi City community bus)
-  'itsukishima-kisen', // Itsukishima Kisen
   'iyotetsu-bus', // Iyotetsu Bus
-  'kagoshima-maritime-bureau', // Sakurajima Ferry
   'kanto-bus', // Kanto Bus
   'kawasaki-city-bus', // Kawasaki City Bus
   'keio-bus', // Keio Bus
@@ -18,83 +31,92 @@ export const CONFIG_GTFS_ALL_TARGETS = [
   'kyoto-bus', // Kyoto Bus
   'kyoto-city-bus', // Kyoto City Bus
   'meguro-c-bus', // Meguro City Community Bus
-  'meimon-taiyo-ferry', // Meimon Taiyo Ferry
-  'mir-train', // Tsukuba Express
   'miyake-bus', // Miyake Village Bus
   'nagoya-srt', // Nagoya SRT
   'nishi-tokyo-bus', // Nishi Tokyo Bus
   'odakyu-bus', // Odakyu Bus
-  'okushiri-ferry', // Okushiri Island Ferry
-  'orange-ferry', // Orange Ferry
   'oshima-bus', // Oshima Bus
   'ota-c-bus', // Ota City Community Bus
   'rinko-bus', // Kawasaki Tsurumi Rinko Bus
-  'sanwa-shosen', // Sanwa Shosen
   'seibu-bus', // Seibu Bus
   'shinagawa-c-bus', // Shinagawa City Community Bus
   'suginami-gsm', // Suginami City Green Slow Mobility
   'taito-c-bus', // Taito City Circular Route Bus "Megurin"
-  'tama-monorail', // Tama Monorail
   'toei-bus', // Toei Bus
-  'toei-train', // Toei Train
-  'tokai-kisen', // Tokai Kisen
-  'tokyo-cruise-ship', // Tokyo Cruise Ship
-  'tokyometro', // Tokyo Metro
-  'twr-rinkai', // TWR Rinkai Line
-  'uwajima-unyu', // Uwajima Unyu Ferries
   'vag-freiburg', // VAG Freiburg
   'yokohama-municipal-bus', // Yokohama Municipal Bus
-  'yokohama-municipal-subway', // Yokohama Municipal Subway
 ];
 
-export const PREFIX_ALL_TARGETS = [
-  '13103b', // Chii Bus (Minato Community Bus)
-  '85b', // Hachiko Bus (Shibuya City community bus)
+export const CONFIG_GTFS_ALL_TARGETS = [
+  'mir-train', // Tsukuba Express
+  'tama-monorail', // Tama Monorail
+  'toei-train', // Toei Train
+  'tokyometro', // Tokyo Metro
+  'twr-rinkai', // TWR Rinkai Line
+  'yokohama-municipal-subway', // Yokohama Municipal Subway
+  ...CONFIG_GTFS_FERRY_TARGETS,
+  ...CONFIG_GTFS_BUS_TARGETS,
+];
+
+const PREFIX_FERRY_TARGETS = [
   'actvnav', // ACTV Navigazione
-  'bgle', // Bunkyo Community Bus (B-GURU)
-  'edobus', // Edo Bus (Chuo City Community Bus)
   'han9fry', // Hankyu Ferry
   'itkfry', // Itsukishima Kisen
-  'iyt2', // Iyotetsu Bus
-  'kazag', // Kazaguruma (Chiyoda Community Bus)
-  'kbus', // Kita City Community Bus K-bus
-  'kcbus', // Kyoto City Bus
   'kcmb', // Sakurajima Ferry
+  'mtfry', // Meimon Taiyo Ferry
+  'oksrif', // Okushiri Island Ferry
+  'orgfry', // Orange Ferry
+  'snws', // Sanwa Shosen
+  'tkksn', // Tokai Kisen
+  'tcship', // Tokyo Cruise Ship
+  'uwjmfry', // Uwajima Unyu Ferries
+];
+
+/**
+ * Data size: Many large-sized data
+ */
+const PREFIX_BUS_TARGETS = [
+  'bgle', // Bunkyo Community Bus (B-GURU)
+  '13103b', // Chii Bus (Minato Community Bus)
+  'kazag', // Kazaguruma (Chiyoda Community Bus)
+  'edobus', // Edo Bus (Chuo City Community Bus)
+  '85b', // Hachiko Bus (Shibuya City community bus)
+  'rin2', // Rinrin-GO (Itabashi City community bus)
+  'iyt2', // Iyotetsu Bus
+  'ktbus', // Kanto Bus
+  'norufin', // Kawasaki City Bus
   'kobus', // Keio Bus
   'kseiw', // Keisei Transit Bus (Chiba West)
-  'ktbus', // Kanto Bus
+  'kbus', // Kita City Community Bus K-bus
   'kytbus', // Kyoto Bus
-  'megurin', // Taito City Circular Route Bus "Megurin"
-  'minkuru', // Toei Bus
-  'mir', // Tsukuba Express
-  'mtfry', // Meimon Taiyo Ferry
+  'kcbus', // Kyoto City Bus
+  'sanma', // Meguro City Community Bus
   'mykbus', // Miyake Village Bus
-  'norufin', // Kawasaki City Bus
   'nsrt', // Nagoya SRT
   'ntbus', // Nishi Tokyo Bus
   'od9bus', // Odakyu Bus
-  'oksrif', // Okushiri Island Ferry
-  'orgfry', // Orange Ferry
   'osmbus', // Oshima Bus
-  'rin2', // Rinrin-GO (Itabashi City community bus)
-  'rintan', // Kawasaki Tsurumi Rinko Bus
-  'sanma', // Meguro City Community Bus
-  'sbbus', // Seibu Bus
-  'sggsm', // Suginami City Green Slow Mobility
-  'shinabus', // Shinagawa City Community Bus
-  'snws', // Sanwa Shosen
   'tamachan', // Ota City Community Bus
-  'tcship', // Tokyo Cruise Ship
-  'tkksn', // Tokai Kisen
+  'rintan', // Kawasaki Tsurumi Rinko Bus
+  'sbbus', // Seibu Bus
+  'shinabus', // Shinagawa City Community Bus
+  'sggsm', // Suginami City Green Slow Mobility
+  'megurin', // Taito City Circular Route Bus "Megurin"
+  'minkuru', // Toei Bus
+  'vagfr', // VAG Freiburg
+  'yhb', // Yokohama Municipal Bus
+];
+
+export const PREFIX_ALL_TARGETS = [
+  'mir', // Tsukuba Express
   'tmm', // Tama Monorail
   'toaran', // Toei Train
   'tome', // Tokyo Metro
   'twrr', // TWR Rinkai Line
-  'uwjmfry', // Uwajima Unyu Ferries
-  'vagfr', // VAG Freiburg
-  'yhb', // Yokohama Municipal Bus
   'yht', // Yokohama Municipal Subway
-  'yurimo', // Yurikamome
+  'yurimo', // Yurikamome // Note: Yurikamome is not GTFS but ODPT-Train
+  ...PREFIX_FERRY_TARGETS,
+  ...PREFIX_BUS_TARGETS,
 ];
 
 // /**
