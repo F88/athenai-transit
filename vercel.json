@@ -1,14 +1,22 @@
 {
-  "rewrites": [
-    {
-      "source": "/data-v3/:path*",
-      "destination": "https://q7b6o26cj43mlftk.public.blob.vercel-storage.com/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
+  "rewrites": {
+    "beforeFiles": [
+      {
+        "source": "/data-v2/:path*",
+        "destination": "https://q7b6o26cj43mlftk.public.blob.vercel-storage.com/:path*"
+      }
+    ],
+    "afterFiles": [
+      {
+        "source": "/data-v3/:path*",
+        "destination": "https://q7b6o26cj43mlftk.public.blob.vercel-storage.com/:path*"
+      },
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ]
+  },
   "headers": [
     {
       "source": "/data-v3/(.*)",
