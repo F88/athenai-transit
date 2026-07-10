@@ -9,6 +9,21 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Vercel Blob データ配信基盤: transit データを Vercel Blob へアップロードする CI workflow と CLI ツール群を追加し、`/data-v3` を Blob へプロキシする vercel rewrite + CDN cache header (`s-maxage`) を設定した (#328)。
+- WebApp: transit データの取得元オリジンを `VITE_TRANSIT_DATA_ORIGIN` で設定可能にした。取得 path (`VITE_TRANSIT_DATA_PATH`) と分離し、別オリジン (Blob 等) からの配信に対応する (#330)。
+- Pipeline: リソース定義に `dataUrls` / `notes` メタデータフィールドを追加した (#325)。
+
+### Changed
+
+- Pipeline: shapes を持たないソースにも空の `shapes.json` を常時出力するようにした。欠損ファイルによる 404 (Blob) / index.html 誤配 (static) を避け、CDN cache 可能な 200 application/json にする。空の shapes バンドルは validate では warning でなく info 扱い (#329)。
+- Pipeline: バッチ target リストを共有定数モジュール (`target-const.ts` の `CONFIG_GTFS_ALL_TARGETS` / `PREFIX_ALL_TARGETS`) に集約し、各ソースの英語名コメントと内容/構造のロックテストを追加した (#331)。
+- Pipeline: 開発/分析用スクリプトを `pipeline/scripts/dev/` から `pipeline/scripts-for-dev/` へ移動し、CI/本番パイプライン用スクリプト (`pipeline/scripts/pipeline/`) と構造上分離した。これらは手動実行専用ツールで data build pipeline には含まれない。
+- WebApp: `VITE_TRANSIT_DATA_ORIGIN` の検証を bare origin のみ許容に厳密化し、`VITE_TRANSIT_DATA_PATH` の末尾スラッシュを許容するようにした (#330)。
+- PWA: VitePWA の設定を `vite.config.ts` から `pwa.config.ts` に分離した (#322)。
+- CI: KSJ (鉄道形状) ビルドの部分失敗を許容し、transit data 更新 workflow が KSJ 失敗で停止しないようにした (#323)。
+
 ## [2026.07.01]
 
 ### Added
