@@ -27,6 +27,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - CI: KSJ (鉄道形状) ビルドの部分失敗を許容し、transit data 更新 workflow が KSJ 失敗で停止しないようにした (#323)。
 - Pipeline: ローカルのデータ配備を pipeline の責務 (Stage 6) として明確化した。配備スクリプトを `scripts/copy-pipeline-data.ts` から `pipeline/scripts/pipeline/copy-pipeline-data.ts` へ移動し、npm script を `data:sync` から `pipeline:deliver:local` へ改名。用途 (ローカル配信領域への配備) を名前で明示し、本番の Vercel Blob upload と対称にする。配備先ベースは `TRANSIT_DATA_DELIVERY_BASE_DIR` (既定 `public/`、`__AT_DATA__/` に切替可) で、cross-boundary import 不可 (`.vercelignore` が `pipeline/` を除外) のため dev plugin 側にも定数を意図的に複製する。重複していた `scripts/lib/sanitize-dir-name.ts` は削除し pipeline の `file-utils` を使用。
 - Scripts: Vercel 運用の npm script を `vercel:*` に整理した。Blob 操作を `pipeline:{upload,delete,list}:blob` から `vercel:blob:{upload,delete,list}` へ、deploy cleanup を `cleanup:vercel[:run]` から `vercel:deployment:cleanup[:run]` へ改名。これらは pipeline のビルドステージではなくローカル手動の Vercel 運用 util であり (CI は npm 経由で呼ばない)、`pipeline:*` と prefix で分離する。
+- CI: Blob upload workflow (`upload-transit-data-to-vercel-blob.yml`) の Job Summary を Blob upload 結果ベースに刷新した。upload script の stdout を capture し、アップロード集計 (`Done: N uploaded, M failed`) と失敗 (`ERR`) を表示する。git 配信版から流用していた git diff は download metadata 差分 (`workspace/state/`) として補助的に残す。全 upload (`--all`) のため成功ファイルの個別行は job log 側とし、summary には出さない。
 
 ## [2026.07.01]
 

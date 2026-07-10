@@ -287,8 +287,8 @@ jobs:
           VERCEL_V3_BLOB_READ_WRITE_TOKEN: ${{ secrets.VERCEL_V3_BLOB_READ_WRITE_TOKEN }}
         run: |
           set +e
-          npx tsx pipeline/scripts/pipeline/vercel-blob/upload-data-to-blob.ts --dir pipeline/workspace/_build/data-v2 --all
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          npx tsx pipeline/scripts/pipeline/vercel-blob/upload-data-to-blob.ts --dir pipeline/workspace/_build/data-v2 --all 2>&1 | tee blob-upload-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Warn on Blob upload partial failure
         if: steps.upload-blob.outputs.exit_code == '1'
@@ -322,16 +322,33 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "---" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          # Primary: Blob upload result. The data is delivered to Vercel Blob,
+          # not committed to git, so the git diff further below is metadata only.
+          echo "## Blob upload" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f blob-upload-output.txt ]; then
+            # Summary line ("Done: N uploaded, M failed") + any failures ("ERR ...").
+            # The full stdout (per-file "ok" lines) is available in the job log,
+            # so only the summary and failures are surfaced here.
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E '^Done:|ERR ' blob-upload-output.txt >> "$GITHUB_STEP_SUMMARY" \
+              || echo "(no Done/ERR lines captured)" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No Blob upload output captured (upload step may have been skipped)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          # Secondary: git metadata diff (download state under workspace/state/).
           if [ "${{ steps.changes.outputs.changed }}" = "true" ]; then
-            echo "## Updated files" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Updated metadata" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             git diff --cached --stat >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "## No data changes" >> "$GITHUB_STEP_SUMMARY"
+            echo "## No metadata change" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "GTFS data is already up to date. No commit created." >> "$GITHUB_STEP_SUMMARY"
+            echo "Data uploaded to Blob; download metadata unchanged. No commit created." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Commit & Push
