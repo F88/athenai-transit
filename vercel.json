@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/data-v3/:path*",
+      "source": "/data/v2/:path*",
       "destination": "https://q7b6o26cj43mlftk.public.blob.vercel-storage.com/:path*"
     },
     {
@@ -11,13 +11,7 @@
   ],
   "headers": [
     {
-      "source": "/data-v3/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=300, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/data-v2/(.*)",
+      "source": "/data/v2/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=86400, must-revalidate" }
       ]

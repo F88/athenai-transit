@@ -1,7 +1,7 @@
 name: Update Transit Data (Vercel Blob)
 
 # Build the latest Athenai Transit data from upstream open data (GTFS / ODPT)
-# and publish it by uploading to Vercel Blob (served to the app via /data-v3).
+# and publish it by uploading to Vercel Blob (served to the app via /data/v2).
 # Same pipeline as update-transit-data.yml; only the publish destination differs.
 
 on:
@@ -275,7 +275,7 @@ jobs:
       # ── Upload to Vercel Blob ──────────────────────────────
       # Replaces "Sync to public/" and committing public/<data dir> to git:
       # instead, upload the build output straight to a Vercel Blob store. The
-      # app fetches it via the same-origin /data-v3/* rewrite in vercel.json.
+      # app fetches it via the same-origin /data/v2/* rewrite in vercel.json.
       # Reads the build output directly, so no pipeline:deliver:local is needed.
       #
       # Exit codes: 0=OK, 1=partial failure or other error, 2=all failed.
