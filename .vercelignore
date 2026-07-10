@@ -10,4 +10,5 @@ node_modules
 .storybook/
 
 # Transit data is served from Vercel Blob (rewrite in vercel.json).
+public/data/
 public/data-v2/
