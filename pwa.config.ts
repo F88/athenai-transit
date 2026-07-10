@@ -41,7 +41,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     ],
     runtimeCaching: [
       {
-        urlPattern: /\/data-v2\/.*\.json$/,
+        urlPattern: /\/data\/v2\/.*\.json$/,
         handler: 'StaleWhileRevalidate',
         options: {
           cacheName: 'gtfs-data-v2',

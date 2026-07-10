@@ -8,3 +8,6 @@ node_modules
 .github/
 .claude/
 .storybook/
+
+# Transit data is served from Vercel Blob (rewrite in vercel.json).
+public/data-v2/
