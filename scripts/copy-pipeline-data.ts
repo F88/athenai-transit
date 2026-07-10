@@ -28,6 +28,8 @@ interface SyncTarget {
   dest: string;
 }
 
+const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
+
 /**
  * Resolve the destination directory for transit data sync.
  * Reads `PIPELINE_TRANSIT_DATA_DIR` env var; defaults to `data-v2`.
@@ -35,7 +37,7 @@ interface SyncTarget {
  */
 export function resolveDestDir(env: Record<string, string | undefined> = process.env): string {
   const dir = sanitizeDirName(
-    env.PIPELINE_TRANSIT_DATA_DIR ?? 'data-v2',
+    env.PIPELINE_TRANSIT_DATA_DIR ?? DEFAULT_PIPELINE_TRANSIT_DATA_DIR,
     'PIPELINE_TRANSIT_DATA_DIR',
   );
   return 'public/' + dir;
