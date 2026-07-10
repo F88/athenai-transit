@@ -57,9 +57,11 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
   try {
     const shapes = extractShapes(db, prefix);
 
+    // Always write shapes.json, even when there are no shapes: an empty bundle
+    // ({ shapes: { v: 2, data: {} } }) makes the app's per-source request a
+    // cacheable 200 JSON instead of a 404 / SPA index.html miss (Issue #329).
     if (Object.keys(shapes).length === 0) {
-      console.log(`  No shapes found, skipping.`);
-      return;
+      console.log(`  No shapes found; writing empty bundle.`);
     }
 
     const outputDir = join(OUTPUT_DIR, prefix);

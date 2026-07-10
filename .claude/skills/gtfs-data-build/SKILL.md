@@ -20,6 +20,7 @@ Commands and execution order are documented in `CLAUDE.md` "Data preparation" se
 - **Steps 1-2 (download)**: Skip if source files are already up to date. GTFS files live in `pipeline/workspace/data/gtfs/{outDir}/`; ODPT JSON files in `pipeline/workspace/data/odpt-json/{outDir}/`.
 - **Step 7 (KSJ shapes)**: Skip if only bus data changed. Requires `pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson`.
 - **Step 12 (data:sync)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/` where the app serves it. The default is `public/data-v2/`, but the destination may be overridden by `PIPELINE_TRANSIT_DATA_DIR` depending on the environment.
+    - Note: this step is for local development (so `npm run dev` can serve the freshly built data from `public/`). The production build procedure differs in part and does not necessarily include this step — do not assume the local and production procedures are identical.
 
 ## Data flow
 

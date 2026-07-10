@@ -28,7 +28,13 @@ import type { ShapePointV2, ShapesBundle } from '@contracts/data/transit-v2-json
 
 export interface ValidationIssue {
   prefix: string;
-  level: 'error' | 'warn';
+  /**
+   * Severity. `error` fails validation (exit 2); `warn` passes with a
+   * non-zero warning code (exit 1); `info` is a non-actionable notice that is
+   * displayed but does not affect the exit code (e.g. an intentionally empty
+   * shapes bundle, see Issue #329).
+   */
+  level: 'error' | 'warn' | 'info';
   /** Machine-readable category for grouping issues in output. */
   category: 'structure' | 'quality' | 'integrity' | 'calendar';
   message: string;
@@ -130,9 +136,14 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
   routeCount = Object.keys(data).length;
 
   if (routeCount === 0) {
+    // An empty shapes bundle is an expected, valid state: sources without
+    // shapes.txt (or without trip.shape_id linkage) still emit shapes.json so
+    // the app's per-source request is a cacheable 200 JSON (Issue #329).
+    // Surface it as an informational notice, not a warning -- it must not
+    // affect the exit code.
     issues.push({
       prefix,
-      level: 'warn',
+      level: 'info',
       category: 'quality',
       message: 'shapes.data is empty (0 routes)',
     });

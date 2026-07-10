@@ -108,11 +108,13 @@ describe('validateShapesBundle', () => {
   });
 
   describe('empty and malformed shapes', () => {
-    it('warns when shapes.data is empty', () => {
+    it('reports an info notice (not a warning) when shapes.data is empty', () => {
+      // An empty shapes bundle is an expected, valid state (Issue #329): it is
+      // surfaced as an info notice so it does not affect the validation exit code.
       writeBundle('empty', makeValidBundle({}));
       const result = validateShapesBundle('empty', TMP_DIR);
       expect(result.issues).toHaveLength(1);
-      expect(result.issues[0].level).toBe('warn');
+      expect(result.issues[0].level).toBe('info');
       expect(result.issues[0].message).toContain('empty');
     });
 
