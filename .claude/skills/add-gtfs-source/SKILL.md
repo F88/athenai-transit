@@ -151,16 +151,16 @@ npm run pipeline:build:v2-data-source-catalog
 
 # 6.6 Validate (register validate.ts with PREFIX) and sync
 npm run pipeline:validate:v2
-npm run data:sync
+npm run data:deliver:local
 ```
 
 Target-list key reminder: `build-json.ts` / `build-shapes-gtfs.ts` use the **source-name**; `build-insights.ts` / `build-global-insights.ts` / `build-data-source-catalog.ts` / `validate.ts` use the **prefix**. Mixing them up silently skips the source in CI.
 
 `pipeline:validate:v2` is the same check CI runs. **Do not skip it locally** — it catches missing target-list registrations before they break CI. Treat any `❌ MISSING (required)` line as a blocker. (An expired feed surfaces here as a `Calendar has expired services` warning — expected if step 2 already flagged the expiry.)
 
-`data:sync` copies `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/`, defaulting to `public/data-v2/`. The destination is configurable, so when `PIPELINE_TRANSIT_DATA_DIR` is overridden in the environment, `public/data-v2/` is **not** the directory that gets updated — check the effective value if the app still shows stale data. See the `gtfs-data-build` skill for the full data flow.
+`data:deliver:local` copies `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/`, defaulting to `public/data-v2/`. The destination is configurable, so when `PIPELINE_TRANSIT_DATA_DIR` is overridden in the environment, `public/data-v2/` is **not** the directory that gets updated — check the effective value if the app still shows stale data. See the `gtfs-data-build` skill for the full data flow.
 
-If, after seeing the built colors, you need to adjust `routeColorFallbacks`, edit the resource definition and re-run `build-from-gtfs.ts {source-name}` + `npm run data:sync`.
+If, after seeing the built colors, you need to adjust `routeColorFallbacks`, edit the resource definition and re-run `build-from-gtfs.ts {source-name}` + `npm run data:deliver:local`.
 
 Verify the new source appears in the resource listing:
 

@@ -24,7 +24,7 @@ Pipeline execution time measurements for local development and CI environments.
 | Build ODPT Train               | `pipeline:build:odpt-train`    | 2.3s       | 2.0s       | 0.9x     |
 | Build Shapes (GTFS)            | `pipeline:build:shapes:gtfs`   | 9.3s       | 9.0s       | 1.0x     |
 | Build Shapes (KSJ)             | `pipeline:build:shapes:ksj`    | 4.6s       | 5.0s       | 1.1x     |
-| Data Sync                      | `data:sync`                    | 1.4s       | 1.0s       | 0.7x     |
+| Data Sync                      | `data:deliver:local`           | 1.4s       | 1.0s       | 0.7x     |
 | Validate                       | `pipeline:validate`            | 1.2s       | 2.0s       | 1.7x     |
 | **Pipeline Total**             |                                | **116.6s** | **179.0s** | **1.5x** |
 

@@ -20,7 +20,7 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 | 4     | **Build Derived App Data** — 派生 bundle / global artifact 生成 | `pipeline/workspace/_build/data-v2/{prefix}/{data,insights,shapes}.json`, `pipeline/workspace/_build/data-v2/global/insights.json`, resource definitions | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/` |
 | 5     | **Validate** — v2 bundle / global artifact 検証                 | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/`                                                               | 検証ログ                                                                                   |
 
-`public/<PIPELINE_TRANSIT_DATA_DIR>/` へのコピー (`npm run data:sync`, default: `public/data-v2/`) は WebApp 側の責務であり、pipeline の Stage には含まない。
+`public/<PIPELINE_TRANSIT_DATA_DIR>/` へのコピー (`npm run data:deliver:local`, default: `public/data-v2/`) は WebApp 側の責務であり、pipeline の Stage には含まない。
 
 ## スクリプト
 
@@ -70,7 +70,7 @@ npm run pipeline:build:v2-data-source-catalog # v2 bundle 群 + global/insights.
 npm run pipeline:validate:v2
 
 # public/ へコピー (pipeline スコープ外)
-npm run data:sync
+npm run data:deliver:local
 ```
 
 ## 処理の流れ
@@ -140,7 +140,7 @@ flowchart TD
         CATALOG --> VAL
     end
 
-    JSON --> SYNC["data:sync → public/<PIPELINE_TRANSIT_DATA_DIR>/"]
+    JSON --> SYNC["data:deliver:local → public/<PIPELINE_TRANSIT_DATA_DIR>/"]
     SHAPES --> SYNC
     INSIGHTS --> SYNC
     GINSIGHTS --> SYNC

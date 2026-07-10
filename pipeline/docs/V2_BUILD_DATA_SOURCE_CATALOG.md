@@ -45,7 +45,7 @@ pipeline/workspace/_build/data-v2/
 
 - catalog 自体が全 source 横断 artifact である
 - `global/insights.json` と同じく、全 source の build 完了後に初めて確定する
-- `data:sync` の既存コピー対象 (`pipeline/workspace/_build/data-v2/` 全体) に自然に含まれる
+- `data:deliver:local` の既存コピー対象 (`pipeline/workspace/_build/data-v2/` 全体) に自然に含まれる
 
 ## 実行タイミング
 
@@ -60,7 +60,7 @@ npm run pipeline:build:v2-insights
 npm run pipeline:build:v2-global-insights
 npm run pipeline:build:v2-data-source-catalog
 npm run pipeline:validate:v2
-npm run data:sync
+npm run data:deliver:local
 ```
 
 DataSourceCatalogBundle は以下に依存するため、`build:v2-global-insights` の後に生成する。
@@ -293,7 +293,7 @@ npm run pipeline:build:v2-insights
 npm run pipeline:build:v2-global-insights
 npm run pipeline:build:v2-data-source-catalog
 npm run pipeline:validate:v2
-npm run data:sync
+npm run data:deliver:local
 ```
 
 catalog builder を CI に組み込むことで、 次を検知できる。
@@ -329,4 +329,4 @@ per-source 欠損は **`Warn on partial failure`** 経路で通知され、 sync
 - target に含まれる prefix ごとに `sources.data[prefix]` が出力される
 - `globalInsights` は `global/insights.json` の実測値で出力される
 - `pipeline:validate:v2` で top-level structure を検証できる
-- `data:sync` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される
+- `data:deliver:local` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される

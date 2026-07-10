@@ -10,13 +10,13 @@ const REPO_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Root directory holding the transit data delivery directories produced by
- * `npm run data:sync` (e.g. `__AT_DATA__/data-v2`, `__AT_DATA__/next-dev`).
+ * `npm run data:deliver:local` (e.g. `__AT_DATA__/data-v2`, `__AT_DATA__/next-dev`).
  * The transit data path's last segment selects which dataset to serve (e.g.
  * `/data-v2` -> `<deliveryRoot>/data-v2`), so switching
  * `VITE_TRANSIT_DATA_PATH` picks among the synced datasets.
  *
  * The base dir name is imported from the sync script so dev serving and
- * `data:sync` stay in lockstep (single source of truth): flipping
+ * `data:deliver:local` stay in lockstep (single source of truth): flipping
  * `TRANSIT_DATA_DELIVERY_BASE_DIR` moves both the sync destination and the
  * dev serving root together.
  */
@@ -29,7 +29,7 @@ const DELIVERY_ROOT = path.join(REPO_ROOT, TRANSIT_DATA_DELIVERY_BASE_DIR);
  * `/data-v2` -> `<deliveryRoot>/data-v2`, `/next-dev` ->
  * `<deliveryRoot>/next-dev`).
  *
- * This lets `npm run dev` serve the data produced by `npm run data:sync`.
+ * This lets `npm run dev` serve the data produced by `npm run data:deliver:local`.
  * It is a no-op when:
  * - not the dev server (`apply: 'serve'`), or
  * - data is fetched cross-origin (`VITE_TRANSIT_DATA_ORIGIN` is set), or
@@ -40,7 +40,7 @@ const DELIVERY_ROOT = path.join(REPO_ROOT, TRANSIT_DATA_DELIVERY_BASE_DIR);
  * `index.html`. When the selected dataset directory does not exist, the
  * middleware is still mounted and every request under the path 404s (with
  * a startup warning), so a wrong `VITE_TRANSIT_DATA_PATH` (or a missing
- * `data:sync`) fails loudly instead of silently returning `index.html`.
+ * `data:deliver:local`) fails loudly instead of silently returning `index.html`.
  *
  * @param opts.basePath - `VITE_TRANSIT_DATA_PATH` (e.g. `/data-v2`).
  * @param opts.origin - `VITE_TRANSIT_DATA_ORIGIN` (empty = same-origin).
@@ -88,12 +88,12 @@ export function serveTransitData(opts: { basePath: string; origin: string }): Pl
 
       // Warn at startup if the selected dataset is missing. The middleware
       // is still mounted below and every request under `base` will 404,
-      // surfacing a wrong VITE_TRANSIT_DATA_PATH or a missing data:sync.
+      // surfacing a wrong VITE_TRANSIT_DATA_PATH or a missing data:deliver:local.
       if (!isExistingDirectory(serveDir)) {
         log.warn(
           `[serve-transit-data] transit data not found: ${path.relative(REPO_ROOT, serveDir)} ` +
             `(from VITE_TRANSIT_DATA_PATH="${opts.basePath}"); requests under "${base}" will 404. ` +
-            `Did you run "npm run data:sync"?`,
+            `Did you run "npm run data:deliver:local"?`,
         );
       }
 

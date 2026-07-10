@@ -12,7 +12,7 @@
  *
  * Usage:
  *   npx tsx scripts/copy-pipeline-data.ts
- *   npm run data:sync
+ *   npm run data:deliver:local
  */
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
