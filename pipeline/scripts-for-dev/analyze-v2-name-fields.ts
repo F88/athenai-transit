@@ -7,12 +7,12 @@
  * inventory of name-related investigation targets.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --json       # all sources as JSON
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --field-counts-tsv
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts <source> --json
- *   npx tsx pipeline/scripts/dev/analyze-v2-name-fields.ts --list       # list sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --json       # all sources as JSON
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --field-counts-tsv
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts <source> --json
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-name-fields.ts --list       # list sources
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -20,12 +20,12 @@ import { join } from 'node:path';
 
 import type { DataBundle } from '@contracts/data/transit-v2-json';
 
-import { PIPELINE_ROOT, V2_OUTPUT_DIR } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { V2_OUTPUT_DIR } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import type { NameFieldAnalysisReport, SourceAnalysis } from './dev-lib/v2-name-fields-analysis';
 import * as nameFieldAnalysisModule from './dev-lib/v2-name-fields-analysis';
 
-const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
+const TARGET_DIR = V2_OUTPUT_DIR;
 
 interface NameFieldAnalysisApi {
   analyzeDataBundleSource: (
@@ -33,11 +33,7 @@ interface NameFieldAnalysisApi {
     bundlePath: string,
     bundle: DataBundle,
   ) => SourceAnalysis;
-  buildAnalysisReport: (
-    results: SourceAnalysis[],
-    publicV2Dir: string,
-    generatedV2Dir: string,
-  ) => NameFieldAnalysisReport;
+  buildAnalysisReport: (results: SourceAnalysis[], targetDir: string) => NameFieldAnalysisReport;
   formatFieldCountsTsv: (results: SourceAnalysis[]) => string;
   formatSourceAnalysis: (result: SourceAnalysis) => string;
 }
@@ -52,16 +48,16 @@ type CliMode =
   | { kind: 'source'; name: string; json: boolean };
 
 function listSourceNames(): string[] {
-  const dirs = readdirSync(PUBLIC_V2_DIR, { withFileTypes: true })
+  const dirs = readdirSync(TARGET_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name !== 'global')
     .map((entry) => entry.name)
     .sort();
 
-  return dirs.filter((name) => existsSync(join(PUBLIC_V2_DIR, name, 'data.json')));
+  return dirs.filter((name) => existsSync(join(TARGET_DIR, name, 'data.json')));
 }
 
 function readBundle(source: string): DataBundle {
-  const bundlePath = join(PUBLIC_V2_DIR, source, 'data.json');
+  const bundlePath = join(TARGET_DIR, source, 'data.json');
   if (!existsSync(bundlePath)) {
     throw new Error(`Bundle not found: ${bundlePath}`);
   }
@@ -72,7 +68,7 @@ function readBundle(source: string): DataBundle {
 function analyzeSource(source: string): SourceAnalysis {
   return nameFieldAnalysis.analyzeDataBundleSource(
     source,
-    join(PUBLIC_V2_DIR, source, 'data.json'),
+    join(TARGET_DIR, source, 'data.json'),
     readBundle(source),
   );
 }
@@ -109,7 +105,7 @@ function parseArgs(args: string[]): CliMode {
 }
 
 function printJsonReport(results: SourceAnalysis[]): void {
-  const report = nameFieldAnalysis.buildAnalysisReport(results, PUBLIC_V2_DIR, V2_OUTPUT_DIR);
+  const report = nameFieldAnalysis.buildAnalysisReport(results, TARGET_DIR);
   console.log(JSON.stringify(report, null, 2));
 }
 
@@ -120,7 +116,7 @@ function main(): void {
 
   if (mode.kind === 'help') {
     console.log('Usage: analyze-v2-name-fields.ts [source-name] [--json]');
-    console.log('  No args           Analyze all public/data-v2 sources');
+    console.log('  No args           Analyze all sources');
     console.log('  <source>          Analyze a single source');
     console.log('  --json            Output machine-readable JSON report');
     console.log('  --field-counts-tsv Output field counts as TSV by source');

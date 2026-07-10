@@ -270,13 +270,13 @@ jobs:
 
       #  disabled: replaced by Vercel Blob upload below
       # - name: Sync to public/
-      #   run: npm run data:sync
+      #   run: npm run pipeline:deliver:local
 
       # ── Upload to Vercel Blob ──────────────────────────────
       # Replaces "Sync to public/" and committing public/<data dir> to git:
       # instead, upload the build output straight to a Vercel Blob store. The
       # app fetches it via the same-origin /data-v3/* rewrite in vercel.json.
-      # Reads the build output directly, so no data:sync is needed.
+      # Reads the build output directly, so no pipeline:deliver:local is needed.
       #
       # Exit codes: 0=OK, 1=partial failure or other error, 2=all failed.
       # npx tsx direct: the npm script contains --env-file-if-exists which could

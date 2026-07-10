@@ -1,7 +1,7 @@
 /**
  * Pure analysis of the v2 GlobalInsightsBundle.
  *
- * Reads `public/data-v2/global/insights.json` (kind = `global-insights`)
+ * Reads `<target_dir>/global/insights.json` (kind = `global-insights`)
  * and summarizes its single section `stopGeo` — cross-source spatial
  * metrics keyed by stopId.
  *
@@ -670,7 +670,7 @@ export function formatGlobalInsightsAnalysis(
     '# Athenai Transit — V2 GlobalInsightsBundle analysis',
     '',
     `# Analyzed at: ${analyzedAt.toISOString()}`,
-    '# Summary of `public/data-v2/global/insights.json` (kind =',
+    '# Summary of `<target_dir>/global/insights.json` (kind =',
     '# `global-insights`). Currently covers the `stopGeo` section only.',
     '# Sections follow the GlobalInsightsBundle type declaration order.',
     '# Each subsection has its own inline legend.',

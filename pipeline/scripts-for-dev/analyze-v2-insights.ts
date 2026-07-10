@@ -3,16 +3,16 @@
 /**
  * Analyze per-source v2 InsightsBundle files.
  *
- * Reads `public/data-v2/<source>/insights.json` and prints duration
+ * Reads `<target_dir>/<source>/insights.json` and prints duration
  * statistics (mean, median, p90, std, min, max, pct trips > 60 min) for
  * each source, in both per-pattern and per-trip (freq-weighted) views.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts              # all sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <a> <b>      # selected sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --list-sources
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --help       # show usage
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts              # all sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts <source>     # single source
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts <a> <b>      # selected sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/analyze-v2-insights.ts --help       # show usage
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -32,17 +32,17 @@ import {
   listGtfsSourceNames,
   loadAllGtfsSources,
   loadGtfsSource,
-} from '../../src/lib/resources/load-gtfs-sources';
+} from '../src/lib/resources/load-gtfs-sources';
 import {
   listOdptJsonSourceNames,
   loadAllOdptJsonSources,
   loadOdptJsonSource,
-} from '../../src/lib/resources/load-odpt-json-sources';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+} from '../src/lib/resources/load-odpt-json-sources';
+import { V2_OUTPUT_DIR } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
-const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
+const TARGET_DIR = V2_OUTPUT_DIR;
 
 function isV2InsightsSectionName(value: string): value is V2InsightsSectionName {
   return (V2_INSIGHTS_SECTION_NAMES as readonly string[]).includes(value);
@@ -52,17 +52,17 @@ interface SourceName {
   nameEn: string;
 }
 
-/** List source prefixes under public/data-v2 that have an insights.json. */
+/** List source prefixes under target directory that have an insights.json. */
 function listSourcePrefixes(): string[] {
-  return readdirSync(PUBLIC_V2_DIR, { withFileTypes: true })
+  return readdirSync(TARGET_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name !== 'global')
     .map((entry) => entry.name)
-    .filter((name) => existsSync(join(PUBLIC_V2_DIR, name, 'insights.json')))
+    .filter((name) => existsSync(join(TARGET_DIR, name, 'insights.json')))
     .sort();
 }
 
 function readInsights(source: string): InsightsBundle {
-  const bundlePath = join(PUBLIC_V2_DIR, source, 'insights.json');
+  const bundlePath = join(TARGET_DIR, source, 'insights.json');
   const bundle = JSON.parse(readFileSync(bundlePath, 'utf-8')) as InsightsBundle;
   // Defensive: catch corrupted or mis-named bundles early so the
   // analyser never tries to interpret e.g. a global-insights bundle
@@ -123,7 +123,7 @@ async function resolveNameForPrefix(prefix: string): Promise<SourceName | null> 
 
 function printHelp(): void {
   console.log('Usage: analyze-v2-insights.ts [source-name ...] [--section <name> ...]');
-  console.log('  No args    Analyze all public/data-v2 sources (excluding global/)');
+  console.log('  No args    Analyze all sources (excluding global/)');
   console.log('  <source>   Analyze one or more sources (by prefix)');
   console.log('  --list-sources  List available sources');
   console.log('  --list-sections List available section names with short descriptions');

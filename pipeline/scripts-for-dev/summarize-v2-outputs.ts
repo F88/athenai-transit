@@ -3,8 +3,8 @@
 /**
  * Summarise v2 pipeline outputs across all bundle files.
  *
- * Reads `public/data-v2/<source>/data.json`, `insights.json`, and
- * optionally `shapes.json` for each source under `public/data-v2/`,
+ * Reads `<target_dir>/<source>/data.json`, `insights.json`, and
+ * optionally `shapes.json` for each source under the target directory,
  * measures raw and gzip-compressed sizes, and emits a per-source
  * text report combining DataBundle entity counts with InsightsBundle
  * trip-volume figures.
@@ -15,12 +15,12 @@
  * v2-insights-summary.ts, ...).
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts                # all sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts <source>       # single source
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts <a> <b>        # selected sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --list-sources
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --list-sections
- *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --section file-sizes
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts                # all sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts <source>       # single source
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts <a> <b>        # selected sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --list-sources
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --list-sections
+ *   npx tsx pipeline/scripts-for-dev/summarize-v2-outputs.ts --section file-sizes
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -33,18 +33,18 @@ import type {
   InsightsBundle,
   ShapesBundle,
 } from '@contracts/data/transit-v2-json';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { V2_OUTPUT_DIR } from '../src/lib/paths';
+import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import {
   listGtfsSourceNames,
   loadAllGtfsSources,
   loadGtfsSource,
-} from '../../src/lib/resources/load-gtfs-sources';
+} from '../src/lib/resources/load-gtfs-sources';
 import {
   listOdptJsonSourceNames,
   loadAllOdptJsonSources,
   loadOdptJsonSource,
-} from '../../src/lib/resources/load-odpt-json-sources';
+} from '../src/lib/resources/load-odpt-json-sources';
 import { truncateSectionDescription } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 import type { FileSizeStats } from './dev-lib/v2-data-summary';
@@ -59,7 +59,7 @@ import {
   type V2OutputsSectionName,
 } from './dev-lib/v2-outputs-summary';
 
-const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
+const TARGET_DIR = V2_OUTPUT_DIR;
 
 interface SourceName {
   nameEn: string;
@@ -70,17 +70,17 @@ function isV2OutputsSectionName(value: string): value is V2OutputsSectionName {
 }
 
 /**
- * List source prefixes under public/data-v2 that have a data.json.
+ * List source prefixes under target directory that have a data.json.
  *
  * `insights.json` is required per-source. `shapes.json` remains
  * optional and its absence surfaces in the report rather than
  * filtering the source out.
  */
 function listSourcePrefixes(): string[] {
-  return readdirSync(PUBLIC_V2_DIR, { withFileTypes: true })
+  return readdirSync(TARGET_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name !== 'global')
     .map((entry) => entry.name)
-    .filter((name) => existsSync(join(PUBLIC_V2_DIR, name, 'data.json')))
+    .filter((name) => existsSync(join(TARGET_DIR, name, 'data.json')))
     .sort();
 }
 
@@ -100,7 +100,7 @@ interface MeasuredSource {
 }
 
 function measureSource(prefix: string): MeasuredSource {
-  const dir = join(PUBLIC_V2_DIR, prefix);
+  const dir = join(TARGET_DIR, prefix);
   const dataPath = join(dir, 'data.json');
   const insightsPath = join(dir, 'insights.json');
   const shapesPath = join(dir, 'shapes.json');
@@ -172,7 +172,7 @@ function measureSource(prefix: string): MeasuredSource {
  * surfacing the absence in the report rather than failing the run.
  */
 function measureGlobalSummary(): GlobalInsightsBundleSummary {
-  const path = join(PUBLIC_V2_DIR, 'global', 'insights.json');
+  const path = join(TARGET_DIR, 'global', 'insights.json');
   const buffer = readFileIfExists(path);
   if (buffer === null) {
     return analyzeV2GlobalSummary({ bundle: null, fileSize: null, gzipSize: null });
@@ -223,7 +223,7 @@ async function resolveNameForPrefix(prefix: string): Promise<SourceName | null> 
 
 function printHelp(): void {
   console.log('Usage: summarize-v2-outputs.ts [source-name ...] [--section <name> ...]');
-  console.log('  No args    Summarise all public/data-v2 sources (excluding global/)');
+  console.log('  No args    Summarise all sources (excluding global/)');
   console.log('  <source>   Summarise one or more sources (by prefix)');
   console.log('  --list-sources  List available source prefixes');
   console.log('  --list-sections List available section names with short descriptions');
@@ -260,7 +260,7 @@ async function main(): Promise<void> {
   const sections = mode.sections as V2OutputsSectionName[];
 
   // `--list-sections` needs no output files — handle it before any
-  // filesystem access so it works even when public/data-v2 has not
+  // filesystem access so it works even when target directory has not
   // been generated yet.
   if (mode.kind === 'list' && mode.target === 'sections') {
     printSectionList();
@@ -304,7 +304,7 @@ async function main(): Promise<void> {
     console.log(
       formatV2OutputsAnalysis(rows, global, {
         sections,
-        sourceRootLabel: 'public/data-v2',
+        sourceRootLabel: '_build/data-v2',
       }),
     );
     return;
@@ -321,7 +321,7 @@ async function main(): Promise<void> {
   console.log(
     formatV2OutputsAnalysis(rows, global, {
       sections,
-      sourceRootLabel: 'public/data-v2',
+      sourceRootLabel: '_build/data-v2',
     }),
   );
 }

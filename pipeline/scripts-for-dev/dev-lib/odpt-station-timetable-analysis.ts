@@ -11,7 +11,7 @@ import type {
   OdptRailway,
   OdptStationTimetable,
   OdptStationTimetableObject,
-} from '../../../src/types/odpt-train';
+} from '../../src/types/odpt-train';
 import { type AnalysisSectionDefinition } from './analysis-sections';
 
 // ---------------------------------------------------------------------------

@@ -55,13 +55,13 @@ V1 と同様、prefix (出力ディレクトリ名) を識別子とする。デ�
 
 `--targets` モード (バッチ実行) では5ステップ、単体実行では4ステップを実行する。
 
-| Step | 名称                             | 対象モード       | 目的                                            |
-| ---- | -------------------------------- | ---------------- | ----------------------------------------------- |
-| 1    | Unvalidated directory check      | `--targets` のみ | ターゲット外ディレクトリの検出 (data:sync 保護) |
-| 2    | File existence check             | 全モード         | 必須バンドルの存在確認                          |
-| 3    | Validate each bundle             | 全モード         | 各バンドルの構造、データ品質、参照整合性を検証  |
-| 4    | Validate GlobalInsightsBundle    | 全モード         | `global/insights.json` の構造検証               |
-| 5    | Validate DataSourceCatalogBundle | 全モード         | `global/data-source-catalog.json` の構造検証    |
+| Step | 名称                             | 対象モード       | 目的                                                         |
+| ---- | -------------------------------- | ---------------- | ------------------------------------------------------------ |
+| 1    | Unvalidated directory check      | `--targets` のみ | ターゲット外ディレクトリの検出 (pipeline:deliver:local 保護) |
+| 2    | File existence check             | 全モード         | 必須バンドルの存在確認                                       |
+| 3    | Validate each bundle             | 全モード         | 各バンドルの構造、データ品質、参照整合性を検証               |
+| 4    | Validate GlobalInsightsBundle    | 全モード         | `global/insights.json` の構造検証                            |
+| 5    | Validate DataSourceCatalogBundle | 全モード         | `global/data-source-catalog.json` の構造検証                 |
 
 ### Step 1: Unvalidated directory check
 

@@ -2,7 +2,7 @@
  * Pure helpers for summarising the v2 GlobalInsightsBundle.
  *
  * GlobalInsightsBundle is a **per-all-datasources** artifact: a single
- * `public/data-v2/global/insights.json` file that consolidates
+ * `<target_dir>/global/insights.json` file that consolidates
  * cross-source spatial metrics (stopGeo). It has no per-source axis,
  * so this sub lib's render takes a singleton summary object instead
  * of an array of per-source rows.

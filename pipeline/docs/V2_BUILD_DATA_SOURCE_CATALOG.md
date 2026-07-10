@@ -15,7 +15,7 @@ v2 パイプラインが生成済みの bundle 群を集約し、`data-source-ca
 
 DataSourceCatalogBundle は per-source transit payload ではない。既に生成された v2 bundle 群から、generic consumer 向けの discovery-oriented facts を安定 schema として再構成する単一 artifact である。
 
-`pipeline/scripts/dev/summarize-v2-outputs.ts` の監査用 text report とは目的が異なる。catalog は人手調査用の ad hoc report ではなく、他 consumer が機械的に読める wire-format bundle として扱う。
+`pipeline/scripts-for-dev/summarize-v2-outputs.ts` の監査用 text report とは目的が異なる。catalog は人手調査用の ad hoc report ではなく、他 consumer が機械的に読める wire-format bundle として扱う。
 
 ## 目的
 
@@ -45,7 +45,7 @@ pipeline/workspace/_build/data-v2/
 
 - catalog 自体が全 source 横断 artifact である
 - `global/insights.json` と同じく、全 source の build 完了後に初めて確定する
-- `data:sync` の既存コピー対象 (`pipeline/workspace/_build/data-v2/` 全体) に自然に含まれる
+- `pipeline:deliver:local` の既存コピー対象 (`pipeline/workspace/_build/data-v2/` 全体) に自然に含まれる
 
 ## 実行タイミング
 
@@ -60,7 +60,7 @@ npm run pipeline:build:v2-insights
 npm run pipeline:build:v2-global-insights
 npm run pipeline:build:v2-data-source-catalog
 npm run pipeline:validate:v2
-npm run data:sync
+npm run pipeline:deliver:local
 ```
 
 DataSourceCatalogBundle は以下に依存するため、`build:v2-global-insights` の後に生成する。
@@ -293,7 +293,7 @@ npm run pipeline:build:v2-insights
 npm run pipeline:build:v2-global-insights
 npm run pipeline:build:v2-data-source-catalog
 npm run pipeline:validate:v2
-npm run data:sync
+npm run pipeline:deliver:local
 ```
 
 catalog builder を CI に組み込むことで、 次を検知できる。
@@ -329,4 +329,4 @@ per-source 欠損は **`Warn on partial failure`** 経路で通知され、 sync
 - target に含まれる prefix ごとに `sources.data[prefix]` が出力される
 - `globalInsights` は `global/insights.json` の実測値で出力される
 - `pipeline:validate:v2` で top-level structure を検証できる
-- `data:sync` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される
+- `pipeline:deliver:local` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される

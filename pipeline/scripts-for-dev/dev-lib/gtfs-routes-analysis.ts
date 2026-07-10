@@ -12,7 +12,7 @@
  * The CLI wrapper is responsible for locating sources and reading files.
  */
 
-import { splitCsvLine } from '../../../src/lib/pipeline/gtfs-csv-parser';
+import { splitCsvLine } from '../../src/lib/pipeline/gtfs-csv-parser';
 import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 

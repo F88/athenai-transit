@@ -32,9 +32,10 @@
     "vitest.config.ts",
     "pwa-assets.config.ts",
     "pwa.config.ts",
-    "scripts/**/*.ts",
+    "vite-plugin-serve-transit-data.ts",
     "pipeline/config/**/*.ts",
     "pipeline/src/**/*.ts",
-    "pipeline/scripts/**/*.ts"
+    "pipeline/scripts/**/*.ts",
+    "pipeline/scripts-for-dev/**/*.ts"
   ]
 }

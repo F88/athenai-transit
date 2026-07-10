@@ -4,7 +4,7 @@
  * stop names and coordinates between sources for each candidate.
  *
  * Usage:
- *   npx tsx pipeline/scripts/dev/find-joint-routes.ts
+ *   npx tsx pipeline/scripts-for-dev/find-joint-routes.ts
  *
  * Reads routes.json, timetable.json, and stops.json from each source
  * in public/data/. Full-width/half-width normalization is applied to

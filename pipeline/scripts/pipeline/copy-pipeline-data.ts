@@ -11,16 +11,17 @@
  * so partial pipeline runs are supported.
  *
  * Usage:
- *   npx tsx scripts/copy-pipeline-data.ts
- *   npm run data:sync
+ *   npx tsx pipeline/scripts/pipeline/copy-pipeline-data.ts
+ *   npm run pipeline:deliver:local
  */
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { sanitizeDirName } from './lib/sanitize-dir-name';
+import { sanitizeDirName } from './lib/file-utils';
 
-const PROJECT_ROOT = resolve(import.meta.dirname, '..');
+// Repo root: three levels up from pipeline/scripts/pipeline/.
+const PROJECT_ROOT = resolve(import.meta.dirname, '../../..');
 
 interface SyncTarget {
   label: string;
@@ -28,17 +29,25 @@ interface SyncTarget {
   dest: string;
 }
 
+export const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
+// export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+
+const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
+
 /**
  * Resolve the destination directory for transit data sync.
- * Reads `PIPELINE_TRANSIT_DATA_DIR` env var; defaults to `data-v2`.
- * Always under `public/`.
+ *
+ * This is the transit data delivery directory: where the web app fetches
+ * its data from. Locally it lives under `TRANSIT_DATA_DELIVERY_BASE_DIR/`; in production the same
+ * data is delivered from Vercel Blob. Reads `PIPELINE_TRANSIT_DATA_DIR`
+ * env var; defaults to `data-v2`. Always under `TRANSIT_DATA_DELIVERY_BASE_DIR/`.
  */
 export function resolveDestDir(env: Record<string, string | undefined> = process.env): string {
   const dir = sanitizeDirName(
-    env.PIPELINE_TRANSIT_DATA_DIR ?? 'data-v2',
+    env.PIPELINE_TRANSIT_DATA_DIR ?? DEFAULT_PIPELINE_TRANSIT_DATA_DIR,
     'PIPELINE_TRANSIT_DATA_DIR',
   );
-  return 'public/' + dir;
+  return TRANSIT_DATA_DELIVERY_BASE_DIR + '/' + dir;
 }
 
 const TARGETS: SyncTarget[] = [
@@ -72,7 +81,7 @@ function syncTarget(target: SyncTarget): boolean {
 }
 
 function main(): void {
-  console.log('=== Copy pipeline output to public/ ===\n');
+  console.log(`=== Copy pipeline output to ${TRANSIT_DATA_DELIVERY_BASE_DIR}/ ===\n`);
 
   let synced = 0;
   for (const target of TARGETS) {

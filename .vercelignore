@@ -3,3 +3,8 @@ pipeline/
 
 # Node modules
 node_modules
+
+# Dev tooling (not used by the production Vite build)
+.github/
+.claude/
+.storybook/
