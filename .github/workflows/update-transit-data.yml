@@ -4,9 +4,14 @@ name: Update Transit Data (git)
 # and publish it by committing public/<PIPELINE_TRANSIT_DATA_DIR> to git.
 
 on:
-  schedule:
-    # JST 13:00 (UTC 04:00)
-    - cron: '0 4 * * *'
+  # Scheduled runs are disabled: this workflow is being retired in favor of the
+  # Vercel Blob upload workflow (upload-transit-data-to-vercel-blob.yml). The
+  # file itself is removed in a follow-up commit; the cron is disabled first so
+  # that reverting that deletion restores this inert version rather than an
+  # active schedule.
+  # schedule:
+  #   # JST 13:00 (UTC 04:00)
+  #   - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       skip_download:
