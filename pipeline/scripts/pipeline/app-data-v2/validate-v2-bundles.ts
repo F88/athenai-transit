@@ -96,7 +96,7 @@ function trackIssues(
 
 /**
  * Check for directories in data-v2/ that are not in the validated set.
- * Prevents unvalidated data from being synced to public/.
+ * Prevents unvalidated data from being delivered to the app.
  *
  * @returns Array of unvalidated directory names (empty = all covered).
  */

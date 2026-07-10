@@ -158,7 +158,7 @@ Target-list key reminder: `build-json.ts` / `build-shapes-gtfs.ts` use the **sou
 
 `pipeline:validate:v2` is the same check CI runs. **Do not skip it locally** — it catches missing target-list registrations before they break CI. Treat any `❌ MISSING (required)` line as a blocker. (An expired feed surfaces here as a `Calendar has expired services` warning — expected if step 2 already flagged the expiry.)
 
-`pipeline:deliver:local` copies `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/`, defaulting to `public/data-v2/`. The destination is configurable, so when `PIPELINE_TRANSIT_DATA_DIR` is overridden in the environment, `public/data-v2/` is **not** the directory that gets updated — check the effective value if the app still shows stale data. See the `gtfs-data-build` skill for the full data flow.
+`pipeline:deliver:local` copies `pipeline/workspace/_build/data-v2/` to `__LOCAL_AT_DATA__/<PIPELINE_TRANSIT_DATA_DIR>/`, defaulting to `__LOCAL_AT_DATA__/data-v2/` (git-ignored). The destination is configurable, so when `PIPELINE_TRANSIT_DATA_DIR` is overridden in the environment, `__LOCAL_AT_DATA__/data-v2/` is **not** the directory that gets updated — check the effective value if the app still shows stale data. See the `gtfs-data-build` skill for the full data flow.
 
 If, after seeing the built colors, you need to adjust `routeColorFallbacks`, edit the resource definition and re-run `build-from-gtfs.ts {source-name}` + `npm run pipeline:deliver:local`.
 
@@ -234,7 +234,7 @@ Keep factual and neutral — this is in a public repository.
 
 ### 11. Commit
 
-Split into logical commits following Conventional Commits. **Do not commit generated app data** (`public/<PIPELINE_TRANSIT_DATA_DIR>/{prefix}/*.json`, default `public/data-v2/{prefix}/*.json`) — the `Update Transit Data` GitHub Action regenerates and pushes those after merge:
+Split into logical commits following Conventional Commits. **Do not commit generated app data** — the pipeline delivers `data.json` / `insights.json` / `shapes.json` to the git-ignored `__LOCAL_AT_DATA__/` locally, and the `Update Transit Data (Vercel Blob)` GitHub Action rebuilds and uploads them to Vercel Blob after merge:
 
 1. `feat(pipeline): add {operator} data source` — resource definition + every applicable target list + `data-source-settings.ts` + `agency-attributes.ts`
 2. `docs: add {operator} credits and notes` — `ABOUT.md` license/credit updates + `pipeline/config/resources/NOTES.md` data-quality notes

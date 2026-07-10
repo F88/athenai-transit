@@ -329,4 +329,4 @@ per-source 欠損は **`Warn on partial failure`** 経路で通知され、 sync
 - target に含まれる prefix ごとに `sources.data[prefix]` が出力される
 - `globalInsights` は `global/insights.json` の実測値で出力される
 - `pipeline:validate:v2` で top-level structure を検証できる
-- `pipeline:deliver:local` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される
+- `pipeline:deliver:local` 後に `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される
