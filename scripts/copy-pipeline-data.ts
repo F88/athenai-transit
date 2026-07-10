@@ -28,19 +28,25 @@ interface SyncTarget {
   dest: string;
 }
 
+export const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
+// const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+
 const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
 
 /**
  * Resolve the destination directory for transit data sync.
- * Reads `PIPELINE_TRANSIT_DATA_DIR` env var; defaults to `data-v2`.
- * Always under `public/`.
+ *
+ * This is the transit data delivery directory: where the web app fetches
+ * its data from. Locally it lives under `TRANSIT_DATA_DELIVERY_BASE_DIR/`; in production the same
+ * data is delivered from Vercel Blob. Reads `PIPELINE_TRANSIT_DATA_DIR`
+ * env var; defaults to `data-v2`. Always under `TRANSIT_DATA_DELIVERY_BASE_DIR/`.
  */
 export function resolveDestDir(env: Record<string, string | undefined> = process.env): string {
   const dir = sanitizeDirName(
     env.PIPELINE_TRANSIT_DATA_DIR ?? DEFAULT_PIPELINE_TRANSIT_DATA_DIR,
     'PIPELINE_TRANSIT_DATA_DIR',
   );
-  return 'public/' + dir;
+  return TRANSIT_DATA_DELIVERY_BASE_DIR + '/' + dir;
 }
 
 const TARGETS: SyncTarget[] = [
