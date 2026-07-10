@@ -29,7 +29,7 @@ interface SyncTarget {
 }
 
 export const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
-// const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+// export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
 
 const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
 
@@ -80,7 +80,7 @@ function syncTarget(target: SyncTarget): boolean {
 }
 
 function main(): void {
-  console.log('=== Copy pipeline output to public/ ===\n');
+  console.log(`=== Copy pipeline output to ${TRANSIT_DATA_DELIVERY_BASE_DIR}/ ===\n`);
 
   let synced = 0;
   for (const target of TARGETS) {
