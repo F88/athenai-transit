@@ -19,9 +19,9 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 | 3     | **Build Core App Data** — 基礎 bundle 生成                      | `pipeline/workspace/_build/db/*.db`, 静的データ, ODPT JSON                                                                                               | `pipeline/workspace/_build/data-v2/{prefix}/`                                              |
 | 4     | **Build Derived App Data** — 派生 bundle / global artifact 生成 | `pipeline/workspace/_build/data-v2/{prefix}/{data,insights,shapes}.json`, `pipeline/workspace/_build/data-v2/global/insights.json`, resource definitions | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/` |
 | 5     | **Validate** — v2 bundle / global artifact 検証                 | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/`                                                               | 検証ログ                                                                                   |
-| 6     | **Deliver** — ビルド出力を配信領域へ配備                        | `pipeline/workspace/_build/data-v2/`                                                                                                                     | `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (local: `public/data-v2/` 等; 本番: Vercel Blob) |
+| 6     | **Deliver** — ビルド出力を配信領域へ配備                        | `pipeline/workspace/_build/data-v2/`                                                                                                                     | `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (local: `__LOCAL_AT_DATA__/data-v2/` 等; 本番: Vercel Blob) |
 
-Stage 6 の配備先は `TRANSIT_DATA_DELIVERY_BASE_DIR` で切り替える。local は `npm run pipeline:deliver:local` で `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (既定 `public/data-v2/`、`public/` ⇔ `__LOCAL_AT_DATA__/` を切替) に配備し、本番は Vercel Blob upload workflow が配備する。
+Stage 6 の配備先ベースは `TRANSIT_DATA_DELIVERY_BASE_DIR` (既定 `__LOCAL_AT_DATA__/`、git 管理外)。local は `npm run pipeline:deliver:local` で `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (既定 `__LOCAL_AT_DATA__/data-v2/`) に配備し、本番は Vercel Blob upload workflow が配備する。
 
 ## スクリプト
 
@@ -143,7 +143,7 @@ flowchart TD
     end
 
     subgraph s6["Stage 6: Deliver"]
-        JSON --> DELIVER["pipeline:deliver:local → delivery dir (public/ or __LOCAL_AT_DATA__/)"]
+        JSON --> DELIVER["pipeline:deliver:local → delivery dir (__LOCAL_AT_DATA__/, git-ignored)"]
         SHAPES --> DELIVER
         INSIGHTS --> DELIVER
         GINSIGHTS --> DELIVER

@@ -54,7 +54,7 @@ User-data repositories (separate from transit data):
 
 ### Data Pipeline
 
-A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`pipeline/workspace/_build/data-v2/`). Delivering that build output to where the app serves it -- locally to `public/` or `__LOCAL_AT_DATA__/` via `npm run pipeline:deliver:local`, in production to Vercel Blob via the upload workflow -- is also a pipeline responsibility. See [pipeline/README.md](./pipeline/README.md) for details.
+A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`pipeline/workspace/_build/data-v2/`). Delivering that build output to where the app serves it -- locally to `__LOCAL_AT_DATA__/` via `npm run pipeline:deliver:local`, in production to Vercel Blob via the upload workflow -- is also a pipeline responsibility. See [pipeline/README.md](./pipeline/README.md) for details.
 
 ## Development Commands
 
@@ -87,7 +87,7 @@ npm run pipeline:build:v2-insights          # 8.  generate v2 InsightsBundle fro
 npm run pipeline:build:v2-global-insights   # 9.  generate v2 GlobalInsightsBundle
 npm run pipeline:build:v2-data-source-catalog # 10. generate v2 DataSourceCatalog
 npm run pipeline:validate:v2                # 11. validate generated v2 bundles
-npm run pipeline:deliver:local                           # 12. copy pipeline/workspace/_build/data-v2/ -> public/<PIPELINE_TRANSIT_DATA_DIR>/ (default: public/data-v2/, destination may vary by environment)
+npm run pipeline:deliver:local                           # 12. copy pipeline/workspace/_build/data-v2/ -> __LOCAL_AT_DATA__/<PIPELINE_TRANSIT_DATA_DIR>/ (default: __LOCAL_AT_DATA__/data-v2/, git-ignored)
 ```
 
 Auxiliary pipeline commands:
