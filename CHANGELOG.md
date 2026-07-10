@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.07.09]
+
 ### Added
 
 - Vercel Blob データ配信基盤: transit データを Vercel Blob へアップロードする CI workflow と CLI ツール群を追加し、`/data-v3` を Blob へプロキシする vercel rewrite + CDN cache header (`s-maxage`) を設定した (#328)。
