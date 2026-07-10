@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+Disallow: /data/
 Disallow: /data-v2/

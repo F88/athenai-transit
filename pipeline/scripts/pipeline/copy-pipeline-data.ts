@@ -1,10 +1,10 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Copy pipeline build output to the public directory.
+ * Copy pipeline build output to the local delivery directory.
  *
  * Copies:
- *   pipeline/workspace/_build/data-v2/ -> public/data-v2/
+ *   pipeline/workspace/_build/data-v2/ -> __LOCAL_AT_DATA__/data-v2/
  *
  * Each directory is cleaned before copying to ensure a fresh state.
  * Missing source directories are skipped with a notice (not an error),
@@ -29,8 +29,7 @@ interface SyncTarget {
   dest: string;
 }
 
-export const TRANSIT_DATA_DELIVERY_BASE_DIR = 'public';
-// export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__AT_DATA__';
+export const TRANSIT_DATA_DELIVERY_BASE_DIR = '__LOCAL_AT_DATA__';
 
 const DEFAULT_PIPELINE_TRANSIT_DATA_DIR = 'data-v2';
 

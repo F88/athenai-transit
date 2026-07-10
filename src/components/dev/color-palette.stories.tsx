@@ -206,9 +206,9 @@ export const LowContrastOnDarkThemeComparison: Story = {
 
 /**
  * Every Toei Bus (都営バス) route_color / route_text_color pair from
- * the minkuru dataset, sorted by `route_id`. Sampled from
- * `public/data-v2/minkuru/data.json` at the time of authoring.
- * Refresh via a repository script when the source data is updated.
+ * the minkuru dataset, sorted by `route_id`. Sampled from the minkuru
+ * source's `data.json` bundle at the time of authoring. Refresh via a
+ * repository script when the source data is updated.
  */
 const MINKURU_ROUTES = [
   { id: 'minkuru:002', color: '#F1B34E', textColor: '#350800', shortName: '波０１(ＮＭ０１)' },

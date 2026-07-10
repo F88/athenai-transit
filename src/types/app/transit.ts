@@ -2,7 +2,7 @@
  * Transit domain types converted from pipeline wire format.
  *
  * These types correspond to the abbreviated JSON types in
- * {@link contracts/data/transit-json.ts} (e.g. StopJson -> Stop) with
+ * {@link contracts/data/transit-v2-json.ts} (e.g. StopV2Json -> Stop) with
  * human-readable field names. The conversion is performed by
  * {@link AthenaiRepository.mergeSources} at initialization time.
  *

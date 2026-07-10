@@ -2,7 +2,7 @@
 
 開発/調査用スクリプト群。手動実行のみ (CI では使用しない)。
 
-分析対象は pipeline のビルド出力を原則とする。V2 系ツール (`analyze-v2-*` / `summarize-v2-*`) は `pipeline/workspace/_build/data-v2/` を読む (WebApp が `public/` へ sync した成果物ではなく、pipeline 出力そのものを対象とする)。`public/data-v2` は git 管理外へ移行予定のため、そこには依存しない。
+分析対象は pipeline のビルド出力を原則とする。V2 系ツール (`analyze-v2-*` / `summarize-v2-*`) は `pipeline/workspace/_build/data-v2/` を読む (配備先へ配備した成果物ではなく、pipeline 出力そのものを対象とする)。配備物は git 管理外のため、そこには依存しない。
 
 ## スクリプト一覧
 

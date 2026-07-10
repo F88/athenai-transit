@@ -282,7 +282,7 @@ catalog builder は per-source 入力の欠損を **skip + warn** として扱�
 
 ## CI 組み込み方針
 
-`Update Transit Data` 系 workflow では、少なくとも次の順序で実行する想定:
+transit データ更新 workflow (`upload-transit-data-to-vercel-blob.yml`) では、少なくとも次の順序で実行する想定:
 
 ```bash
 npm run pipeline:build:v2-data
@@ -329,4 +329,4 @@ per-source 欠損は **`Warn on partial failure`** 経路で通知され、 sync
 - target に含まれる prefix ごとに `sources.data[prefix]` が出力される
 - `globalInsights` は `global/insights.json` の実測値で出力される
 - `pipeline:validate:v2` で top-level structure を検証できる
-- `pipeline:deliver:local` 後に `public/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される
+- `pipeline:deliver:local` 後に `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/global/data-source-catalog.json` へ同期される

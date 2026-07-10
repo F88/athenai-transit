@@ -45,7 +45,7 @@ public/next-dev
 
 # Transit data delivery directory (local equivalent of Vercel Blob); the
 # web app fetches its data from here and it is not tracked in git.
-__AT_DATA__/
+__LOCAL_AT_DATA__/
 
 # Node modules and build artifacts
 node_modules
