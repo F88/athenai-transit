@@ -270,7 +270,7 @@ jobs:
           exit 1
 
       - name: Sync to public/
-        run: npm run data:deliver:local
+        run: npm run pipeline:deliver:local
 
       # ── Report & Commit ────────────────────────────────────
       - name: Detect changes

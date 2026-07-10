@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveDestDir, TRANSIT_DATA_DELIVERY_BASE_DIR } from '../copy-pipeline-data';
+import { resolveDestDir, TRANSIT_DATA_DELIVERY_BASE_DIR } from './copy-pipeline-data';
 
 const BASE = TRANSIT_DATA_DELIVERY_BASE_DIR;
 

@@ -1,9 +1,12 @@
 /**
  * Sanitize a directory name to prevent path traversal (for pipeline).
  *
- * Intentionally duplicated across project boundaries (src/, scripts/, pipeline/).
- * Each boundary has its own copy because cross-boundary imports are not possible
- * (`.vercelignore` excludes `pipeline/`, `scripts/` is outside `src/`).
+ * Kept per-boundary rather than shared via import: cross-boundary imports are
+ * not possible (`.vercelignore` excludes `pipeline/` from the Vercel build, and
+ * `scripts/` / repo-root files are outside `src/`). A boundary that needs it
+ * keeps its own copy. This pipeline copy is currently the only one; the former
+ * `scripts/lib/sanitize-dir-name.ts` was removed when its sole consumer
+ * (`copy-pipeline-data`) moved into `pipeline/`.
  *
  * Only simple directory names are allowed: lowercase alphanumeric,
  * hyphens, and underscores. Rejects path traversal (`..`), absolute

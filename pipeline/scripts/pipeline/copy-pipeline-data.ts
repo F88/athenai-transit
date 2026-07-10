@@ -11,16 +11,17 @@
  * so partial pipeline runs are supported.
  *
  * Usage:
- *   npx tsx scripts/copy-pipeline-data.ts
- *   npm run data:deliver:local
+ *   npx tsx pipeline/scripts/pipeline/copy-pipeline-data.ts
+ *   npm run pipeline:deliver:local
  */
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { sanitizeDirName } from './lib/sanitize-dir-name';
+import { sanitizeDirName } from './lib/file-utils';
 
-const PROJECT_ROOT = resolve(import.meta.dirname, '..');
+// Repo root: three levels up from pipeline/scripts/pipeline/.
+const PROJECT_ROOT = resolve(import.meta.dirname, '../../..');
 
 interface SyncTarget {
   label: string;

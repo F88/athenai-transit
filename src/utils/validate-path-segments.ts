@@ -7,10 +7,11 @@
  * simple name: lowercase alphanumeric, hyphens, and underscores. Empty
  * segments, `.`, and `..` (traversal) are rejected.
  *
- * Distinct from the `scripts/lib/` (and pipeline) `sanitizeDirName`, which
- * validate a single on-disk directory name and reject slashes; those cannot be
- * imported here across project boundaries (`.vercelignore` excludes
- * `pipeline/`, `scripts/` is outside `src/`).
+ * Distinct from the pipeline `sanitizeDirName`
+ * (`pipeline/scripts/pipeline/lib/file-utils.ts`), which validates a single
+ * on-disk directory name and rejects slashes; it cannot be imported here across
+ * project boundaries (`.vercelignore` excludes `pipeline/`, `scripts/` is
+ * outside `src/`).
  *
  * @param value - Path to validate (slash-separated simple names).
  * @param label - Environment variable name for error messages.

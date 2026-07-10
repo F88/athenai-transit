@@ -14,7 +14,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Vercel Blob データ配信基盤: transit データを Vercel Blob へアップロードする CI workflow と CLI ツール群を追加し、`/data-v3` を Blob へプロキシする vercel rewrite + CDN cache header (`s-maxage`) を設定した (#328)。
 - WebApp: transit データの取得元オリジンを `VITE_TRANSIT_DATA_ORIGIN` で設定可能にした。取得 path (`VITE_TRANSIT_DATA_PATH`) と分離し、別オリジン (Blob 等) からの配信に対応する (#330)。
 - Pipeline: リソース定義に `dataUrls` / `notes` メタデータフィールドを追加した (#325)。
-- WebApp/dev: dev server 用の Vite plugin (`vite-plugin-serve-transit-data`) を追加した。`npm run data:deliver:local` で配備したローカル配信領域 (`__AT_DATA__/<name>` 等) を `VITE_TRANSIT_DATA_PATH` の末尾セグメントで選択して配信する。存在しない dataset は SPA fallback せず 404 を返し、起動時に配信設定を INFO ログで出力する。
+- WebApp/dev: dev server 用の Vite plugin (`vite-plugin-serve-transit-data`) を追加した。`npm run pipeline:deliver:local` で配備したローカル配信領域 (`__AT_DATA__/<name>` 等) を `VITE_TRANSIT_DATA_PATH` の末尾セグメントで選択して配信する。存在しない dataset は SPA fallback せず 404 を返し、起動時に配信設定を INFO ログで出力する。
 
 ### Changed
 
@@ -25,7 +25,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - WebApp: `VITE_TRANSIT_DATA_ORIGIN` の検証を bare origin のみ許容に厳密化し、`VITE_TRANSIT_DATA_PATH` の末尾スラッシュを許容するようにした (#330)。
 - PWA: VitePWA の設定を `vite.config.ts` から `pwa.config.ts` に分離した (#322)。
 - CI: KSJ (鉄道形状) ビルドの部分失敗を許容し、transit data 更新 workflow が KSJ 失敗で停止しないようにした (#323)。
-- Pipeline/dev: ローカルのデータ配備 npm script を `data:sync` から `data:deliver:local` へ改名した。用途 (ローカル配信領域への配備) を名前で明示し、本番の Vercel Blob upload と対称にする。配備先ベースは `TRANSIT_DATA_DELIVERY_BASE_DIR` 定数 (既定 `public/`) に集約し、dev plugin と共有する (single source of truth)。
+- Pipeline: ローカルのデータ配備を pipeline の責務 (Stage 6) として明確化した。配備スクリプトを `scripts/copy-pipeline-data.ts` から `pipeline/scripts/pipeline/copy-pipeline-data.ts` へ移動し、npm script を `data:sync` から `pipeline:deliver:local` へ改名。用途 (ローカル配信領域への配備) を名前で明示し、本番の Vercel Blob upload と対称にする。配備先ベースは `TRANSIT_DATA_DELIVERY_BASE_DIR` (既定 `public/`、`__AT_DATA__/` に切替可) で、cross-boundary import 不可 (`.vercelignore` が `pipeline/` を除外) のため dev plugin 側にも定数を意図的に複製する。重複していた `scripts/lib/sanitize-dir-name.ts` は削除し pipeline の `file-utils` を使用。
 
 ## [2026.07.01]
 

@@ -33,7 +33,6 @@
     "pwa-assets.config.ts",
     "pwa.config.ts",
     "vite-plugin-serve-transit-data.ts",
-    "scripts/**/*.ts",
     "pipeline/config/**/*.ts",
     "pipeline/src/**/*.ts",
     "pipeline/scripts/**/*.ts",

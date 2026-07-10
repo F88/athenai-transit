@@ -19,7 +19,7 @@ Commands and execution order are documented in `CLAUDE.md` "Data preparation" se
 
 - **Steps 1-2 (download)**: Skip if source files are already up to date. GTFS files live in `pipeline/workspace/data/gtfs/{outDir}/`; ODPT JSON files in `pipeline/workspace/data/odpt-json/{outDir}/`.
 - **Step 7 (KSJ shapes)**: Skip if only bus data changed. Requires `pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson`.
-- **Step 12 (data:deliver:local)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/` where the app serves it. The default is `public/data-v2/`, but the destination may be overridden by `PIPELINE_TRANSIT_DATA_DIR` depending on the environment.
+- **Step 12 (pipeline:deliver:local)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/` where the app serves it. The default is `public/data-v2/`, but the destination may be overridden by `PIPELINE_TRANSIT_DATA_DIR` depending on the environment.
     - Note: this step is for local development (so `npm run dev` can serve the freshly built data from `public/`). The production build procedure differs in part and does not necessarily include this step — do not assume the local and production procedures are identical.
 
 ## Data flow
@@ -42,4 +42,4 @@ Defined in `pipeline/config/resources/{gtfs,odpt-json}/`. Each `.ts` file is a s
 - ODPT JSON download requires `ODPT_ACCESS_TOKEN` environment variable (set via `pipeline/.env.pipeline.local`)
 - `pipeline:build:db` expects GTFS CSV files in `pipeline/workspace/data/gtfs/{outDir}/`
 - `pipeline:build:v2-shapes:ksj` expects MLIT GeoJSON at `pipeline/workspace/data/mlit/N02-XX_RailroadSection.geojson` (year-suffixed)
-- If JSON output looks stale, check that `data:deliver:local` was run after the build steps and inspect the effective `PIPELINE_TRANSIT_DATA_DIR` for the current environment.
+- If JSON output looks stale, check that `pipeline:deliver:local` was run after the build steps and inspect the effective `PIPELINE_TRANSIT_DATA_DIR` for the current environment.

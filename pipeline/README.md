@@ -10,7 +10,7 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 
 ## Stage
 
-パイプライン本体は 5 つの Stage で構成される。各 Stage は前段の出力を入力として受け取る。
+パイプライン本体は 6 つの Stage で構成される。各 Stage は前段の出力を入力として受け取る。
 
 | Stage | 概要                                                            | 主な入力                                                                                                                                                 | 主な出力                                                                                   |
 | ----- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -19,8 +19,9 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 | 3     | **Build Core App Data** — 基礎 bundle 生成                      | `pipeline/workspace/_build/db/*.db`, 静的データ, ODPT JSON                                                                                               | `pipeline/workspace/_build/data-v2/{prefix}/`                                              |
 | 4     | **Build Derived App Data** — 派生 bundle / global artifact 生成 | `pipeline/workspace/_build/data-v2/{prefix}/{data,insights,shapes}.json`, `pipeline/workspace/_build/data-v2/global/insights.json`, resource definitions | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/` |
 | 5     | **Validate** — v2 bundle / global artifact 検証                 | `pipeline/workspace/_build/data-v2/{prefix}/`, `pipeline/workspace/_build/data-v2/global/`                                                               | 検証ログ                                                                                   |
+| 6     | **Deliver** — ビルド出力を配信領域へ配備                        | `pipeline/workspace/_build/data-v2/`                                                                                                                     | `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (local: `public/data-v2/` 等; 本番: Vercel Blob) |
 
-`public/<PIPELINE_TRANSIT_DATA_DIR>/` へのコピー (`npm run data:deliver:local`, default: `public/data-v2/`) は WebApp 側の責務であり、pipeline の Stage には含まない。
+Stage 6 の配備先は `TRANSIT_DATA_DELIVERY_BASE_DIR` で切り替える。local は `npm run pipeline:deliver:local` で `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (既定 `public/data-v2/`、`public/` ⇔ `__AT_DATA__/` を切替) に配備し、本番は Vercel Blob upload workflow が配備する。
 
 ## スクリプト
 
@@ -39,6 +40,7 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 | 4     | GlobalInsightsBundle を生成    | `scripts/pipeline/app-data-v2/build-global-insights.ts`         | `npm run pipeline:build:v2-global-insights`     |
 | 4     | DataSourceCatalogBundle を生成 | `scripts/pipeline/app-data-v2/build-data-source-catalog.ts`     | `npm run pipeline:build:v2-data-source-catalog` |
 | 5     | バンドルの検証                 | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`           | `npm run pipeline:validate:v2`                  |
+| 6     | ビルド出力を配信領域へ配備     | `scripts/pipeline/copy-pipeline-data.ts`                        | `npm run pipeline:deliver:local`                |
 | -     | ODPT リソース更新チェック      | `scripts/pipeline/check-odpt-resources.ts`                      | `npm run pipeline:check:odpt-resources`         |
 
 **Note**: v1 スクリプト (`scripts/pipeline/app-data-v1/`) は残存しているが、v1 出力を消費する WebApp コードは削除済みのため、実行しても意味がない。
@@ -69,8 +71,8 @@ npm run pipeline:build:v2-data-source-catalog # v2 bundle 群 + global/insights.
 # Stage 5: Validate
 npm run pipeline:validate:v2
 
-# public/ へコピー (pipeline スコープ外)
-npm run data:deliver:local
+# Stage 6: Deliver (配信領域へ配備)
+npm run pipeline:deliver:local
 ```
 
 ## 処理の流れ
@@ -140,11 +142,13 @@ flowchart TD
         CATALOG --> VAL
     end
 
-    JSON --> SYNC["data:deliver:local → public/<PIPELINE_TRANSIT_DATA_DIR>/"]
-    SHAPES --> SYNC
-    INSIGHTS --> SYNC
-    GINSIGHTS --> SYNC
-    CATALOG --> SYNC
+    subgraph s6["Stage 6: Deliver"]
+        JSON --> DELIVER["pipeline:deliver:local → delivery dir (public/ or __AT_DATA__/)"]
+        SHAPES --> DELIVER
+        INSIGHTS --> DELIVER
+        GINSIGHTS --> DELIVER
+        CATALOG --> DELIVER
+    end
 ```
 
 ## リソース定義
