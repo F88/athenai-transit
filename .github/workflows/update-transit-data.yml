@@ -274,7 +274,7 @@ jobs:
           echo "::error::V2 bundle validation failed. See Job Summary for details."
           exit 1
 
-      - name: Sync to public/
+      - name: Sync to local dir
         run: npm run pipeline:deliver:local
 
       # ── Report & Commit ────────────────────────────────────
