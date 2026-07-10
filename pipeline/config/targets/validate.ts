@@ -6,62 +6,7 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default [
-  'minkuru', // toei-bus
-  'toaran', // toei-train
-  'ktbus', // kanto-bus
-  'kobus', // keio-bus
-  'sggsm', // suginami-gsm
-  'kazag', // chiyoda-bus
-  'edobus', // chuo-bus
-  'sbbus', // seibu-bus
-  'iyt2', // iyotetsu-bus
-  'kbus', // kita-bus
-  'kcbus', // kyoto-city-bus
-  'osmbus', // oshima-bus
-  'mykbus', // miyake-bus
-  'kseiw', // keisei-transit-bus
-  'mir', // mir-train
-  'yurimo', // yurikamome
-  'nsrt', // nagoya-srt
-  'tmm', // tama-monorail
-  'twrr', // twr-rinkai
-  'vagfr', // vag-freiburg
-  'actvnav', // actv-nav
-  'tcship', // tokyo-cruise-ship
-  'tome', // tokyometro
-  'ntbus', // nishi-tokyo-bus
-  'snws', // sanwa-shosen
-  'tkksn', // tokai-kisen
-  'kcmb', // kagoshima-maritime-bureau
-  'oksrif', // okushiri-ferry
-  'orgfry', // orange-ferry
-  'uwjmfry', // uwajima-unyu
-  'mtfry', // meimon-taiyo-ferry
-  'itkfry', // itsukishima-kisen
-  'kytbus', // kyoto-bus
-  'od9bus', // odakyu-bus
-  'yht', // yokohama-municipal-subway
-  'yhb', // yokohama-municipal-bus
-  'norufin', // kawasaki-city-bus
-  'rintan', // rinko-bus
-  '85b', // hachiko-bus
-  '13103b', // chii-bus
-  'han9fry', // hankyu-ferry
-  'sanma', // meguro-c-bus
-  'shinabus', // shinagawa-c-bus
-  'tamachan', // ota-c-bus
-  'bgle', // bunkyo-c-bus
-  'megurin', // taito-c-bus
-  'rin2', // itabashi-rin2-bus
-  // 'tkbus', // tokyu-bus (not built)
-];
+import { PREFIX_ALL_TARGETS } from './target-const';
 
-// /**
-//  * Resources for preliminary research
-//  */
-// const preliminaryResearchTargets = [
-//   'kcsub', // kyoto-city-subway (ODPT Challenge 2026)
-//   'kotr', // keio-train (ODPT Challenge 2026)
-//   'tobutr', // tobu-train (ODPT Challenge 2026)
-// ];
+const TARGETS = PREFIX_ALL_TARGETS;
+export default TARGETS;
