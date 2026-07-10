@@ -323,7 +323,7 @@ export function formatV2OutputsAnalysis(
     options.sections === undefined || options.sections.length === 0
       ? V2_OUTPUTS_SECTION_NAMES
       : options.sections;
-  const sourceRootLabel = options.sourceRootLabel ?? 'public/data-v2';
+  const sourceRootLabel = options.sourceRootLabel ?? '_build/data-v2';
   const renderedSections = requestedSections.map((sectionName) =>
     renderSection(sorted, global, sectionName),
   );

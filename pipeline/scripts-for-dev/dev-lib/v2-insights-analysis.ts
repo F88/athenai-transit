@@ -568,7 +568,7 @@ export function formatInsightsAnalysis(
     '# Athenai Transit — V2 InsightsBundle analysis',
     '',
     `# Analyzed at: ${analyzedAt.toISOString()}`,
-    '# Per-source summary of `public/data-v2/<source>/insights.json`.',
+    '# Per-source summary of `<target_dir>/<source>/insights.json`.',
     '# Covers serviceGroups (calendar segmentation), tripPatternStats',
     '# (pattern/trip duration distribution), tripPatternGeo (straight-',
     '# line geometry — handle with care), and stopStats (per-stop',

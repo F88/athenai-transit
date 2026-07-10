@@ -27,8 +27,7 @@ export interface SourceAnalysisJson {
 
 export interface NameFieldAnalysisReport {
   meta: {
-    publicV2Dir: string;
-    generatedV2Dir: string;
+    targetDir: string;
     sourceCount: number;
   };
   sources: SourceAnalysisJson[];
@@ -201,13 +200,11 @@ export function analyzeDataBundleSource(
 
 export function buildAnalysisReport(
   results: SourceAnalysis[],
-  publicV2Dir: string,
-  generatedV2Dir: string,
+  targetDir: string,
 ): NameFieldAnalysisReport {
   return {
     meta: {
-      publicV2Dir,
-      generatedV2Dir,
+      targetDir,
       sourceCount: results.length,
     },
     sources: results.map((result) => ({

@@ -54,7 +54,7 @@ User-data repositories (separate from transit data):
 
 ### Data Pipeline
 
-A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`public/data-v2/`). See [pipeline/README.md](./pipeline/README.md) for details.
+A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`pipeline/workspace/_build/data-v2/`). Copying that build output to where the app serves it (e.g. `public/`, or Vercel Blob) is a separate step outside the pipeline. See [pipeline/README.md](./pipeline/README.md) for details.
 
 ## Development Commands
 

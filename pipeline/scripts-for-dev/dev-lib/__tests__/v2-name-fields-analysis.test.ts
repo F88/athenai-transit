@@ -162,7 +162,7 @@ describe('report builders', () => {
       }),
     );
 
-    const report = buildAnalysisReport([first, second], '/public/data-v2', '/build/data-v2');
+    const report = buildAnalysisReport([first, second], '/_build/data-v2');
     const rows = buildFieldCountRows([first, second]);
     const fieldTsv = formatFieldCountsTsv([first, second]);
 

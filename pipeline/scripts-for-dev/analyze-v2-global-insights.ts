@@ -1,7 +1,7 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Analyze the v2 GlobalInsightsBundle (`public/data-v2/global/insights.json`).
+ * Analyze the v2 GlobalInsightsBundle (<target_dir>/global/insights.json`).
  *
  * Prints a per-source breakdown of the `stopGeo` section with basic
  * coverage of optional fields (`wp`, `cn`) and a distribution of the
@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
 
-import { PIPELINE_ROOT } from '../src/lib/paths';
+import { V2_OUTPUT_DIR } from '../src/lib/paths';
 import { runMain } from '../src/lib/pipeline/pipeline-utils';
 import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
@@ -31,8 +31,8 @@ import {
   type V2GlobalInsightsSectionName,
 } from './dev-lib/v2-global-insights-analysis';
 
-const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
-const GLOBAL_INSIGHTS_PATH = join(PUBLIC_V2_DIR, 'global', 'insights.json');
+const TARGET_DIR = V2_OUTPUT_DIR;
+const GLOBAL_INSIGHTS_PATH = join(TARGET_DIR, 'global', 'insights.json');
 
 function isV2GlobalInsightsSectionName(value: string): value is V2GlobalInsightsSectionName {
   return (V2_GLOBAL_INSIGHTS_SECTION_NAMES as readonly string[]).includes(value);
@@ -40,7 +40,7 @@ function isV2GlobalInsightsSectionName(value: string): value is V2GlobalInsights
 
 function printHelp(): void {
   console.log('Usage: analyze-v2-global-insights.ts [--section <name> ...]');
-  console.log('  No args    Analyze public/data-v2/global/insights.json');
+  console.log('  No args    Analyze <target_dir>/global/insights.json');
   console.log('  --list-sections  List available section names with short descriptions');
   console.log('  --section <name> Limit output to the selected section (repeatable)');
   console.log('  --help     Show this help');
