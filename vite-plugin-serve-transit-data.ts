@@ -104,7 +104,16 @@ export function serveTransitData(opts: { basePath: string; origin: string }): Pl
       }
 
       server.middlewares.use(base, (req, res) => {
-        const urlPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
+        let urlPath: string;
+        try {
+          urlPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
+        } catch {
+          // Malformed percent-encoding: decodeURIComponent throws. Return 400
+          // instead of letting it bubble up.
+          res.statusCode = 400;
+          res.end('Bad Request');
+          return;
+        }
         const resolved = path.resolve(path.join(serveDir, urlPath));
 
         // Prevent path traversal outside the served directory.
@@ -133,7 +142,19 @@ export function serveTransitData(opts: { basePath: string; origin: string }): Pl
 
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache');
-        fs.createReadStream(resolved).pipe(res);
+        // A file can vanish between statSync and streaming (e.g. deliver:local
+        // removes then recopies the dataset). Without an error handler the
+        // stream's 'error' event would throw and crash the dev server.
+        const stream = fs.createReadStream(resolved);
+        stream.on('error', () => {
+          if (!res.headersSent) {
+            res.statusCode = 500;
+            res.end('Internal Server Error');
+          } else {
+            res.destroy();
+          }
+        });
+        stream.pipe(res);
       });
     },
   };
