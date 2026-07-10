@@ -13,8 +13,8 @@
  * Target: pipeline/workspace/_build/data-v2/{prefix}/
  *
  * Exit codes:
- *   0 — all checks passed
- *   1 — warnings (e.g. empty shapes, calendar expiring)
+ *   0 — all checks passed (info notices, e.g. empty shapes, do not raise this)
+ *   1 — warnings (e.g. calendar expiring)
  *   2 — errors (missing files, invalid structure, invalid data)
  *
  * Usage:
@@ -50,7 +50,7 @@ import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
 
 /** All checks passed. */
 const EXIT_OK = 0;
-/** Warnings (empty shapes, etc.). */
+/** Warnings (calendar expiring, etc.). */
 const EXIT_WARN = 1;
 /** Errors (missing files, invalid structure, invalid data). */
 const EXIT_ERROR = 2;
@@ -83,9 +83,10 @@ function trackIssues(
   for (const issue of issues) {
     if (issue.level === 'error') {
       state.hasError = true;
-    } else {
+    } else if (issue.level === 'warn') {
       state.hasWarn = true;
     }
+    // 'info' is a non-actionable notice: it must not affect the exit code.
   }
 }
 
@@ -187,8 +188,10 @@ function printIssueDetails(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
       console.log(`        ❌ ERROR: ${issue.message}`);
-    } else {
+    } else if (issue.level === 'warn') {
       console.log(`        ⚠️ WARN:  ${issue.message}`);
+    } else {
+      console.log(`        ℹ️ INFO:  ${issue.message}`);
     }
   }
 }
@@ -197,8 +200,10 @@ function printSectionIssues(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
       console.log(`          ❌ ERROR: ${issue.message}`);
-    } else {
+    } else if (issue.level === 'warn') {
       console.log(`          ⚠️ WARN:  ${issue.message}`);
+    } else {
+      console.log(`          ℹ️ INFO:  ${issue.message}`);
     }
   }
 }
@@ -342,12 +347,16 @@ function validateSource(
       } else {
         const errors = dataIssues.filter((i) => i.level === 'error').length;
         const warns = dataIssues.filter((i) => i.level === 'warn').length;
+        const infos = dataIssues.filter((i) => i.level === 'info').length;
         const parts: string[] = [];
         if (errors > 0) {
           parts.push(`${errors} error(s)`);
         }
         if (warns > 0) {
           parts.push(`${warns} warning(s)`);
+        }
+        if (infos > 0) {
+          parts.push(`${infos} notice(s)`);
         }
         console.log(`      shapes:        ${stats}, ${parts.join(', ')}`);
         printIssueDetails(dataIssues);

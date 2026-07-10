@@ -129,7 +129,10 @@ describe('GTFS ShapesBundle assembly', () => {
     expect(polyline[1]).toEqual([35.69, 139.77, 150.5]);
   });
 
-  it('writes empty shapes when no shapes exist', () => {
+  // The build script always writes shapes.json, even when a source has no
+  // shapes (e.g. no shapes.txt). This pins the exact empty bundle so the app's
+  // per-source request stays a cacheable 200 JSON instead of a 404 (Issue #329).
+  it('writes a valid empty ShapesBundle when no shapes exist', () => {
     const db = new Database(':memory:');
     db.exec(`
       CREATE TABLE trips (
@@ -152,7 +155,13 @@ describe('GTFS ShapesBundle assembly', () => {
     const outDir = join(TMP_DIR, 'out', 'test');
     writeShapesBundle(outDir, shapes);
 
-    const bundle = JSON.parse(readFileSync(join(outDir, 'shapes.json'), 'utf-8')) as ShapesBundle;
+    const filePath = join(outDir, 'shapes.json');
+    expect(existsSync(filePath)).toBe(true);
+
+    const bundle = JSON.parse(readFileSync(filePath, 'utf-8')) as ShapesBundle;
+    expect(bundle.bundle_version).toBe(3);
+    expect(bundle.kind).toBe('shapes');
+    expect(bundle.shapes.v).toBe(2);
     expect(bundle.shapes.data).toEqual({});
   });
 
