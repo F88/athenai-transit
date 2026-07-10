@@ -16,21 +16,36 @@ import {
 
 describe('deriveBlobKey', () => {
   it('strips the base dir and yields a key with no prefix', () => {
-    expect(deriveBlobKey('public/data-v2', 'public/data-v2/85b/data.json')).toBe('85b/data.json');
+    expect(
+      deriveBlobKey(
+        'pipeline/workspace/_build/data-v2',
+        'pipeline/workspace/_build/data-v2/85b/data.json',
+      ),
+    ).toBe('85b/data.json');
   });
 
   it('handles nested paths', () => {
-    expect(deriveBlobKey('public/data-v2', 'public/data-v2/a/b/c.json')).toBe('a/b/c.json');
+    expect(
+      deriveBlobKey(
+        'pipeline/workspace/_build/data-v2',
+        'pipeline/workspace/_build/data-v2/a/b/c.json',
+      ),
+    ).toBe('a/b/c.json');
   });
 
   it('handles a trailing slash on the base dir', () => {
-    expect(deriveBlobKey('public/data-v2/', 'public/data-v2/85b/data.json')).toBe('85b/data.json');
+    expect(
+      deriveBlobKey(
+        'pipeline/workspace/_build/data-v2/',
+        'pipeline/workspace/_build/data-v2/85b/data.json',
+      ),
+    ).toBe('85b/data.json');
   });
 });
 
 describe('isPathInside', () => {
   it('accepts a nested path', () => {
-    expect(isPathInside('/repo', '/repo/public/data-v2')).toBe(true);
+    expect(isPathInside('/repo', '/repo/pipeline/workspace/_build/data-v2')).toBe(true);
   });
 
   it('accepts the base itself', () => {
@@ -52,8 +67,8 @@ describe('isPathInside', () => {
 
 describe('uploadArgsSchema', () => {
   it('applies defaults (with --dir and --all)', () => {
-    const r = uploadArgsSchema.parse({ dir: 'public/data-v2', all: true });
-    expect(r.dir).toBe('public/data-v2');
+    const r = uploadArgsSchema.parse({ dir: 'pipeline/workspace/_build/data-v2', all: true });
+    expect(r.dir).toBe('pipeline/workspace/_build/data-v2');
     expect(r.concurrency).toBe(MAX_CONCURRENCY);
     expect(r.dryRun).toBe(false);
     expect(r.all).toBe(true);
