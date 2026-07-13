@@ -4,6 +4,72 @@ theme: gaia
 paginate: true
 ---
 
+<style>
+/* Athenai concept deck -- monochrome refinement (theme / class / font-size unchanged) */
+
+section {
+  padding: 70px 80px;
+  color: #2b2b2b;
+  justify-content: flex-start;
+}
+
+/* heading hierarchy via grayscale, not accent color */
+h1 {
+  color: #1a1a1a;
+  border-bottom: 3px solid #d4d4d2;
+  padding-bottom: 0.25em;
+}
+h2,
+h3 {
+  color: #555;
+}
+
+/* emphasis carried by weight / ink, no accent color */
+strong {
+  color: #111;
+  font-weight: 700;
+}
+
+/* list rhythm */
+ul {
+  line-height: 1.55;
+}
+li {
+  margin-bottom: 0.35em;
+}
+li::marker {
+  color: #9a9a9a;
+}
+
+/* key-phrase callout: styles any blockquote */
+blockquote {
+  border-left: 5px solid #c4c4c2;
+  padding-left: 0.9em;
+  color: #333;
+  font-style: normal;
+}
+
+/* one-pager code block */
+pre {
+  background: #f5f5f3;
+  border: 1px solid #e3e3e1;
+  border-radius: 10px;
+}
+
+/* subtle pagination */
+section::after {
+  color: #b3b3b3;
+}
+
+/* lead (title / summary) slides */
+section.lead {
+  justify-content: center;
+}
+section.lead h1 {
+  border-bottom: none;
+}
+</style>
+
 <!-- markdownlint-disable MD025 -->
 <!-- markdownlint-disable MD036 -->
 
@@ -31,8 +97,6 @@ Athenai Transit は **目的地検索機能を持たない** 乗換案内
 - 目的地検索とは、行き先を **決めてから** 使う道具
 - 目的地を検索した時点で、無数の選択肢は一つに絞り込まれる
 - **「検索」は可能性を「狭める」行為**
-
-<br>
 
 あてのない旅には、そもそも向かない
 
