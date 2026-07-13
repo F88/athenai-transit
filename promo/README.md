@@ -7,5 +7,6 @@ Source material for creating product introduction content (blog posts, presentat
 
 | File                                       | Description                                                                    |
 | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| [CONCEPT.md](./CONCEPT.md)                 | Concept and value proposition (for product introduction)                       |
 | [OVERVIEW.md](./OVERVIEW.md)               | App overview (concept, value proposition, screen layout, supported data, etc.) |
 | [FEATURE_CATALOG.md](./FEATURE_CATALOG.md) | Feature catalog (intermediate working document — not for direct use)           |
