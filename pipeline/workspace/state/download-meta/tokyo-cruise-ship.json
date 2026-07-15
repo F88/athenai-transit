@@ -2,12 +2,12 @@
   "sourceName": "tokyo-cruise-ship",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-13T00:43:43.946Z",
+  "downloadedAt": "2026-07-15T00:35:50.653Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyoCruiseShip/AllLines.zip?date=20250402",
   "size": 8330,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1197,
-  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260713-004345.zip",
+  "contentType": "application/octet-stream",
+  "durationMs": 1456,
+  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260715-003552.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

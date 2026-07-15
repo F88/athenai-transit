@@ -1,9 +1,7 @@
 {
   "sourceName": "tokyo-cruise-ship",
-  "checkedAt": "2026-07-12T05:59:45.480Z",
-  "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/TokyoCruiseShip/AllLines.zip?date=20250402"
-  ],
+  "checkedAt": "2026-07-15T05:46:15.828Z",
+  "resourceUrls": [],
   "result": "ok",
   "warnings": [],
   "errors": []
