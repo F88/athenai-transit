@@ -2,20 +2,32 @@
   "sourceName": "odakyu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-15T00:35:01.317Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260601",
-  "size": 3301299,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 4160,
-  "archivePath": "workspace/_archives/gtfs/odakyu-bus/AIILines_20260715-003505.zip",
+  "downloadedAt": "2026-07-17T05:31:51.245Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260716",
+  "size": 4330090,
+  "contentType": "application/octet-stream",
+  "durationMs": 4288,
+  "archivePath": "workspace/_archives/gtfs/odakyu-bus/AIILines_20260717-053155.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
       "size": 193
     },
     {
+      "name": "stops.txt",
+      "size": 180617
+    },
+    {
       "name": "routes.txt",
-      "size": 43343
+      "size": 39552
+    },
+    {
+      "name": "trips.txt",
+      "size": 2394302
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 43472947
     },
     {
       "name": "fare_attributes.txt",
@@ -27,7 +39,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 4624
+      "size": 2488
     },
     {
       "name": "feed_info.txt",
@@ -35,27 +47,15 @@
     },
     {
       "name": "translations.txt",
-      "size": 464871
-    },
-    {
-      "name": "stops.txt",
-      "size": 198053
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 32357553
-    },
-    {
-      "name": "trips.txt",
-      "size": 1104702
+      "size": 419688
     }
   ],
   "feedInfo": {
     "publisherName": "NECネクサソリューションズ株式会社",
     "publisherUrl": "https://www.nec-nexs.com",
     "lang": "ja",
-    "startDate": "20260601",
+    "startDate": "20260716",
     "endDate": "",
-    "version": "20260601_20260630"
+    "version": "20260716_20260731"
   }
 }

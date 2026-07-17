@@ -2,36 +2,24 @@
   "sourceName": "rinko-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-15T00:35:16.349Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20260523",
-  "size": 1340712,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3257,
-  "archivePath": "workspace/_archives/gtfs/rinko-bus/allrinko_20260715-003519.zip",
+  "downloadedAt": "2026-07-17T05:32:05.964Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20260716",
+  "size": 1312229,
+  "contentType": "application/octet-stream",
+  "durationMs": 3272,
+  "archivePath": "workspace/_archives/gtfs/rinko-bus/allrinko_20260717-053209.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
       "size": 201
     },
     {
-      "name": "stops.txt",
-      "size": 66985
+      "name": "calendar.txt",
+      "size": 593
     },
     {
-      "name": "routes.txt",
-      "size": 5179
-    },
-    {
-      "name": "trips.txt",
-      "size": 783313
-    },
-    {
-      "name": "pattern_jp.txt",
-      "size": 11560
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 12706903
+      "name": "calendar_dates.txt",
+      "size": 2216
     },
     {
       "name": "fare_attributes.txt",
@@ -42,36 +30,48 @@
       "size": 55
     },
     {
-      "name": "calendar.txt",
-      "size": 593
-    },
-    {
-      "name": "calendar_dates.txt",
-      "size": 872
-    },
-    {
       "name": "feed_info.txt",
       "size": 198
-    },
-    {
-      "name": "translations.txt",
-      "size": 136421
     },
     {
       "name": "office_jp.txt",
       "size": 149
     },
     {
+      "name": "pattern_jp.txt",
+      "size": 11452
+    },
+    {
+      "name": "routes.txt",
+      "size": 5180
+    },
+    {
       "name": "shapes.txt",
       "size": 76
+    },
+    {
+      "name": "stops.txt",
+      "size": 66985
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 12628628
+    },
+    {
+      "name": "translations.txt",
+      "size": 135026
+    },
+    {
+      "name": "trips.txt",
+      "size": 772668
     }
   ],
   "feedInfo": {
     "publisherName": "川崎鶴見臨港バス株式会社",
     "publisherUrl": "https://www.rinkobus.co.jp/",
     "lang": "ja",
-    "startDate": "20260523",
-    "endDate": "20270523",
-    "version": "20260523_20260831"
+    "startDate": "20260716",
+    "endDate": "20270716",
+    "version": "20260716_20261231"
   }
 }

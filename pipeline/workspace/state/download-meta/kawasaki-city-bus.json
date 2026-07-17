@@ -2,12 +2,12 @@
   "sourceName": "kawasaki-city-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-15T00:34:18.164Z",
+  "downloadedAt": "2026-07-17T05:31:10.270Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260701",
   "size": 7421596,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 4997,
-  "archivePath": "workspace/_archives/gtfs/kawasaki-city-bus/AllLines_20260715-003422.zip",
+  "durationMs": 4461,
+  "archivePath": "workspace/_archives/gtfs/kawasaki-city-bus/AllLines_20260717-053114.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
