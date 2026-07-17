@@ -106,12 +106,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
     colors: [{ bg: '138060', text: 'FFFFFF' }],
   },
-  // // --- Kyoto City Subway ---
-  // 'kcsub:2000020261009': {
-  //   shortName: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' },
-  //   longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
-  //   colors: [{ bg: '138060', text: 'FFFFFF' }],
-  // },
+
+  // --- Kyoto City Subway ---
+  'kcsub:2000020261009': {
+    shortName: { ja: '京都市営地下鉄', en: 'Kyoto City Subway' },
+    longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
+    colors: [{ bg: '138060', text: 'FFFFFF' }],
+  },
 
   // --- Kagoshima City Maritime Bureau (Sakurajima Ferry) ---
   'kcmb:1000020462012': {
@@ -164,22 +165,22 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '003B83', text: 'FFFFFF' }],
   },
 
-  // // --- Keio Railway ---
-  // 'kotr:keio': {
-  //   shortName: { ja: '京王電鉄', en: 'Keio Railway' },
-  //   longName: { ja: '京王電鉄株式会社', en: 'Keio Corporation' },
-  //   colors: [
-  //     { bg: '00377E', text: 'FFFFFF' },
-  //     { bg: 'C8006B', text: 'FFFFFF' },
-  //   ],
-  // },
+  // --- Keio Railway ---
+  'kotr:keio': {
+    shortName: { ja: '京王電鉄', en: 'Keio Railway' },
+    longName: { ja: '京王電鉄株式会社', en: 'Keio Corporation' },
+    colors: [
+      { bg: '00377E', text: 'FFFFFF' },
+      { bg: 'C8006B', text: 'FFFFFF' },
+    ],
+  },
 
-  // // --- Tobu Railway ---
-  // 'tobutr:tobu': {
-  //   shortName: { ja: '東武鉄道', en: 'Tobu Railway' },
-  //   longName: { ja: '東武鉄道株式会社', en: 'Tobu Railway Co., Ltd.' },
-  //   colors: [{ bg: '00458F', text: 'FFFFFF' }],
-  // },
+  // --- Tobu Railway ---
+  'tobutr:tobu': {
+    shortName: { ja: '東武鉄道', en: 'Tobu Railway' },
+    longName: { ja: '東武鉄道株式会社', en: 'Tobu Railway Co., Ltd.' },
+    colors: [{ bg: '00458F', text: 'FFFFFF' }],
+  },
 
   // --- Meimon Taiyo Ferry ---
   'mtfry:6120001047907': {
@@ -345,6 +346,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: '都営交通', en: 'Toei' },
     longName: { ja: '東京都交通局', en: 'Bureau of Transportation, Tokyo Metropolitan Government' },
     colors: [{ bg: '009f40', text: 'FFFFFF' }],
+  },
+
+  // --- JR East (ODPT Challenge 2026, preliminary) ---
+  'jret:jreast': {
+    shortName: { ja: 'JR東日本', en: 'JR East' },
+    longName: { ja: '東日本旅客鉄道株式会社', en: 'East Japan Railway Company' },
+    colors: [{ bg: '00B258', text: 'FFFFFF' }],
   },
 
   // --- Tokai Kisen ---
