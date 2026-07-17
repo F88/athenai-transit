@@ -5,13 +5,13 @@ Source material for creating product introduction content (blog posts, presentat
 > [!IMPORTANT]
 > **These are intermediate working documents for authoring materials — not finished documents to be used as-is.** They are also **not** product development requirements or specifications (INPUT). For requirements see [../PRD.md](../PRD.md); for developer documentation see [../DEVELOPMENT.md](../DEVELOPMENT.md).
 
-CONCEPT.md and FEATURE_CATALOG.md are the two foundational sources — CONCEPT holds the *why* (the concept and value proposition), FEATURE_CATALOG the *what* (the app's actual features, recorded as fact). Any purpose-specific material — a particular presentation, blog post, or pitch — is meant to be derived from these two as the need arises. The other documents here are such derivations, kept ready for general use rather than any single occasion.
+CONCEPT.md and FEATURE_CATALOG.md are the two foundational sources — CONCEPT holds the _why_ (the concept and value proposition), FEATURE_CATALOG the _what_ (the app's actual features, recorded as fact). Any purpose-specific material — a particular presentation, blog post, or pitch — is meant to be derived from these two as the need arises. The other documents here are such derivations, kept ready for general use rather than any single occasion.
 
 ## Foundational sources
 
 ### [CONCEPT.md](./CONCEPT.md)
 
-Articulates the product's core concept and value proposition — the source material behind any introduction. Lays out the premise ("no destination input" — the origin of the name Athenai), the UI reframing ("selecting, not searching"), the core values (from point-by-point lookup to a bird's-eye view, and how that view sparks chance encounters), and the two feature axes (finding stops / surveying departures). Written to convey the *why* behind each point, not just the *what*.
+Articulates the product's core concept and value proposition — the source material behind any introduction. Lays out the premise ("no destination input" — the origin of the name Athenai), the UI reframing ("selecting, not searching"), the core values (from point-by-point lookup to a bird's-eye view, and how that view sparks chance encounters), and the two feature axes (finding stops / surveying departures). Written to convey the _why_ behind each point, not just the _what_.
 
 ### [FEATURE_CATALOG.md](./FEATURE_CATALOG.md)
 
