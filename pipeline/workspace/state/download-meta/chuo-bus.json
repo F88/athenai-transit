@@ -2,16 +2,32 @@
   "sourceName": "chuo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-17T05:30:49.693Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108",
-  "size": 43708,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1528,
-  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260717-053051.zip",
+  "downloadedAt": "2026-07-17T06:19:01.691Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20260712",
+  "size": 36107,
+  "contentType": "application/octet-stream",
+  "durationMs": 1736,
+  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260717-061903.zip",
   "extractedFiles": [
     {
+      "name": "trips.txt",
+      "size": 8240
+    },
+    {
+      "name": "agency.txt",
+      "size": 217
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 164
+    },
+    {
+      "name": "calendar.txt",
+      "size": 172
+    },
+    {
       "name": "calendar_dates.txt",
-      "size": 1098
+      "size": 1303
     },
     {
       "name": "fare_attributes.txt",
@@ -19,7 +35,7 @@
     },
     {
       "name": "feed_info.txt",
-      "size": 285
+      "size": 293
     },
     {
       "name": "office_jp.txt",
@@ -35,7 +51,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 399392
+      "size": 247596
     },
     {
       "name": "stops.txt",
@@ -46,28 +62,16 @@
       "size": 295
     },
     {
-      "name": "trips.txt",
-      "size": 8104
-    },
-    {
-      "name": "agency.txt",
-      "size": 203
-    },
-    {
-      "name": "agency_jp.txt",
-      "size": 164
-    },
-    {
-      "name": "calendar.txt",
-      "size": 212
+      "name": "translations.txt",
+      "size": 5377
     }
   ],
   "feedInfo": {
-    "publisherName": "有限会社エイ・ケイ・システム",
-    "publisherUrl": "https://ak-system.co.jp/",
+    "publisherName": "株式会社 アチピレーションテクノロジー",
+    "publisherUrl": "https://acp-tech.jp/",
     "lang": "ja",
-    "startDate": "20241201",
-    "endDate": "20251130",
-    "version": "20241201_E001"
+    "startDate": "20260715",
+    "endDate": "20280630",
+    "version": "edo_20260715_001"
   }
 }
