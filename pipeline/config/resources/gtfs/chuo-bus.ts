@@ -16,8 +16,8 @@ const chuoBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyo_chuo_city',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata/resource/6674c46b-d4aa-44a6-a427-0862df7b7189',
-      resourceId: '6674c46b-d4aa-44a6-a427-0862df7b7189',
+        'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata/resource/2ddf722e-78ea-448c-b148-3690e9e82633',
+      resourceId: '2ddf722e-78ea-448c-b148-3690e9e82633',
     },
     provider: {
       name: {
@@ -37,7 +37,7 @@ const chuoBus: GtfsSourceDefinition = {
     routeTypes: ['bus'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20260712',
   },
   pipeline: {
     outDir: 'chuo-bus',
