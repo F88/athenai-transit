@@ -16,8 +16,8 @@ const iyotetsuBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/iyotetsu_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/iyotetsu_bus_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/iyotetsu_bus_all_lines/resource/d8ded132-ffcc-416d-b180-04fece268400',
-      resourceId: 'd8ded132-ffcc-416d-b180-04fece268400',
+        'https://ckan.odpt.org/dataset/iyotetsu_bus_all_lines/resource/1c565a07-6b6a-4f77-be81-b3ad59a3fccd',
+      resourceId: '1c565a07-6b6a-4f77-be81-b3ad59a3fccd',
     },
     provider: {
       name: {
@@ -37,7 +37,7 @@ const iyotetsuBus: GtfsSourceDefinition = {
     routeTypes: ['bus'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260519',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260720',
   },
   pipeline: {
     outDir: 'iyotetsu-bus',
