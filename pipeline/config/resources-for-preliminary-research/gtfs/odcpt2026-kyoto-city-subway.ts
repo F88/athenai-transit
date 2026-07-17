@@ -56,7 +56,7 @@ const kyotoCitySubway: GtfsSourceDefinition = {
     ],
   },
   pipeline: {
-    outDir: 'kyoto-city-subway',
+    outDir: 'odcpt2026-kyoto-city-subway',
     prefix: 'kcsub',
   },
 };

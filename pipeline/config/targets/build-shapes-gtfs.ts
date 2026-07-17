@@ -14,5 +14,10 @@
  */
 import { CONFIG_GTFS_ALL_TARGETS } from './target-const';
 
-const TARGETS = CONFIG_GTFS_ALL_TARGETS;
+const TARGETS = [
+  //
+  ...CONFIG_GTFS_ALL_TARGETS /* Regular targets */,
+  // ...CONFIG_ODCPT2026_TARGETS /* Open Data Challenge for Public Transportation 2026 */,
+];
+
 export default TARGETS;

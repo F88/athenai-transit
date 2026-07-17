@@ -47,6 +47,16 @@ const CONFIG_GTFS_BUS_TARGETS = [
   'yokohama-municipal-bus', // Yokohama Municipal Bus
 ];
 
+/**
+ * Open Data Challenge for Public Transportation 2026
+ */
+export const CONFIG_ODCPT2026_TARGETS: string[] = [
+  // 'odcpt2026-jreast-tokyo-area',
+  // 'odcpt2026-keio-train',
+  // 'odcpt2026-kyoto-city-subway'
+  // 'odcpt2026-tobu-train',
+];
+
 export const CONFIG_GTFS_ALL_TARGETS = [
   'mir-train', // Tsukuba Express
   'tama-monorail', // Tama Monorail
@@ -119,11 +129,12 @@ export const PREFIX_ALL_TARGETS = [
   ...PREFIX_BUS_TARGETS,
 ];
 
-// /**
-//  * Resources for preliminary research
-//  */
-// const preliminaryResearchTargets = [
-//   'kcsub', // kyoto-city-subway (ODPT Challenge 2026)
-//   'kotr', // keio-train (ODPT Challenge 2026)
-//   'tobutr', // tobu-train (ODPT Challenge 2026)
-// ];
+/**
+ * Open Data Challenge for Public Transportation 2026
+ */
+export const PREFIX_ODCPT2026_TARGETS: string[] = [
+  // 'jret', // jreast-tokyo-area (Open Data Challenge for Public Transportation 2026)
+  // 'kcsub', // kyoto-city-subway (Open Data Challenge for Public Transportation 2026)
+  // 'kotr', // keio-train (Open Data Challenge for Public Transportation 2026)
+  // 'tobutr', // tobu-train (Open Data Challenge for Public Transportation 2026)
+];

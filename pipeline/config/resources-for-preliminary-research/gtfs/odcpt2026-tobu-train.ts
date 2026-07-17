@@ -78,7 +78,7 @@ const tobuTrain: GtfsSourceDefinition = {
     ],
   },
   pipeline: {
-    outDir: 'tobu-train',
+    outDir: 'odcpt2026-tobu-train',
     // NOTE: provisional prefix -- not yet locked in.
     prefix: 'tobutr',
   },

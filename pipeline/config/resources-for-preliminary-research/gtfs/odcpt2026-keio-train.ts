@@ -73,7 +73,7 @@ const keioTrain: GtfsSourceDefinition = {
     ],
   },
   pipeline: {
-    outDir: 'keio-train',
+    outDir: 'odcpt2026-keio-train',
     // NOTE: provisional prefix -- not yet locked in.
     prefix: 'kotr',
   },

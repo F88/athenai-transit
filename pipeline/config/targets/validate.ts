@@ -8,5 +8,10 @@
  */
 import { PREFIX_ALL_TARGETS } from './target-const';
 
-const TARGETS = PREFIX_ALL_TARGETS;
-export default TARGETS;
+const PREFIX_TARGETS = [
+  //
+  ...PREFIX_ALL_TARGETS /* Regular targets */,
+  // ...PREFIX_ODCPT2026_TARGETS /* Open Data Challenge for Public Transportation 2026 */,
+];
+
+export default PREFIX_TARGETS;

@@ -6,7 +6,7 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default [
+const REGULAR_TARGETS = [
   'toei-train', // Toei Train
   'yurikamome', // Yurikamome
   'mir-train', // Tsukuba Express
@@ -14,3 +14,17 @@ export default [
   'twr-rinkai', // TWR Rinkai Line
   'tokyometro', // Tokyo Metro
 ];
+
+// const ODCPT2026_TARGETS = [
+//   // 'odcpt2026-jreast-tokyo-area',
+//   // 'odcpt2026-keio-train',
+//   // 'odcpt2026-tobu-train',
+// ];
+
+const TARGETS = [
+  ...REGULAR_TARGETS,
+  //
+  // ...ODCPT2026_TARGETS,
+];
+
+export default TARGETS;
