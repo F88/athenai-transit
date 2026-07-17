@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.07.17]
+
 ### Changed
 
 - Data: rinko-bus の GTFS resource を 20260716 版へ更新。
