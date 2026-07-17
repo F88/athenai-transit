@@ -15,6 +15,13 @@ Build web app JSON data files from GTFS open data sources.
 
 Commands and execution order are documented in `CLAUDE.md` "Data preparation" section. Run steps 1-12 in order; each step depends on the previous one.
 
+## Execution rules
+
+- **One command per shell call — never chain pipeline steps with `&&`.** Judge each step from its full output before running the next.
+- **Exit status alone is NOT a success signal.** Some pipeline scripts print usage and exit 0 on invalid arguments (`parseCliArg` returns `help` for user errors), so an `&&` chain can roll past a step that did nothing — e.g. building app data from a stale DB.
+- **Per-source scripts take exactly ONE source name (or `--targets <file>`, never both).** `build-gtfs-db.ts --targets <file> <source>` is invalid and prints usage with exit 0.
+- When in doubt, verify the artifact itself (mtime / content such as `feedInfo` in `data.json`), not just the log.
+
 ## When to skip steps
 
 - **Steps 1-2 (download)**: Skip if source files are already up to date. GTFS files live in `pipeline/workspace/data/gtfs/{outDir}/`; ODPT JSON files in `pipeline/workspace/data/odpt-json/{outDir}/`.

@@ -117,7 +117,7 @@ This is the canonical download (archived, with download metadata); it extracts t
 Add the **source-name** to `pipeline/config/targets/build-db.ts`, then build:
 
 ```bash
-npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts --targets pipeline/config/targets/build-db.ts {source-name}
+npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts {source-name}
 ```
 
 This produces `pipeline/workspace/_build/db/{source-name}.db`. The step 2 recon already established the overview; query this DB with `sqlite3` if you need exact values while finalizing details (e.g. precise per-route `route_color`, trip/stop counts, orphan stops):
@@ -249,6 +249,7 @@ Split into logical commits following Conventional Commits. **Do not commit gener
 
 ## Common Pitfalls
 
+- **Chaining pipeline steps with `&&` / trusting exit status alone**: run one command per shell call and read its full output before the next step. Pipeline scripts print usage and exit 0 on invalid arguments (e.g. `build-gtfs-db.ts --targets <file> <source>` — the two forms are mutually exclusive), so a chained run can silently skip a step and build from stale inputs.
 - **Writing the definition before the recon**: deciding `dataFormat`, `routeColorFallbacks`, or even whether to add the source at all without seeing the data leads to wrong values and wasted work. Download to a temp dir and inspect first (step 2), then write the definition (step 3).
 - **Adding an expired feed unnoticed**: check `feed_info.feed_end_date` in the recon. A past end_date means empty current-date timetables — raise it as a go/no-go before investing.
 - **`shapes.txt` present but `trips` lack `shape_id`**: shapes are linked to routes only via `trips.shape_id`; a feed can ship `shapes.txt` geometry with no `shape_id` column, so no shapes are emitted. Keep the source registered in `build-shapes-gtfs.ts` for future auto-generation.
