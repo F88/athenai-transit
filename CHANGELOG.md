@@ -9,6 +9,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Data: rinko-bus の GTFS resource を 20260716 版へ更新。
+- Data: keio-bus の GTFS resource を 20260716 版へ更新。
+- Data: odakyu-bus の GTFS resource を 20260716 版へ更新。
+- Data: nishi-tokyo-bus の GTFS resource を 20260711 版へ更新。
+- Data: iyotetsu-bus の GTFS resource を 20260720 版へ更新。
+
 ## [2026.07.09]
 
 ### Added
