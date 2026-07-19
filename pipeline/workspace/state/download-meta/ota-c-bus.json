@@ -2,12 +2,12 @@
   "sourceName": "ota-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-18T00:38:07.048Z",
+  "downloadedAt": "2026-07-19T00:43:35.835Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260601",
   "size": 9754,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1023,
-  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20260718-003808.zip",
+  "durationMs": 1613,
+  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20260719-004337.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

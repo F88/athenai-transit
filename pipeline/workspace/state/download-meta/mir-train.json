@@ -2,12 +2,12 @@
   "sourceName": "mir-train",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-18T00:36:36.381Z",
+  "downloadedAt": "2026-07-19T00:41:40.852Z",
   "url": "https://api.odpt.org/api/v4/files/MIR/data/MIR-Train-GTFS.zip",
   "size": 90039,
   "contentType": "application/octet-stream",
-  "durationMs": 1432,
-  "archivePath": "workspace/_archives/gtfs/mir-train/MIR-Train-GTFS_20260718-003637.zip",
+  "durationMs": 2002,
+  "archivePath": "workspace/_archives/gtfs/mir-train/MIR-Train-GTFS_20260719-004142.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
