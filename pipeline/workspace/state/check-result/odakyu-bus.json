@@ -1,14 +1,12 @@
 {
   "sourceName": "odakyu-bus",
-  "checkedAt": "2026-07-19T05:58:55.012Z",
+  "checkedAt": "2026-07-20T06:01:49.075Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260319",
     "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260601",
     "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260716"
   ],
   "result": "attention",
   "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD"
   ],
   "errors": []

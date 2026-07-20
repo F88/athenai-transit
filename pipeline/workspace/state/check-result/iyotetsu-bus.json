@@ -1,14 +1,10 @@
 {
   "sourceName": "iyotetsu-bus",
-  "checkedAt": "2026-07-19T05:58:55.020Z",
+  "checkedAt": "2026-07-20T06:01:49.081Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260720"
   ],
-  "result": "critical",
-  "warnings": [
-    "ADOPTED_BEFORE_PERIOD"
-  ],
-  "errors": [
-    "REMOTE_NO_VALID_DATA"
-  ]
+  "result": "ok",
+  "warnings": [],
+  "errors": []
 }
