@@ -2,12 +2,12 @@
   "sourceName": "chii-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-20T02:25:52.022Z",
+  "downloadedAt": "2026-07-21T00:40:20.572Z",
   "url": "https://gtfs-jp.buskita.com/fxc/gtfs.zip",
-  "size": 248374,
+  "size": 246730,
   "contentType": "application/zip",
-  "durationMs": 2190,
-  "archivePath": "workspace/_archives/gtfs/chii-bus/gtfs_20260720-022554.zip",
+  "durationMs": 2025,
+  "archivePath": "workspace/_archives/gtfs/chii-bus/gtfs_20260721-004022.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -43,11 +43,11 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 1621606
+      "size": 1605214
     },
     {
       "name": "stops.txt",
-      "size": 13488
+      "size": 13426
     },
     {
       "name": "translations.txt",
@@ -64,6 +64,6 @@
     "lang": "ja",
     "startDate": "20260401",
     "endDate": "20261231",
-    "version": "202603301602"
+    "version": "202607171405"
   }
 }
