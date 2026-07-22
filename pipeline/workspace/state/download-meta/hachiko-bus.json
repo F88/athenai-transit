@@ -2,12 +2,12 @@
   "sourceName": "hachiko-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-21T00:40:28.624Z",
+  "downloadedAt": "2026-07-22T00:39:20.353Z",
   "url": "https://www.arcgis.com/sharing/rest/content/items/185d0dbc980443b8b60e135349e2ae5e/data",
   "size": 73419,
   "contentType": "application/zip",
-  "durationMs": 215,
-  "archivePath": "workspace/_archives/gtfs/hachiko-bus/data_20260721-004028",
+  "durationMs": 400,
+  "archivePath": "workspace/_archives/gtfs/hachiko-bus/data_20260722-003920",
   "extractedFiles": [
     {
       "name": "agency.txt",
