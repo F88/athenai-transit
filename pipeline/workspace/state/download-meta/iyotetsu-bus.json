@@ -2,12 +2,12 @@
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-23T00:41:13.665Z",
+  "downloadedAt": "2026-07-24T00:38:30.384Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260720",
-  "size": 763706,
+  "size": 763943,
   "contentType": "application/octet-stream",
-  "durationMs": 1903,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260723-004115.zip",
+  "durationMs": 2666,
+  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260724-003833.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,7 +15,7 @@
     },
     {
       "name": "stops.txt",
-      "size": 73736
+      "size": 73737
     },
     {
       "name": "routes.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 32
+      "size": 242
     },
     {
       "name": "feed_info.txt",
@@ -72,6 +72,6 @@
     "lang": "ja",
     "startDate": "20260720",
     "endDate": "20260831",
-    "version": "20260720_00000000"
+    "version": "20260720_20260820"
   }
 }
