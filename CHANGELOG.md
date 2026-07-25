@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.07.25]
+
 ### Changed
 
 - Data: keio-bus の GTFS resource を 20260724 版へ更新。
