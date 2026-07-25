@@ -232,7 +232,14 @@ Add resource-specific notes to `pipeline/config/resources/NOTES.md`:
 
 Keep factual and neutral — this is in a public repository.
 
-### 11. Commit
+### 11. Commit and PR
+
+**Branch -> commit -> PR. NEVER commit resource definitions directly on main.** Cut a
+fresh branch off main named `feat/add-resources-YYYYMMDD` (today's date; fixed rule,
+user decision 2026-07-25 — no "gtfs" in the name since resource definitions cover more
+than GTFS). Version bumps of EXISTING sources are a different job with their own
+`chore/update-resources-YYYYMMDD` branch (see the `check-transit-resources` skill).
+Push and open a PR; the user decides when to merge.
 
 Split into logical commits following Conventional Commits. **Do not commit generated app data** — the pipeline delivers `data.json` / `insights.json` / `shapes.json` to the git-ignored `__LOCAL_AT_DATA__/` locally, and the `Update Transit Data (Vercel Blob)` GitHub Action rebuilds and uploads them to Vercel Blob after merge:
 

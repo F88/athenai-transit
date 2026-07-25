@@ -117,7 +117,34 @@ Output a table grouped by category (CRITICAL / UPDATE CANDIDATE / UPCOMING / No 
 each row showing the source, the adopted `start_at`, and the newer `start_at` + its `feed=`
 window from the block. Then list the candidates and ask which (if any) the user wants to
 adopt after reviewing the resource. **Do not edit any definition** — applying an approved
-bump is a separate, user-initiated step (see the `add-gtfs-source` / `gtfs-data-build` skills).
+bump is a separate, user-initiated step (see "Applying an approved bump" below).
+
+## Applying an approved bump (only after explicit per-source user approval)
+
+Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260724"):
+
+1. **Update the three-field set** in `pipeline/config/resources/gtfs/{source}.ts`:
+   the `date=` param of `downloadUrl`, `catalog.resourceUrl`, and `catalog.resourceId`.
+   The CKAN resource UUID for the new date comes from the dataset page
+   (`https://ckan.odpt.org/dataset/{dataset}` — the CKAN Action API returns HTML, so
+   scrape the resource links; each title embeds the date, e.g. "京都バス-20260724").
+   The `downloadUrl` date and `resourceId` must refer to the same version.
+2. **Update `CHANGELOG.md`** under `[Unreleased]` / `### Changed`, one line per source
+   in the established format: `- Data: {source} の GTFS resource を {date} 版へ更新。`
+3. **Verify**: `npm run typecheck`.
+4. **Branch -> commit -> PR. NEVER commit resource definition updates directly on main.**
+   Cut a fresh branch off main named `chore/update-resources-YYYYMMDD` (today's date).
+   Fixed rule (user decision, 2026-07-25): version bumps are ALWAYS `chore`, even when
+   triggered by a CRITICAL / expired source. A second bump branch on the same day gets
+   a serial suffix (`chore/update-resources-YYYYMMDD-2`). The name deliberately has no
+   "gtfs" in it — resource definitions cover more than GTFS. Adding a NEW source is a
+   different job: the `add-gtfs-source` skill, on its own `feat/add-resources-YYYYMMDD`
+   branch. Commit ONLY the edited resource definitions + `CHANGELOG.md` (never
+   `pipeline/workspace/state/**` — CI owns those snapshots), push, and open a PR
+   with the `resource` label (`gh pr create --label resource ...`).
+   The user decides when to merge.
+5. The data build itself is CI's job after merge (Blob upload workflow) — do not run
+   the pipeline or any production workflow locally as part of the bump.
 
 ## Related
 
