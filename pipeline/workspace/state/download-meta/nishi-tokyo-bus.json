@@ -2,12 +2,12 @@
   "sourceName": "nishi-tokyo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-24T00:39:13.036Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260711",
-  "size": 2156972,
+  "downloadedAt": "2026-07-25T10:26:37.528Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260718",
+  "size": 2696498,
   "contentType": "application/octet-stream",
-  "durationMs": 3371,
-  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260724-003916.zip",
+  "durationMs": 3929,
+  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260725-102641.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,19 +19,19 @@
     },
     {
       "name": "routes.txt",
-      "size": 22851
+      "size": 23181
     },
     {
       "name": "trips.txt",
-      "size": 796661
+      "size": 1106644
     },
     {
       "name": "pattern_jp.txt",
-      "size": 23836
+      "size": 24007
     },
     {
       "name": "stop_times.txt",
-      "size": 14998325
+      "size": 20649847
     },
     {
       "name": "fare_attributes.txt",
@@ -39,15 +39,15 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 3203844
+      "size": 3204038
     },
     {
       "name": "calendar.txt",
-      "size": 719
+      "size": 929
     },
     {
       "name": "calendar_dates.txt",
-      "size": 32
+      "size": 326
     },
     {
       "name": "feed_info.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 316363
+      "size": 315471
     },
     {
       "name": "office_jp.txt",
@@ -70,8 +70,8 @@
     "publisherName": "西東京バス株式会社",
     "publisherUrl": "http://www.nisitokyobus.co.jp",
     "lang": "ja",
-    "startDate": "20260711",
-    "endDate": "20260725",
-    "version": "20260711_20260717"
+    "startDate": "20260718",
+    "endDate": "20260801",
+    "version": "20260718_20260930"
   }
 }
