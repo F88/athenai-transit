@@ -16,8 +16,8 @@ const keioBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/keio_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/keio_bus_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/keio_bus_all_lines/resource/abc7b801-5c10-461d-b50b-397b660e36d0',
-      resourceId: 'abc7b801-5c10-461d-b50b-397b660e36d0',
+        'https://ckan.odpt.org/dataset/keio_bus_all_lines/resource/642a138c-c3d9-405b-b681-6b99e13b81a9',
+      resourceId: '642a138c-c3d9-405b-b681-6b99e13b81a9',
     },
     provider: {
       name: {
@@ -43,7 +43,7 @@ const keioBus: GtfsSourceDefinition = {
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260716',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260724',
   },
   pipeline: {
     outDir: 'keio-bus',
