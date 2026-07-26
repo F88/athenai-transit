@@ -58,20 +58,7 @@ A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-sour
 
 ## Development Commands
 
-```bash
-npm run dev             # start Vite dev server
-npm run build           # production build (tsc + vite build)
-npm run typecheck       # tsc -b --noEmit
-npm run lint            # ESLint (type-checked)
-npm run lint:fix        # ESLint with auto-fix
-npm run format          # Prettier format all files
-npm run format:check    # Prettier check (CI)
-npm run test            # Vitest run
-npm run test:coverage   # Vitest with coverage
-npm run preview         # preview production build
-npm run storybook       # Storybook dev server
-npm run build-storybook # Storybook production build
-```
+Standard scripts (`dev`, `build`, `typecheck`, `lint`, `lint:fix`, `format`, `format:check`, `test`, `test:coverage`, `preview`, `storybook`, `build-storybook`) are defined in `package.json`; run them via `npm run <script>`. The pipeline-specific commands below are not derivable from the manifest.
 
 ### Data preparation
 
