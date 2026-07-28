@@ -2,12 +2,12 @@
   "sourceName": "taito-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-27T00:45:17.051Z",
+  "downloadedAt": "2026-07-28T00:40:57.752Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20251028",
   "size": 78030,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1898,
-  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20260727-004518.zip",
+  "durationMs": 1220,
+  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20260728-004058.zip",
   "extractedFiles": [
     {
       "name": "calendar.txt",
