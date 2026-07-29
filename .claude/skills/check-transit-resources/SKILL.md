@@ -132,7 +132,14 @@ Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260
 2. **Update `CHANGELOG.md`** under `[Unreleased]` / `### Changed`, one line per source
    in the established format: `- Data: {source} の GTFS resource を {date} 版へ更新。`
 3. **Verify**: `npm run typecheck`.
-4. **Branch -> commit -> PR. NEVER commit resource definition updates directly on main.**
+4. **STOP and get explicit user confirmation before committing (RULE).** After editing
+   the definition(s) + `CHANGELOG.md` and passing typecheck, show the exact diff and
+   WAIT. Resource definition changes are ALWAYS committed only after the user explicitly
+   approves *this* commit — naming the sources/dates to adopt (step 0) authorizes the
+   *edit*, NOT the commit. The user may still add more sources or revise values before
+   committing. Never run `git commit` on a resource bump without that explicit go-ahead.
+   See [[feedback_resource_update_human_confirmation]].
+5. **Branch -> commit -> PR. NEVER commit resource definition updates directly on main.**
    Cut a fresh branch off main named `chore/update-resources-YYYYMMDD` (today's date).
    Fixed rule (user decision, 2026-07-25): version bumps are ALWAYS `chore`, even when
    triggered by a CRITICAL / expired source. A second bump branch on the same day gets
@@ -143,7 +150,7 @@ Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260
    `pipeline/workspace/state/**` — CI owns those snapshots), push, and open a PR
    with the `resource` label (`gh pr create --label resource ...`).
    The user decides when to merge.
-5. The data build itself is CI's job after merge (Blob upload workflow) — do not run
+6. The data build itself is CI's job after merge (Blob upload workflow) — do not run
    the pipeline or any production workflow locally as part of the bump.
 
 ## Related
