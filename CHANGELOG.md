@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Data: kawasaki-city-bus の GTFS resource を 20260801 版へ更新。
+- Data: yokohama-municipal-bus の GTFS resource を 20260727 版へ更新。
+
 ## [2026.07.25]
 
 ### Changed
