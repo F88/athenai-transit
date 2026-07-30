@@ -2,12 +2,12 @@
   "sourceName": "yokohama-municipal-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-29T00:39:19.916Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260601",
-  "size": 4032908,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3163,
-  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-bus/Bus_20260729-003922.zip",
+  "downloadedAt": "2026-07-30T00:39:24.092Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260727",
+  "size": 5854016,
+  "contentType": "application/octet-stream",
+  "durationMs": 5065,
+  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-bus/Bus_20260730-003928.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -23,7 +23,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 3551
+      "size": 9087
     },
     {
       "name": "fare_attributes.txt",
@@ -51,11 +51,11 @@
     },
     {
       "name": "shapes.txt",
-      "size": 2883947
+      "size": 2888059
     },
     {
       "name": "stop_times.txt",
-      "size": 37499298
+      "size": 61025632
     },
     {
       "name": "stops.txt",
@@ -67,15 +67,15 @@
     },
     {
       "name": "trips.txt",
-      "size": 1690598
+      "size": 2757594
     }
   ],
   "feedInfo": {
     "publisherName": "横浜市交通局",
     "publisherUrl": "https://www.city.yokohama.lg.jp/kotsu/",
     "lang": "ja",
-    "startDate": "20260601",
-    "endDate": "20270531",
-    "version": "v3.0_20260601"
+    "startDate": "20260727",
+    "endDate": "20270726",
+    "version": "v3.0_20260727"
   }
 }
