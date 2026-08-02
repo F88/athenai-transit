@@ -1,0 +1,8 @@
+{
+  "ignores": [
+    //
+    ".agents/",
+    ".claude/",
+    "__LOCAL_DOCS__/**/*.md",
+  ],
+}
