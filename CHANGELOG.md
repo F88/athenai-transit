@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.08.02]
+
 ### Added
 
 - Pipeline: GTFS バッチダウンロードの opt-in 並列実行を追加 (`PIPELINE_DOWNLOAD_CONCURRENCY`、既定 1 = 逐次)。ネットワーク律速の DL を wall-clock で短縮。(#348)
