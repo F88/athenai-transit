@@ -29,11 +29,13 @@ import { buildTripPatternStats } from '../../../src/lib/pipeline/app-data-v2/bui
 import { writeInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
 

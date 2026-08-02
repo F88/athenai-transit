@@ -34,11 +34,13 @@ import {
 import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../src/lib/pipeline/pipeline-utils';
 import { ensureDir } from '../../src/lib/fs-utils';

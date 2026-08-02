@@ -6,7 +6,6 @@
  * (download, build-db, build-json, etc.).
  */
 
-import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -176,51 +175,6 @@ export function uniqueInOrder(values: string[]): string[] {
   });
 }
 
-/** Result of a single source operation in a batch run. */
-export interface BatchResult {
-  sourceName: string;
-  success: boolean;
-  durationMs: number;
-}
-
-/**
- * Run a pipeline script for each source name in sequence.
- *
- * Each source runs in a separate child process for error isolation.
- * A failed source does not stop subsequent sources.
- *
- * @param scriptPath - Absolute path to the script (e.g. download-gtfs.ts, build-gtfs-db.ts).
- * @param sourceNames - Array of source names to process.
- * @returns Array of results for each source.
- */
-export function runBatch(scriptPath: string, sourceNames: string[]): BatchResult[] {
-  const results: BatchResult[] = [];
-
-  for (let i = 0; i < sourceNames.length; i++) {
-    if (i > 0) {
-      console.log('');
-    }
-    const sourceName = sourceNames[i];
-    const startTime = performance.now();
-    let success = true;
-
-    try {
-      execFileSync('npx', ['tsx', scriptPath, sourceName], {
-        stdio: 'inherit',
-        env: process.env,
-      });
-    } catch {
-      console.error(`  [${sourceName}] FAILED`);
-      success = false;
-    }
-
-    const durationMs = Math.round(performance.now() - startTime);
-    results.push({ sourceName, success, durationMs });
-  }
-
-  return results;
-}
-
 /** Exit code: all sources succeeded. */
 export const EXIT_OK = 0;
 
@@ -229,52 +183,6 @@ export const EXIT_WARN = 1;
 
 /** Exit code: all sources failed. */
 export const EXIT_ERROR = 2;
-
-/**
- * Print a summary table of batch results.
- *
- * @param results - Batch execution results.
- */
-export function printBatchSummary(results: BatchResult[]): void {
-  const succeeded = results.filter((r) => r.success);
-  const failed = results.filter((r) => !r.success);
-  const totalMs = results.reduce((sum, r) => sum + r.durationMs, 0);
-
-  console.log('\n=== Batch Summary ===\n');
-  for (const r of results) {
-    const status = r.success ? 'OK' : 'FAILED';
-    const duration = (r.durationMs / 1000).toFixed(1);
-    console.log(`  ${r.sourceName.padEnd(30)} ${status.padEnd(8)} ${duration}s`);
-  }
-  console.log(
-    `\n  Total: ${results.length} sources, ${succeeded.length} succeeded, ${failed.length} failed (${(totalMs / 1000).toFixed(1)}s)`,
-  );
-}
-
-/**
- * Determine the exit code based on batch results.
- *
- * Follows the same convention as validate-app-data.ts:
- * - 0 (EXIT_OK): all succeeded
- * - 1 (EXIT_WARN): partial failure (some succeeded, some failed)
- * - 2 (EXIT_ERROR): all failed
- *
- * @param results - Batch execution results.
- * @returns Exit code.
- */
-export function determineBatchExitCode(results: BatchResult[]): number {
-  if (results.length === 0) {
-    return EXIT_OK;
-  }
-  const failedCount = results.filter((r) => !r.success).length;
-  if (failedCount === results.length) {
-    return EXIT_ERROR;
-  }
-  if (failedCount > 0) {
-    return EXIT_WARN;
-  }
-  return EXIT_OK;
-}
 
 /** Human-readable label for each exit code. */
 const EXIT_CODE_LABELS: Record<number, string> = {

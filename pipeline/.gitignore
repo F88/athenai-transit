@@ -5,6 +5,8 @@ _references/
 
 # Pipeline local env (contains API tokens)
 .env.pipeline.*
+# Exception: the committed template (no secrets) documenting the variables.
+!.env.pipeline.example
 
 ## Pipeline workspace (contains intermediate files and outputs; not needed in production)
 

@@ -41,11 +41,13 @@ import {
 import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../src/lib/pipeline/pipeline-utils';
 import { formatBytes } from '../../src/lib/format-utils';

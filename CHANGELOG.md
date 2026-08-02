@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Pipeline: GTFS バッチダウンロードの opt-in 並列実行を追加 (`PIPELINE_DOWNLOAD_CONCURRENCY`、既定 1 = 逐次)。ネットワーク律速の DL を wall-clock で短縮。(#348)
+
 ### Changed
 
 - Data: keio-bus の GTFS resource を 20260731 版へ更新。

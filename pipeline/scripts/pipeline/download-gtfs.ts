@@ -32,11 +32,15 @@ import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import { parseFeedInfoTxt } from '../../src/lib/pipeline/gtfs-feed-info';
 import {
   determineBatchExitCode,
+  parseConcurrencyEnv,
+  printBatchSummary,
+  runBatch,
+  runBatchConcurrent,
+} from '../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../src/lib/pipeline/pipeline-utils';
 import { ensureDir } from '../../src/lib/fs-utils';
@@ -114,7 +118,15 @@ async function main(): Promise<void> {
     const sourceNames = await loadTargetFile(arg.path);
     console.log(`=== Batch download (${sourceNames.length} targets) ===\n`);
     const scriptPath = resolve(import.meta.dirname, 'download-gtfs.ts');
-    const results = runBatch(scriptPath, sourceNames);
+    // Opt-in parallel download via PIPELINE_DOWNLOAD_CONCURRENCY (default 1 =
+    // unchanged sequential behavior). Downloads are network-bound, so modest
+    // concurrency cuts wall-clock without needing extra cores; keep it small to
+    // respect the ODPT server's rate limits.
+    const concurrency = parseConcurrencyEnv('PIPELINE_DOWNLOAD_CONCURRENCY');
+    const results =
+      concurrency > 1
+        ? await runBatchConcurrent(scriptPath, sourceNames, { concurrency })
+        : runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);
     console.log(`\n${formatExitCode(exitCode)}`);
