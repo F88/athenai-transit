@@ -100,6 +100,30 @@ export async function mapWithConcurrency<T, R>(
 }
 
 /**
+ * Resolve the text block to print for a finished child process.
+ *
+ * Prefers the child's captured stdout/stderr. When the child produced no
+ * output (e.g. spawn failure, killed by signal, or `maxBuffer` exceeded, where
+ * only the thrown error carries information), falls back to `errorMessage` so a
+ * failed source is never reduced to an empty log block. Pure, so the
+ * fallback rule is unit-testable.
+ *
+ * @param captured - The child's captured `stdout` / `stderr` (utf8 strings).
+ * @param errorMessage - Fallback used only when the captured output is blank.
+ * @returns The text to print for this source.
+ */
+export function resolveChildOutput(
+  captured: { stdout?: string; stderr?: string },
+  errorMessage?: string,
+): string {
+  const combined = (captured.stdout ?? '') + (captured.stderr ? `\n${captured.stderr}` : '');
+  if (combined.trim().length > 0) {
+    return combined;
+  }
+  return errorMessage ?? '';
+}
+
+/**
  * Concurrent counterpart of {@link runBatch}.
  *
  * Runs the same per-source child process (`npx tsx <script> <source>`), but up
@@ -137,15 +161,20 @@ export async function runBatchConcurrent(
     try {
       const { stdout, stderr } = await execFileAsync('npx', ['tsx', scriptPath, sourceName], {
         env: process.env,
-        // Per-source logs can be large (every extracted file is printed); avoid
-        // ENOBUFS by allowing a generous buffer.
-        maxBuffer: 64 * 1024 * 1024,
+        // Buffer the child's output (utf8 -> strings). Measured per-source logs
+        // are ~24 KB (2026-08-02, 46 GTFS sources); 16 MB is a generous ceiling.
+        // Peak memory scales with the ACTUAL captured size (~concurrency x tens
+        // of KB), not with this cap.
+        maxBuffer: 16 * 1024 * 1024,
       });
-      output = stdout + (stderr ? `\n${stderr}` : '');
+      output = resolveChildOutput({ stdout, stderr });
     } catch (err) {
       success = false;
-      const e = err as { stdout?: string; stderr?: string };
-      output = (e.stdout ?? '') + (e.stderr ? `\n${e.stderr}` : '');
+      const e = err as { stdout?: string; stderr?: string; message?: string };
+      // Fall back to the error message when the child produced no captured
+      // output (spawn failure, killed by signal, maxBuffer exceeded) so a
+      // failed source is never reduced to an empty header.
+      output = resolveChildOutput(e, e.message ?? String(err));
     }
 
     const durationMs = Math.round(performance.now() - startTime);

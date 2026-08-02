@@ -5,6 +5,7 @@ import {
   determineBatchExitCode,
   mapWithConcurrency,
   parseConcurrency,
+  resolveChildOutput,
 } from '../pipeline-batch';
 import { EXIT_ERROR, EXIT_OK, EXIT_WARN } from '../pipeline-utils';
 
@@ -138,5 +139,36 @@ describe('mapWithConcurrency', () => {
   it('handles an empty item list', async () => {
     const results = await mapWithConcurrency([], 4, () => Promise.resolve('x'));
     expect(results).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveChildOutput
+// ---------------------------------------------------------------------------
+
+describe('resolveChildOutput', () => {
+  it('returns stdout when present', () => {
+    expect(resolveChildOutput({ stdout: 'hello', stderr: '' })).toBe('hello');
+  });
+
+  it('appends stderr after stdout', () => {
+    expect(resolveChildOutput({ stdout: 'out', stderr: 'err' })).toBe('out\nerr');
+  });
+
+  it('prefers captured output over the error message', () => {
+    expect(resolveChildOutput({ stdout: 'real log' }, 'ignored')).toBe('real log');
+  });
+
+  it('falls back to the error message when captured output is empty', () => {
+    // Spawn failure / signal kill / maxBuffer: only the error carries info.
+    expect(resolveChildOutput({}, 'spawn npx ENOENT')).toBe('spawn npx ENOENT');
+  });
+
+  it('falls back when captured output is only whitespace', () => {
+    expect(resolveChildOutput({ stdout: '   \n', stderr: '' }, 'boom')).toBe('boom');
+  });
+
+  it('returns an empty string when both captured output and error message are absent', () => {
+    expect(resolveChildOutput({})).toBe('');
   });
 });
