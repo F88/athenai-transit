@@ -13,6 +13,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Pipeline: Build DB (GTFS CSV -> SQLite) バッチの opt-in 並列実行を追加 (`PIPELINE_BUILD_DB_CONCURRENCY`、既定 1 = 逐次)。GTFS download と同じ行プレフィックス streaming。CPU/メモリ律速のため並列度は控えめ推奨。(#350)
 
+### Changed
+
+- Data: keio-bus の GTFS resource を 20260803 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260803 版へ更新。
+
 ## [2026.08.02]
 
 ### Added
