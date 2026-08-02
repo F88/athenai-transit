@@ -2,12 +2,12 @@
   "sourceName": "rinko-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-02T09:32:53.484Z",
+  "downloadedAt": "2026-08-02T10:50:04.637Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20260716",
   "size": 1312229,
   "contentType": "application/octet-stream",
-  "durationMs": 2108,
-  "archivePath": "workspace/_archives/gtfs/rinko-bus/allrinko_20260802-093255.zip",
+  "durationMs": 2030,
+  "archivePath": "workspace/_archives/gtfs/rinko-bus/allrinko_20260802-105006.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
