@@ -2,12 +2,12 @@
   "sourceName": "nishi-tokyo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-07-30T00:38:42.060Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260718",
-  "size": 2696498,
+  "downloadedAt": "2026-08-02T05:39:29.205Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260801",
+  "size": 2349013,
   "contentType": "application/octet-stream",
-  "durationMs": 3830,
-  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260730-003845.zip",
+  "durationMs": 2865,
+  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20260802-053931.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,23 +15,23 @@
     },
     {
       "name": "stops.txt",
-      "size": 176601
+      "size": 176035
     },
     {
       "name": "routes.txt",
-      "size": 23181
+      "size": 23217
     },
     {
       "name": "trips.txt",
-      "size": 1106644
+      "size": 1115502
     },
     {
       "name": "pattern_jp.txt",
-      "size": 24007
+      "size": 24019
     },
     {
       "name": "stop_times.txt",
-      "size": 20649847
+      "size": 20895953
     },
     {
       "name": "fare_attributes.txt",
@@ -39,7 +39,7 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 3204038
+      "size": 3207156
     },
     {
       "name": "calendar.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 326
+      "size": 2132
     },
     {
       "name": "feed_info.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 315471
+      "size": 314955
     },
     {
       "name": "office_jp.txt",
@@ -70,8 +70,8 @@
     "publisherName": "西東京バス株式会社",
     "publisherUrl": "http://www.nisitokyobus.co.jp",
     "lang": "ja",
-    "startDate": "20260718",
-    "endDate": "20260801",
-    "version": "20260718_20260930"
+    "startDate": "20260801",
+    "endDate": "20260828",
+    "version": "20260801_20260828"
   }
 }
