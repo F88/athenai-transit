@@ -11,6 +11,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Data: keio-bus の GTFS resource を 20260731 版へ更新。
+- Data: meimon-taiyo-ferry の GTFS resource を 20260801 版へ更新。
+- Data: nishi-tokyo-bus の GTFS resource を 20260801 版へ更新。
 - Data: kawasaki-city-bus の GTFS resource を 20260801 版へ更新。
 - Data: yokohama-municipal-bus の GTFS resource を 20260727 版へ更新。
 
