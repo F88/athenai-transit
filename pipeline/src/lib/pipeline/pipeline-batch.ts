@@ -7,12 +7,10 @@
  * `pipeline-utils.ts` to keep the batch-execution concern self-contained.
  */
 
-import { execFile, execFileSync } from 'node:child_process';
-import { promisify } from 'node:util';
+import { execFileSync, spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 
 import { EXIT_ERROR, EXIT_OK, EXIT_WARN } from './pipeline-utils';
-
-const execFileAsync = promisify(execFile);
 
 /** Result of a single source operation in a batch run. */
 export interface BatchResult {
@@ -100,27 +98,64 @@ export async function mapWithConcurrency<T, R>(
 }
 
 /**
- * Resolve the text block to print for a finished child process.
+ * Run one per-source child process, streaming its output live with every line
+ * prefixed by `[source]`.
  *
- * Prefers the child's captured stdout/stderr. When the child produced no
- * output (e.g. spawn failure, killed by signal, or `maxBuffer` exceeded, where
- * only the thrown error carries information), falls back to `errorMessage` so a
- * failed source is never reduced to an empty log block. Pure, so the
- * fallback rule is unit-testable.
+ * Under concurrency, lines from different children may interleave, but each line
+ * names its source so it stays attributable. Nothing is buffered, so memory does
+ * not scale with output size. A spawn-level failure (the child prints nothing)
+ * is surfaced with an explicit prefixed line. Always resolves (never rejects) so
+ * one failed source cannot abort the pool.
  *
- * @param captured - The child's captured `stdout` / `stderr` (utf8 strings).
- * @param errorMessage - Fallback used only when the captured output is blank.
- * @returns The text to print for this source.
+ * @param scriptPath - Absolute path to the per-source script.
+ * @param sourceName - Source name (child CLI argument and log prefix).
+ * @param completionLabel - Called once on completion; returns e.g. `[3/46]`.
+ * @returns The batch result once the child closes.
  */
-export function resolveChildOutput(
-  captured: { stdout?: string; stderr?: string },
-  errorMessage?: string,
-): string {
-  const combined = (captured.stdout ?? '') + (captured.stderr ? `\n${captured.stderr}` : '');
-  if (combined.trim().length > 0) {
-    return combined;
-  }
-  return errorMessage ?? '';
+function runChildStreaming(
+  scriptPath: string,
+  sourceName: string,
+  completionLabel: () => string,
+): Promise<BatchResult> {
+  return new Promise((resolve) => {
+    const startTime = performance.now();
+    const prefix = `[${sourceName}] `;
+    let settled = false;
+
+    const finish = (success: boolean): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      const durationMs = Math.round(performance.now() - startTime);
+      const status = success ? 'ok' : 'FAILED';
+      const seconds = (durationMs / 1000).toFixed(1);
+      // Completion marker on its own prefixed line.
+      process.stdout.write(`${prefix}done ${completionLabel()} (${status}, ${seconds}s)\n`);
+      resolve({ sourceName, success, durationMs });
+    };
+
+    const child = spawn('npx', ['tsx', scriptPath, sourceName], { env: process.env });
+
+    // Prefix every line. readline emits a final line even without a trailing
+    // newline, so no output is dropped when the stream closes.
+    createInterface({ input: child.stdout }).on('line', (line) => {
+      process.stdout.write(`${prefix}${line}\n`);
+    });
+    createInterface({ input: child.stderr }).on('line', (line) => {
+      process.stderr.write(`${prefix}${line}\n`);
+    });
+
+    // Spawn-level failure (e.g. `npx` not found): the child prints nothing, so
+    // surface the reason explicitly before finishing.
+    child.on('error', (err) => {
+      process.stderr.write(`${prefix}spawn failed: ${err.message}\n`);
+      finish(false);
+    });
+    child.on('close', (code) => {
+      finish(code === 0);
+    });
+  });
 }
 
 /**
@@ -128,9 +163,10 @@ export function resolveChildOutput(
  *
  * Runs the same per-source child process (`npx tsx <script> <source>`), but up
  * to `concurrency` at a time instead of strictly one-by-one. Each child's output
- * is buffered and flushed as a single block on completion, so parallel runs stay
- * readable (no interleaving). Error isolation is preserved (a failed source does
- * not stop others) and the returned results are in input (source) order.
+ * is streamed live with every line prefixed by `[source]`: lines from concurrent
+ * children may interleave, but every line stays attributable to its source, and
+ * nothing is buffered. Error isolation is preserved (a failed source does not
+ * stop others) and the returned results are in input (source) order.
  *
  * The existing sequential {@link runBatch} is intentionally left untouched;
  * callers opt in to this variant one at a time.
@@ -140,59 +176,28 @@ export function resolveChildOutput(
  * @param options.concurrency - Max child processes in flight (default 1).
  * @returns Array of results in source order.
  */
-export async function runBatchConcurrent(
+export function runBatchConcurrent(
   scriptPath: string,
   sourceNames: string[],
   options: { concurrency?: number } = {},
 ): Promise<BatchResult[]> {
   const concurrency = Math.max(1, Math.floor(options.concurrency ?? 1));
   const total = sourceNames.length;
-  console.log(`(concurrency: ${concurrency}, ${total} sources)\n`);
+  console.log(
+    `(concurrency: ${concurrency}, ${total} sources; each line is prefixed with [source])\n`,
+  );
 
   // Completion counter. Workers are async on a single thread (not OS threads),
   // so this increment is race-free.
   let completed = 0;
-
-  return mapWithConcurrency(sourceNames, concurrency, async (sourceName) => {
-    const startTime = performance.now();
-    let success = true;
-    let output = '';
-
-    try {
-      const { stdout, stderr } = await execFileAsync('npx', ['tsx', scriptPath, sourceName], {
-        env: process.env,
-        // Buffer the child's output (utf8 -> strings). Measured per-source logs
-        // are ~24 KB (2026-08-02, 46 GTFS sources); 16 MB is a generous ceiling.
-        // Peak memory scales with the ACTUAL captured size (~concurrency x tens
-        // of KB), not with this cap.
-        maxBuffer: 16 * 1024 * 1024,
-      });
-      output = resolveChildOutput({ stdout, stderr });
-    } catch (err) {
-      success = false;
-      const e = err as { stdout?: string; stderr?: string; message?: string };
-      // Fall back to the error message when the child produced no captured
-      // output (spawn failure, killed by signal, maxBuffer exceeded) so a
-      // failed source is never reduced to an empty header.
-      output = resolveChildOutput(e, e.message ?? String(err));
-    }
-
-    const durationMs = Math.round(performance.now() - startTime);
+  const nextCompletionLabel = (): string => {
     completed += 1;
+    return `[${completed}/${total}]`;
+  };
 
-    // Readable parallel logs: buffer each source's whole output and flush it as
-    // ONE atomic console.log on completion, wrapped in a labeled delimiter. A
-    // single console.log never interleaves with another, so blocks stay intact;
-    // the header (completion index / source / status / duration) makes each
-    // block easy to locate even though they arrive in completion order, not
-    // source order.
-    const status = success ? 'ok' : 'FAILED';
-    const seconds = (durationMs / 1000).toFixed(1);
-    const header = `===== [${completed}/${total}] ${sourceName}: ${status} (${seconds}s) =====`;
-    console.log(`${header}\n${output.trimEnd()}\n`);
-
-    return { sourceName, success, durationMs };
-  });
+  return mapWithConcurrency(sourceNames, concurrency, (sourceName) =>
+    runChildStreaming(scriptPath, sourceName, nextCompletionLabel),
+  );
 }
 
 /**
