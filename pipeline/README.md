@@ -23,6 +23,28 @@ GTFS-JP は 2026 年に国土交通省から **v4 が公開された** (=「公�
 
 Stage 6 の配備先ベースは `TRANSIT_DATA_DELIVERY_BASE_DIR` (既定 `__LOCAL_AT_DATA__/`、git 管理外)。local は `npm run pipeline:deliver:local` で `<delivery>/<PIPELINE_TRANSIT_DATA_DIR>/` (既定 `__LOCAL_AT_DATA__/data-v2/`) に配備し、本番は Vercel Blob upload workflow が配備する。
 
+### 参考: Stage 別 実行時間 (計測スナップショット)
+
+以下は 1 回の CI 実行 (run 30734448464、2026-08-02、GitHub-hosted `ubuntu-latest`、Upload まで成功) のステップ実測を Stage 別に集計した**参考値**。この run は **GTFS 46 ソース + ODPT JSON 3 ソース**を処理した際の値である。恒常的な保証値ではなく、環境・データ・**ソース数**・ランナーで変動する。
+
+| Stage           | 主なステップ (実測)                                                     | 小計  | 区分         |
+| --------------- | ----------------------------------------------------------------------- | ----- | ------------ |
+| 1 Download      | GTFS 136s + ODPT JSON 7s                                                | ~143s | per-resource |
+| 2 Build DB      | SQLite DB 99s                                                           | ~99s  | per-resource |
+| 3 Build Core    | v2 data 84s + odpt-train 3s + shapes-gtfs 42s + shapes-ksj 7s           | ~136s | per-resource |
+| 4 Build Derived | insights 50s (per-resource) + global-insights 46s + catalog 3s (global) | ~99s  | 混在         |
+| 5 Validate      | validate v2 4s                                                          | ~4s   | global       |
+| 6 Deliver       | Blob upload 19s (concurrency 10、既に並列)                              | ~19s  | global       |
+
+パイプライン合計 ≈ 500s ≈ 8.3 分 (timeout 15 分に対し余裕あり)。別途、非パイプラインの infra (checkout / setup-node / install deps) ≈ 24s。
+
+注記:
+
+- per-resource ステージ (Stage 1-3 + Stage 4a insights) が全体の約 85% を占め、いずれも**ソース単位で並列化可能**。Stage 4b (global-insights / catalog)・5・6 は全ソース集約 / whole-set のため per-resource 並列の対象外。
+- per-resource ステージの所要時間は**処理するソース数にほぼ比例**する (上表は GTFS 46 ソース時点の値)。
+- Download 136s は、US リージョンのランナーと日本の ODPT サーバ間のレイテンシ、およびこの run の 1 件 DL 失敗 (iyotetsu-bus 404) のリトライ backoff を含む。
+- per-resource ステージの並列化については Issue #348 を参照 (`PIPELINE_DOWNLOAD_CONCURRENCY` による GTFS download の opt-in 並列化を含む)。
+
 ## スクリプト
 
 各スクリプトの詳細な仕様は `docs/` を参照。

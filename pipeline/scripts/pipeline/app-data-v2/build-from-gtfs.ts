@@ -33,11 +33,13 @@ import { extractTripPatternsAndTimetable } from '../../../src/lib/pipeline/app-d
 import { extractTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-translations';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
 import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';

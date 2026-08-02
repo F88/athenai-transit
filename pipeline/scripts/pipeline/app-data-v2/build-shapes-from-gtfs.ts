@@ -23,11 +23,13 @@ import { fileURLToPath } from 'node:url';
 import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
 import { extractShapes } from '../../../src/lib/pipeline/extract-shapes-from-gtfs';

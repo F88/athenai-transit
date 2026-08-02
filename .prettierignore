@@ -1,5 +1,6 @@
 # Ignore Prettier config files
 .agents
+.claude
 
 # Ignore Claude Code worktrees
 .claude/worktrees

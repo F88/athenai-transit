@@ -21,11 +21,13 @@ import { fileURLToPath } from 'node:url';
 
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
 import {

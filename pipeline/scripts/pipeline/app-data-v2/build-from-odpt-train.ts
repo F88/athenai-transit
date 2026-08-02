@@ -31,11 +31,13 @@ import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline
 import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-translations';
 import {
   determineBatchExitCode,
+  printBatchSummary,
+  runBatch,
+} from '../../../src/lib/pipeline/pipeline-batch';
+import {
   formatExitCode,
   loadTargetFile,
   parseCliArg,
-  printBatchSummary,
-  runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
 import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';

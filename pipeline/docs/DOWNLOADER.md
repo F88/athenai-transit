@@ -96,6 +96,26 @@ export default [
 
 各ソースは独立した子プロセスで実行される。1つのソースが失敗しても後続のソースは継続する。
 
+### 並列実行 (opt-in, GTFS のみ)
+
+GTFS のバッチダウンロードは、環境変数 `PIPELINE_DOWNLOAD_CONCURRENCY` で並列度を指定できる。ダウンロードはネットワーク I/O 律速のため、少ない CPU コアでも並列化で wall-clock を短縮できる。特にランナーが海外 (GitHub-hosted は US リージョン) で ODPT サーバ (日本) との往復レイテンシが大きい場合に効く。
+
+- **既定は 1** (逐次)。未設定・不正値・1 未満はすべて 1 にフォールバックするため、**既定の挙動は変わらない** (opt-in)。
+- 推奨値は **4-6**。ODPT サーバのレート制限に配慮して控えめにする。
+- 各ソースの出力はバッファされ、完了時に `===== [N/total] source: ok (X.Xs) =====` のヘッダ付きブロックとして atomic に出力される。並列でもログが混線しない。
+- エラー分離・Batch Summary (ソース順)・exit code は逐次実行と同じ。
+
+```bash
+# ローカル: pipeline/.env.pipeline.local に記述 (npm script が自動読み込み)
+# PIPELINE_DOWNLOAD_CONCURRENCY=4
+npm run pipeline:download:gtfs
+
+# 直接実行
+PIPELINE_DOWNLOAD_CONCURRENCY=4 npx tsx pipeline/scripts/pipeline/download-gtfs.ts --targets pipeline/config/targets/download-gtfs.ts
+```
+
+CI (GitHub Actions) は `.env.pipeline.local` を読まないため、有効化するには workflow の `env:` で明示的に渡す。既定では未設定 = 逐次なので、設定しない限り CI の挙動は変わらない。
+
 ### バッチ出力例
 
 ```text

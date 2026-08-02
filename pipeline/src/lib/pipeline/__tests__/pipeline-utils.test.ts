@@ -2,55 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type AggregateTargetResult,
-  type BatchResult,
   EXIT_ERROR,
   EXIT_OK,
   EXIT_WARN,
   determineAggregateExitCode,
-  determineBatchExitCode,
   formatExitCode,
   parseCliArg,
   printAggregateSummary,
   runMain,
   uniqueInOrder,
 } from '../pipeline-utils';
-
-// ---------------------------------------------------------------------------
-// determineBatchExitCode
-// ---------------------------------------------------------------------------
-
-describe('determineBatchExitCode', () => {
-  const ok = (name: string): BatchResult => ({ sourceName: name, success: true, durationMs: 100 });
-  const fail = (name: string): BatchResult => ({
-    sourceName: name,
-    success: false,
-    durationMs: 100,
-  });
-
-  it('returns EXIT_OK (0) for an empty results array', () => {
-    expect(determineBatchExitCode([])).toBe(EXIT_OK);
-  });
-
-  it('returns EXIT_OK (0) when all succeeded', () => {
-    expect(determineBatchExitCode([ok('a'), ok('b'), ok('c')])).toBe(EXIT_OK);
-  });
-
-  it('returns EXIT_WARN (1) when some succeeded and some failed', () => {
-    expect(determineBatchExitCode([ok('a'), fail('b'), ok('c')])).toBe(EXIT_WARN);
-  });
-
-  it('returns EXIT_ERROR (2) when all failed', () => {
-    expect(determineBatchExitCode([fail('a'), fail('b')])).toBe(EXIT_ERROR);
-  });
-
-  it('returns EXIT_ERROR (2) for a single failed source', () => {
-    expect(determineBatchExitCode([fail('a')])).toBe(EXIT_ERROR);
-  });
-
-  it('returns EXIT_OK (0) for a single successful source', () => {
-    expect(determineBatchExitCode([ok('a')])).toBe(EXIT_OK);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // formatExitCode
