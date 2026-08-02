@@ -34,6 +34,24 @@ Usage: npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts <source-name>
 
 `npm run pipeline:build:db` は `--targets pipeline/config/targets/build-db.ts` で一括処理する。ダウンロード対象リスト (`pipeline/config/targets/download-gtfs.ts`) とは独立したファイルであり、DB 格納対象のみを管理する。
 
+### 並列実行 (opt-in)
+
+`--targets` バッチは、環境変数 `PIPELINE_BUILD_DB_CONCURRENCY` で並列度を指定できる (GTFS ダウンロードの `PIPELINE_DOWNLOAD_CONCURRENCY` と同じ仕組み)。
+
+- **既定は 1** (逐次)。未設定・不正値・1 未満は 1 にフォールバックするため、**既定の挙動は変わらない** (opt-in)。
+- 各ソースの出力はライブでストリーミングされ、各行に `[source]` プレフィックスが付く (並列でも発生源が識別できる)。エラー分離・Batch Summary (ソース順)・exit code は逐次と同じ。
+- **注意 (ダウンロードとの違い)**: この工程は CPU・メモリ律速 (各ソースが別プロセスで GTFS を SQLite に展開する)。**ピークメモリが並列度に比例**するため、値は控えめ (例: 2-4) にし、ランナーのメモリに合わせて調整する。大きいソースが重なると OOM しうる。
+
+```bash
+# ローカル: pipeline/.env.pipeline.local に PIPELINE_BUILD_DB_CONCURRENCY=3 等を記述
+npm run pipeline:build:db
+
+# 直接実行
+PIPELINE_BUILD_DB_CONCURRENCY=3 npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts --targets pipeline/config/targets/build-db.ts
+```
+
+CI (GitHub Actions) で有効化するには workflow の `env:` で明示的に渡す。既定では未設定 = 逐次なので、設定しない限り CI の挙動は変わらない。
+
 ### ソース名の解決
 
 `<source-name>` は `pipeline/config/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
