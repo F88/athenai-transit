@@ -32,6 +32,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # The default runner setup log prints the Azure region but not the CPU /
+      # memory, which matter for tuning the CPU/memory-bound build steps (the
+      # runner allocation is indeterminate per run). Log them explicitly.
+      - name: Runner specs
+        run: |
+          echo "vCPU:   $(nproc)"
+          echo "Memory: $(free -h | awk '/^Mem:/{print $2}')"
+
       # Required: actions/checkout checks out the commit that triggered
       # the run. On rerun, this is the OLD commit — the previous run's
       # push is not included. git pull fetches the latest HEAD so that
@@ -106,6 +114,13 @@ jobs:
       # Build steps use npm run (no --env-file-if-exists, safe for CI).
       - name: Build SQLite DB
         id: build-db
+        env:
+          # Opt-in parallel DB build. Set the repository/environment Variable
+          # PIPELINE_BUILD_DB_CONCURRENCY to enable; unset expands to an empty
+          # string, which the script treats as 1 (sequential). This step is
+          # CPU- and memory-bound, so peak memory scales with concurrency -- keep
+          # the value conservative (e.g. 2-3) and watch the "Runner specs" step.
+          PIPELINE_BUILD_DB_CONCURRENCY: ${{ vars.PIPELINE_BUILD_DB_CONCURRENCY }}
         run: |
           set +e
           npm run pipeline:build:db

@@ -41,8 +41,10 @@ import {
 import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
   determineBatchExitCode,
+  parseConcurrencyEnv,
   printBatchSummary,
   runBatch,
+  runBatchConcurrent,
 } from '../../src/lib/pipeline/pipeline-batch';
 import {
   formatExitCode,
@@ -880,7 +882,16 @@ async function main(): Promise<void> {
     const sourceNames = await loadTargetFile(arg.path);
     console.log(`=== Batch build-db (${sourceNames.length} targets) ===\n`);
     const scriptPath = resolve(import.meta.dirname, 'build-gtfs-db.ts');
-    const results = runBatch(scriptPath, sourceNames);
+    // Opt-in parallel build via PIPELINE_BUILD_DB_CONCURRENCY (default 1 =
+    // unchanged sequential behavior). Unlike download, this step is CPU- and
+    // memory-bound (each source loads its GTFS into SQLite in a separate
+    // process), so peak memory scales with concurrency; keep the value
+    // conservative (e.g. 2-4) and tune to the runner's memory.
+    const concurrency = parseConcurrencyEnv('PIPELINE_BUILD_DB_CONCURRENCY');
+    const results =
+      concurrency > 1
+        ? await runBatchConcurrent(scriptPath, sourceNames, { concurrency })
+        : runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);
     console.log(`\n${formatExitCode(exitCode)}`);
