@@ -5,7 +5,7 @@
  *
  * Runs validation in up to five steps:
  *   Step 1 — Unvalidated directory check (--targets mode only)
- *   Step 2 — File existence check (required bundles must exist)
+ *   Step 2 — File existence check (missing required bundles: partial = warn/skip, all = error)
  *   Step 3 — Validate each bundle (structure, data quality, referential integrity)
  *   Step 4 — Validate GlobalInsightsBundle (global/insights.json)
  *   Step 5 — Validate DataSourceCatalogBundle (global/data-source-catalog.json)
@@ -14,8 +14,13 @@
  *
  * Exit codes:
  *   0 — all checks passed (info notices, e.g. empty shapes, do not raise this)
- *   1 — warnings (e.g. calendar expiring)
- *   2 — errors (missing files, invalid structure, invalid data)
+ *   1 — warnings: calendar expiring, or SOME (not all) sources missing their
+ *       required bundles this run (upstream removed / build failed). Missing
+ *       sources are skipped; every source that built still validates. The Blob
+ *       uploader never deletes, so a skipped source keeps its last-good copy.
+ *   2 — errors: invalid structure / invalid data, unvalidated directory, or
+ *       EVERY source is missing its required bundles (total build wipeout). A
+ *       single upstream outage must not reach this level and block the update.
  *
  * Usage:
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <prefix>
@@ -140,6 +145,45 @@ function checkFileExistence(prefix: string): ExistenceResult {
   return { files, allRequiredPresent };
 }
 
+/** Per-source presence of required bundles, in target order. */
+export interface SourcePresence {
+  prefix: string;
+  allRequiredPresent: boolean;
+}
+
+/** Aggregate verdict of the existence check across all target sources. */
+export interface ExistenceOutcome {
+  /** Prefixes whose required bundles all exist (validated in Step 3). */
+  presentPrefixes: string[];
+  /** Prefixes missing >=1 required bundle (skipped: not built this run). */
+  missingPrefixes: string[];
+  /**
+   * Whether the existence check is a hard error (EXIT_ERROR).
+   *
+   * True ONLY on a total build wipeout: at least one source was targeted, yet
+   * none produced its required bundles. A partial miss (some present, some
+   * missing) is NOT fatal — the missing sources are skipped and the rest still
+   * validate and publish, so a single upstream resource outage can never block
+   * the whole update. This mirrors the "all failed = exit 2" convention of the
+   * build steps.
+   */
+  fatal: boolean;
+}
+
+/**
+ * Decide the existence-check verdict from each source's required-bundle
+ * presence. Pure (no I/O) so the exit-code policy is unit-testable.
+ */
+export function classifyExistenceOutcome(sources: SourcePresence[]): ExistenceOutcome {
+  const presentPrefixes = sources.filter((s) => s.allRequiredPresent).map((s) => s.prefix);
+  const missingPrefixes = sources.filter((s) => !s.allRequiredPresent).map((s) => s.prefix);
+  return {
+    presentPrefixes,
+    missingPrefixes,
+    fatal: sources.length > 0 && presentPrefixes.length === 0,
+  };
+}
+
 function printExistenceResult(
   _prefix: string,
   result: ExistenceResult,
@@ -152,8 +196,15 @@ function printExistenceResult(
     if (exists) {
       console.log(`    ${bf.filename} ${pad} OK`);
     } else if (bf.required) {
-      console.log(`    ${bf.filename} ${pad} ❌ MISSING (required)`);
-      state.hasError = true;
+      // A missing required bundle means the source did not build this run (its
+      // upstream resource was removed / 404, or its build failed). This is a
+      // partial-degradation WARNING, not a hard error: the source is skipped
+      // and its last-good copy on Blob is preserved (the uploader never
+      // deletes), while every source that did build still validates and
+      // publishes. Only a TOTAL wipeout (zero sources present) is escalated to
+      // an error, by the aggregate check in main().
+      console.log(`    ${bf.filename} ${pad} ⚠️  MISSING (required — source skipped this run)`);
+      state.hasWarn = true;
     } else {
       console.log(`    ${bf.filename} ${pad} not found (optional, skipped)`);
     }
@@ -456,9 +507,11 @@ function printMarkdownSummary(
     console.log('');
   }
 
-  // Missing required files
+  // Missing required bundles: the source did not build this run (upstream
+  // removed / build failed) and is skipped. A partial miss is a warning; a
+  // total wipeout is reported as a failure by main() separately.
   if (missingFiles.length > 0) {
-    console.log('### ❌ Missing files\n');
+    console.log('### ⚠️ Skipped sources (required bundle missing)\n');
     console.log('| Prefix | File |');
     console.log('|--------|------|');
     for (const m of missingFiles) {
@@ -631,7 +684,7 @@ async function main(): Promise<void> {
   console.log(`--- [${stepNum}/${totalSteps}] File existence check ---\n`);
 
   const existenceResults = new Map<string, ExistenceResult>();
-  let allExistencePassed = true;
+  const sourcePresence: SourcePresence[] = [];
 
   let totalFiles = 0;
   let presentFiles = 0;
@@ -643,9 +696,7 @@ async function main(): Promise<void> {
     existenceResults.set(prefix, result);
     printExistenceResult(prefix, result, state);
 
-    if (!result.allRequiredPresent) {
-      allExistencePassed = false;
-    }
+    sourcePresence.push({ prefix, allRequiredPresent: result.allRequiredPresent });
 
     for (const bf of BUNDLE_FILES) {
       totalFiles++;
@@ -662,12 +713,28 @@ async function main(): Promise<void> {
 
   const skippedNote = optionalSkipped > 0 ? ` (${optionalSkipped} optional skipped)` : '';
   console.log(`  Result: ${presentFiles}/${totalFiles} files present${skippedNote}.`);
+
+  // A source whose required bundles are missing did not build this run (its
+  // upstream resource was removed / failed to download). It is skipped, not
+  // fatal: its last-good copy on Blob is preserved (the uploader never deletes)
+  // and it stays selectable in the app, losing only its catalog metadata until
+  // it returns. printExistenceResult already recorded these as warnings, so the
+  // run still validates and publishes every source that built. Only a TOTAL
+  // wipeout — zero sources present — is a hard error (see classifyExistenceOutcome).
+  const existence = classifyExistenceOutcome(sourcePresence);
+  if (existence.missingPrefixes.length > 0) {
+    console.log(
+      `  ⚠️  ${existence.missingPrefixes.length} source(s) skipped (required bundles missing): ${existence.missingPrefixes.join(', ')}`,
+    );
+  }
   console.log('');
 
-  if (!allExistencePassed) {
-    // Print summary before early return so CI gets missing-files report
+  if (existence.fatal) {
+    // Total wipeout: no source produced its required bundles. Preserve the
+    // "all failed" hard-stop so a catastrophic pipeline failure never publishes
+    // an empty dataset. Print summary before early return so CI gets the report.
     printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
-    console.log('❌ Validation failed (required files missing).\n');
+    console.log('❌ Validation failed (no source produced its required bundles).\n');
     const elapsed = Math.round(performance.now() - t0);
     console.log(`Done in ${elapsed}ms. (exit code: ${EXIT_ERROR})`);
     process.exitCode = EXIT_ERROR;
@@ -682,9 +749,15 @@ async function main(): Promise<void> {
   console.log(`--- [${stepNum}/${totalSteps}] Validate each bundle ---\n`);
 
   for (const prefix of prefixes) {
+    const existenceResult = existenceResults.get(prefix)!;
+    if (!existenceResult.allRequiredPresent) {
+      // Skipped in Step 2 (required bundles missing this run). There is nothing
+      // to validate; it was already reported as a warning above.
+      console.log(`  ${prefix}: skipped (required bundles missing this run)\n`);
+      continue;
+    }
     console.log(`  ${prefix}:`);
-    const existence = existenceResults.get(prefix)!;
-    const sourceResult = validateSource(prefix, existence.files, state, allIssues);
+    const sourceResult = validateSource(prefix, existenceResult.files, state, allIssues);
     if (sourceResult.calendarServices.length > 0) {
       calendarByPrefix.set(prefix, sourceResult.calendarServices);
     }

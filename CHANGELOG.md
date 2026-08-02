@@ -17,6 +17,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - Data: kawasaki-city-bus の GTFS resource を 20260801 版へ更新。
 - Data: yokohama-municipal-bus の GTFS resource を 20260727 版へ更新。
 
+### Fixed
+
+- Pipeline: v2 バリデーションが、あるソースの bundle 欠落 (上流リソース削除等による未ビルド) で run 全体を失敗させないよう変更。欠落ソースは skip し他ソースは検証・配信を継続、全ソース欠落時のみ致命 (exit 2) とする。(#346)
+
 ## [2026.07.25]
 
 ### Changed
