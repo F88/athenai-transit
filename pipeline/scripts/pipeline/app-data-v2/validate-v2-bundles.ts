@@ -203,7 +203,7 @@ function printExistenceResult(
       // deletes), while every source that did build still validates and
       // publishes. Only a TOTAL wipeout (zero sources present) is escalated to
       // an error, by the aggregate check in main().
-      console.log(`    ${bf.filename} ${pad} ⚠️  MISSING (required — source skipped this run)`);
+      console.log(`    ${bf.filename} ${pad} ⚠️  MISSING (required - source skipped this run)`);
       state.hasWarn = true;
     } else {
       console.log(`    ${bf.filename} ${pad} not found (optional, skipped)`);

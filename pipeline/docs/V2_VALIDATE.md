@@ -6,7 +6,7 @@ v2 パイプラインが出力したバンドルファイルと global artifact 
 
 Validator の役割は**パイプライン全体の出力が揃っているかの最終確認**である。各バンドルの出力内容の正しさは builder 側のテストで担保する。
 
-- **ファイル存在チェック**: メインの検証。必須バンドルが全て出力されているか
+- **ファイル存在チェック**: メインの検証。必須バンドルが出力されているか。ソース単位で欠落を許容する (一部ソースの欠落は skip + warn で処理続行、全ソース欠落のみ致命)
 - **構造チェック**: bundle_version, kind, section versions が正しいか
 - **安全網チェック**: builder のバグで壊れたデータがアプリに渡らないための最低限の検証 (座標範囲、参照整合性、配列長一致など)
 
@@ -70,6 +70,10 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 ### Step 2: File existence check
 
 必須バンドル (`data.json`, `insights.json`) の存在を確認する。任意バンドル (`shapes.json`) は存在しなければスキップ。
+
+必須バンドルを欠くソースは、**その run でビルドされなかった**ことを意味する (上流リソースの削除 / ダウンロード失敗など)。これは **skip + warn** として扱い、当該ソースを Step 3 の検証からも除外して処理を続行する。欠落ソースは Blob 上の last-good がそのまま残り (uploader は削除しない)、他のビルド済みソースは通常どおり検証・配信される。1 件の上流不調で run 全体を止めないための設計で、catalog builder の skip-tolerant 方針 (`V2_BUILD_DATA_SOURCE_CATALOG.md`) と足並みを揃えている。
+
+例外は **全ソースが欠落した場合 (total wipeout)** で、これは exit 2 (error) として停止する。ビルド系の「全失敗 = exit 2」規約と対称であり、空データの配信を防ぐ。この判定は純粋関数 `classifyExistenceOutcome` に切り出している (presentSources === 0 のときのみ fatal)。
 
 ### Step 3: Validate each bundle
 
@@ -259,37 +263,77 @@ Checked on: 2026-03-22
 Done in 42ms. (exit code: 1)
 ```
 
-### エラーありの例 (exit code: 2)
+### 一部ソース欠落の例 (exit code: 1)
+
+一部のソースが必須バンドルを欠く (上流削除等でビルドされなかった) が、他のソースはビルド済みのケース。欠落ソースは Step 2 で skip され Step 3 の検証からも除外されるが、run は warning で通過する (exit 1 なので Blob upload は継続)。
 
 ```plain
-=== Validate v2 bundles (/path/to/pipeline/workspace/_build/data-v2) ===
-
-  Validating 3 sources: minkuru, kobus, unknown
-
---- [1/5] Unvalidated directory check ---
-
-  ❌ ERROR: Unvalidated directory: broken/
-  Result: 1 unvalidated directory found.
-
 --- [2/5] File existence check ---
 
   minkuru:
     data.json ......... OK
     insights.json ..... OK
     shapes.json ....... OK
-  kobus:
-    data.json ......... OK
-    insights.json ..... ❌ MISSING (required)
+  iyt2:
+    data.json ......... ⚠️  MISSING (required - source skipped this run)
+    insights.json ..... ⚠️  MISSING (required - source skipped this run)
+    shapes.json ....... not found (optional, skipped)
+  Result: 3/6 files present (1 optional skipped).
+  ⚠️  1 source(s) skipped (required bundles missing): iyt2
+
+--- [3/5] Validate each bundle ---
+
+  minkuru:
+    [DataBundle]
+      Structure:     OK (bundle_version = 3, kind=data, 9 sections)
+      ...
+  iyt2: skipped (required bundles missing this run)
+
+... (Step 4 / 5 は通常どおり)
+
+⚠️ Validation passed with warnings.
+
+Done in 12ms. (exit code: 1)
+```
+
+### エラーありの例 (exit code: 2)
+
+必須バンドルの欠落で exit 2 になるのは **全ソースが欠落した場合 (total wipeout) のみ**。1 件でも present なら上記の一部欠落の例のとおり exit 1 (warning) となる。このほか unvalidated directory (Step 1)、構造 / データ / 参照整合性エラー (Step 3-5) も exit 2。
+
+```plain
+=== Validate v2 bundles (/path/to/pipeline/workspace/_build/data-v2) ===
+
+  Validating 2 sources: minkuru, unknown
+
+--- [1/5] Unvalidated directory check ---
+
+  Result: All directories are covered by targets.
+
+--- [2/5] File existence check ---
+
+  minkuru:
+    data.json ......... ⚠️  MISSING (required - source skipped this run)
+    insights.json ..... ⚠️  MISSING (required - source skipped this run)
     shapes.json ....... not found (optional, skipped)
   unknown:
-    data.json ......... ❌ MISSING (required)
-    insights.json ..... ❌ MISSING (required)
+    data.json ......... ⚠️  MISSING (required - source skipped this run)
+    insights.json ..... ⚠️  MISSING (required - source skipped this run)
     shapes.json ....... not found (optional, skipped)
-  Result: 4/9 files present (2 optional skipped).
+  Result: 0/6 files present (2 optional skipped).
+  ⚠️  2 source(s) skipped (required bundles missing): minkuru, unknown
 
-❌ Validation failed (required files missing).
+❌ Validation failed (no source produced its required bundles).
 
-Done in 12ms. (exit code: 2)
+Done in 8ms. (exit code: 2)
+```
+
+Step 1 の unvalidated directory も exit 2 (error) となる:
+
+```plain
+--- [1/5] Unvalidated directory check ---
+
+  ❌ ERROR: Unvalidated directory: broken/
+  Result: 1 unvalidated directory found.
 ```
 
 参照整合性エラーがある場合、Step 3 で以下のように表示される:
@@ -319,11 +363,11 @@ Done in 12ms. (exit code: 2)
 
 ## Exit Code
 
-| code | label   | 意味                                                   |
-| ---- | ------- | ------------------------------------------------------ |
-| 0    | ok      | 全チェック通過                                         |
-| 1    | warning | 警告あり (calendar 期限切れ/間近、空データなど)        |
-| 2    | error   | エラー (ファイル欠損、構造不正、参照整合性違反、fatal) |
+| code | label   | 意味                                                                                          |
+| ---- | ------- | --------------------------------------------------------------------------------------------- |
+| 0    | ok      | 全チェック通過                                                                                |
+| 1    | warning | 警告あり (calendar 期限切れ/間近、空データ、一部ソースの必須バンドル欠落による skip など)     |
+| 2    | error   | エラー (構造不正、参照整合性違反、unvalidated directory、全ソース欠落 = total wipeout、fatal) |
 
 ## 実装構成
 
