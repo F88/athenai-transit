@@ -2,8 +2,8 @@ name: Check Transit Resources
 
 on:
   schedule:
-    # JST 14:00 (UTC 05:00) — 1 hour after update-transit-data
-    - cron: '0 5 * * *'
+    # JST 19:00 (UTC 10:00)
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 concurrency:
