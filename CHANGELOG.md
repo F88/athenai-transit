@@ -13,6 +13,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Data: kyoto-city-bus の GTFS resource を 20260729 版へ更新。
 - Data: iyotetsu-bus の GTFS resource を 20260803 版へ更新。
+- CI: Check Transit Resources のスケジュールを JST 19:00 へ変更。
 
 ## [2026.08.03]
 
