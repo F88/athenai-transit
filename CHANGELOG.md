@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.08.05]
+
 ### Changed
 
 - Data: kyoto-city-bus の GTFS resource を 20260729 版へ更新。
