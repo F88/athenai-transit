@@ -72,6 +72,10 @@ Read it directly — and read the **whole** per-source block, not just the table
 The trailing number of a pasted `.../actions/runs/<id>` URL is the run id. If none is given,
 default to the latest run.
 
+Keep the resolved run id — the triage must end by printing its run URL
+(`https://github.com/F88/athenai-transit/actions/runs/<run-id>`), so the user can open the
+job result directly. See step 3.
+
 **Read the entire job output, top to bottom — every source block in full. This is required,
 not optional.** Do NOT judge from a `grep`-ed subset, from the Slack `[RESULT:*]` summary, or
 from the Job Summary alone. Critical facts live OUTSIDE the table rows — e.g.
@@ -79,8 +83,9 @@ from the Job Summary alone. Critical facts live OUTSIDE the table rows — e.g.
 valid` header, `Local feed:` — and a filter will silently drop them and make you judge a part.
 
 ```bash
-# only when no URL/id was given:
-gh run list --workflow check-transit-resources.yml --repo F88/athenai-transit --limit 5
+# only when no URL/id was given (--json ... url gives the run URL to report in step 3):
+gh run list --workflow check-transit-resources.yml --repo F88/athenai-transit --limit 5 \
+  --json databaseId,url,createdAt,conclusion
 
 # fetch the WHOLE log, strip only the CI line prefix, and READ ALL OF IT:
 gh run view <run-id> --repo F88/athenai-transit --log 2>&1 \
@@ -118,6 +123,13 @@ each row showing the source, the adopted `start_at`, and the newer `start_at` + 
 window from the block. Then list the candidates and ask which (if any) the user wants to
 adopt after reviewing the resource. **Do not edit any definition** — applying an approved
 bump is a separate, user-initiated step (see "Applying an approved bump" below).
+
+**End every triage with the run URL of the job you read** — always, whether the user pasted
+it or you resolved the latest run yourself. Put it on the last line so it is easy to click:
+
+```text
+Source run: https://github.com/F88/athenai-transit/actions/runs/<run-id>
+```
 
 ## Applying an approved bump (only after explicit per-source user approval)
 
