@@ -15,17 +15,6 @@ This is a TypeScript project using Leaflet, React, shadcn/ui, and Vite. Always e
 
 Do not remove, rename, or modify code that the user did not explicitly ask to change. When in doubt, ask before making additional changes.
 
-## Tech Stack
-
-| Layer       | Technology                                                                        |
-| ----------- | --------------------------------------------------------------------------------- |
-| Frontend    | React 19 + TypeScript + Vite                                                      |
-| Styling     | Tailwind CSS v4 + shadcn/ui (Radix UI)                                            |
-| Map         | Leaflet.js + react-leaflet + GSI (Geospatial Information Authority of Japan) tile |
-| Linting     | ESLint (typescript-eslint, type-checked) + Prettier (prettier-plugin-tailwindcss) |
-| Testing     | Vitest + Storybook 10 (react-vite + Playwright)                                   |
-| Data Source | GTFS / GTFS-JP open data (static, v4 baseline + legacy v3 feed compat)            |
-
 ## Architecture
 
 Before proposing architecture or data flow changes, thoroughly investigate the existing codebase first. Do not assume simpler approaches exist — ask the user or explore the code to confirm.
@@ -54,36 +43,15 @@ User-data repositories (separate from transit data):
 
 ### Data Pipeline
 
+Source data is GTFS / GTFS-JP open data (static, v4 baseline + legacy v3 feed compat).
+
 A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`pipeline/workspace/_build/data-v2/`). Delivering that build output to where the app serves it -- locally to `__LOCAL_AT_DATA__/` via `npm run pipeline:deliver:local`, in production to Vercel Blob via the upload workflow -- is also a pipeline responsibility. See [pipeline/README.md](./pipeline/README.md) for details.
 
 ## Development Commands
 
-Standard scripts (`dev`, `build`, `typecheck`, `lint`, `lint:fix`, `format`, `format:check`, `test`, `test:coverage`, `preview`, `storybook`, `build-storybook`) are defined in `package.json`; run them via `npm run <script>`. The pipeline-specific commands below are not derivable from the manifest.
+Standard scripts (`dev`, `build`, `typecheck`, `lint`, `lint:fix`, `format`, `format:check`, `test`, `test:coverage`, `preview`, `storybook`, `build-storybook`) are defined in `package.json`; run them via `npm run <script>`.
 
-### Data preparation
-
-```bash
-npm run pipeline:download:gtfs              # 1.  download GTFS data (batch)
-npm run pipeline:download:odpt-json         # 2.  download ODPT JSON data (batch, requires .env.pipeline.local)
-npm run pipeline:build:db                   # 3.  convert GTFS CSV -> pipeline/workspace/_build/db/*.db
-npm run pipeline:build:v2-data              # 4.  generate v2 DataBundle from GTFS
-npm run pipeline:build:v2-odpt-train        # 5.  generate v2 ODPT Train DataBundle
-npm run pipeline:build:v2-shapes:gtfs       # 6.  generate v2 route shapes from GTFS
-npm run pipeline:build:v2-shapes:ksj        # 7.  generate v2 route shapes from KSJ railway
-npm run pipeline:build:v2-insights          # 8.  generate v2 InsightsBundle from DataBundle
-npm run pipeline:build:v2-global-insights   # 9.  generate v2 GlobalInsightsBundle
-npm run pipeline:build:v2-data-source-catalog # 10. generate v2 DataSourceCatalog
-npm run pipeline:validate:v2                # 11. validate generated v2 bundles
-npm run pipeline:deliver:local                           # 12. copy pipeline/workspace/_build/data-v2/ -> __LOCAL_AT_DATA__/<PIPELINE_TRANSIT_DATA_DIR>/ (default: __LOCAL_AT_DATA__/data-v2/, git-ignored)
-```
-
-Auxiliary pipeline commands:
-
-```bash
-npm run pipeline:check:odpt-resources # check ODPT resource availability
-npm run pipeline:describe             # describe configured resources
-npm run pipeline:dev-tools            # ad-hoc dev tooling
-```
+The `pipeline:*` scripts must run in a fixed order that `package.json` does not express. That order, together with the rules for skipping steps, lives in the `gtfs-data-build` skill ([.claude/skills/gtfs-data-build/SKILL.md](./.claude/skills/gtfs-data-build/SKILL.md)).
 
 ## Key UX Requirements
 
@@ -119,7 +87,3 @@ When refactoring or moving files, always verify path resolution and imports stil
 | `CLAUDE.md`          | This file. High-level architecture and rules for Claude Code.                         |
 
 Individual `docs/**/*.md` files may be added or reorganized over time; consult [README.md](./README.md) and [docs/README.md](./docs/README.md) for the current set.
-
-## MCP Setup
-
-Chrome DevTools MCP is configured in `.claude/settings.json` and starts automatically via `npx chrome-devtools-mcp@latest`.
