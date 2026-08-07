@@ -67,6 +67,56 @@ Read it directly — and read the **whole** per-source block, not just the table
 
 ## Procedure
 
+### 0. Confirm the last update job finished cleanly (lightweight, do this first)
+
+`check-transit-resources.yml` cannot version-track every source. As of 2026-08-07, of the
+46 GTFS download targets, 9 print `Not available in Members Portal API` (fixed/latest URL,
+no remote table) and 5 more are not in the checker's target list at all (`actv-nav`,
+`chii-bus`, `hachiko-bus`, `itabashi-rin2-bus`, `vag-freiburg`) -- 14 sources with no
+remote-side signal here. For those, a clean run of `upload-transit-data-to-vercel-blob.yml`
+("Update Transit Data (Vercel Blob)", daily at JST 09:00) is the only health signal: they
+are fetched from a fixed/latest URL, so a successful download IS the update.
+
+**A `conclusion: success` on the run is NOT enough.** Partial failures keep the run green:
+each `Warn on <step> partial failure` step only runs `echo "::warning::..."`, which exits 0.
+The reliable signal is that every `Warn on *` / `Fail on *` step was **skipped** -- that is
+exactly equivalent to "every pipeline step exited 0", including `Done: N uploaded, 0 failed`
+from the Blob upload (`upload-data-to-blob.ts` sets exit 1 when `failed > 0`, exit 2 when
+all failed).
+
+```bash
+RUN_ID=$(gh run list --workflow upload-transit-data-to-vercel-blob.yml \
+  --repo F88/athenai-transit --limit 1 --json databaseId --jq '.[0].databaseId')
+JOB_ID=$(gh api repos/F88/athenai-transit/actions/runs/$RUN_ID/jobs --jq '.jobs[0].id')
+gh api repos/F88/athenai-transit/actions/jobs/$JOB_ID \
+  --jq '[.steps[] | select(.name | test("^(Warn|Fail) on ")) | select(.conclusion != "skipped") | .name]'
+```
+
+An empty `[]` means no partial failure. Report it in ONE line (run date + conclusion +
+"no partial failure") and move on to step 1. Two API calls, a few KB. Do NOT download the
+update job's log for this -- it is ~2 MB / 18,000 lines, and the "read the FULL log" rule
+in step 1 applies to the check job, not to this one.
+
+**Only when the array is non-empty**, fetch the log and identify which source failed:
+
+```bash
+gh run view $RUN_ID --repo F88/athenai-transit --log 2>&1 > /tmp/update-run.txt
+```
+
+Read the `=== Batch Summary ===` block (per-source `OK` / failure list plus the
+`Total: N sources, M succeeded, K failed` line) and the `Done:` / `ERR ` lines of the Blob
+upload. The GitHub Job Summary markdown is NOT reachable from the REST API (the job object
+has no `summary` field), so the log is the only source for those lines.
+
+**Ignore the `validate:v2` warnings entirely.** `Calendar has expired services`,
+`Calendar expires within 30 days` and `calendar.data.services is empty (0 services)` are
+GTFS data-quality signals, not usability failures, and the validator reports them on
+purpose -- its expiry check uses the EARLIEST `end_date` across all services
+(`validate-data.ts`), so a single leftover past-season entry is enough to trigger it. That
+is intended behaviour, not a bug: do not propose changing it. These warnings are never a
+reason to bump a resource. Only a validate exit 2 (ERROR) matters, and that already fails
+the run. See [[feedback_validate_warn_not_actionable]].
+
 ### 1. Resolve the run and read the FULL log — mandatory
 
 The trailing number of a pasted `.../actions/runs/<id>` URL is the run id. If none is given,
@@ -102,7 +152,7 @@ Check the cases **in this order** (the first match wins):
 
 | What you see in the block                                                                                                                              | Category                     | Note                                                                                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Not available in Members Portal API` (no remote table)                                                                                                | **OUT OF SCOPE**             | Fixed/latest-URL source, not version-tracked by this Action. NOT critical — exclude from update judgment; if it needs a refresh that is a separate workflow.                                 |
+| `Not available in Members Portal API` (no remote table)                                                                                                | **OUT OF SCOPE**             | Fixed/latest-URL source, not version-tracked by this Action. NOT critical — exclude from update judgment. Its health is covered by the step 0 update-job check, not here.                    |
 | `*** ADOPTED_EXPIRED` / `*** ADOPTED_MISSING` / `*** REMOTE_NO_VALID_DATA` (= `[RESULT:ERROR]`; LOCAL status `after`; header says `0 currently valid`) | **CRITICAL — cannot update** | Adopted feed dead AND no in-period replacement. Decide disable-vs-leave (expired-data UX shows an empty timetable). This is what fails CI (exit 1). Applies even when `<-- LOCAL` is row #1. |
 | LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `in` (or `in-no-end`/`in-no-start`)                                                   | **UPDATE CANDIDATE**         | A newer revision is valid _now_. Larger `start_at` gap above LOCAL = higher priority.                                                                                                        |
 | LOCAL status is `in`, AND a row **above** `<-- LOCAL` has status `before` (future `start_at`)                                                          | **UPCOMING**                 | A newer revision exists but has not started; adopt on/after its `start_at`, not now.                                                                                                         |
@@ -118,10 +168,11 @@ same block live).
 
 ### 3. Present the triage and hand the decision back
 
-Output a table grouped by category (CRITICAL / UPDATE CANDIDATE / UPCOMING / No action),
-each row showing the source, the adopted `start_at`, and the newer `start_at` + its `feed=`
-window from the block. Then list the candidates and ask which (if any) the user wants to
-adopt after reviewing the resource. **Do not edit any definition** — applying an approved
+Open with the ONE-line update-job status from step 0, then output a table grouped by
+category (CRITICAL / UPDATE CANDIDATE / UPCOMING / No action), each row showing the source,
+the adopted `start_at`, and the newer `start_at` + its `feed=` window from the block. Then
+list the candidates and ask which (if any) the user wants to adopt after reviewing the
+resource. **Do not edit any definition** — applying an approved
 bump is a separate, user-initiated step (see "Applying an approved bump" below).
 
 **End every triage with the run URL of the job you read** — always, whether the user pasted
@@ -173,4 +224,10 @@ Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260
   for a live single-source block.
 - `pipeline/scripts/pipeline/lib/odpt-resources.ts` — `RemoteResource` (`startAt` is the
   sanctioned sort key; `date=` is not) / `getPeriodStatus` (the `in`/`after`/`before` token).
+- `.github/workflows/upload-transit-data-to-vercel-blob.yml` — the update job checked in
+  step 0; the `Warn on * / Fail on *` steps encode each pipeline step's exit code.
+- `pipeline/scripts/pipeline/vercel-blob/upload-data-to-blob.ts` — `Done: N uploaded,
+  M failed` and the exit-code contract behind the step 0 check.
+- `pipeline/src/lib/pipeline/app-data-v2/validate-data.ts` — the calendar-expiry check whose
+  warnings step 0 deliberately ignores.
 - `gtfs-data-build` skill — building data after an approved version bump.
