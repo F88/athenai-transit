@@ -2,12 +2,12 @@
   "sourceName": "keio-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-11T00:23:02.379Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260806",
-  "size": 5812895,
+  "downloadedAt": "2026-08-11T23:51:03.383Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260812",
+  "size": 5812631,
   "contentType": "application/octet-stream",
-  "durationMs": 3159,
-  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260811-002305.zip",
+  "durationMs": 5611,
+  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260811-235108.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 32023880
+      "size": 32022785
     },
     {
       "name": "calendar.txt",
@@ -27,11 +27,11 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 10157
+      "size": 9332
     },
     {
       "name": "translations.txt",
-      "size": 59056988
+      "size": 59054828
     },
     {
       "name": "feed_info.txt",
@@ -62,8 +62,8 @@
     "publisherName": "株式会社ナビタイムジャパン",
     "publisherUrl": "https://corporate.navitime.co.jp/",
     "lang": "ja",
-    "startDate": "20260806",
+    "startDate": "20260812",
     "endDate": "20261231",
-    "version": "20260804174447"
+    "version": "20260804175449"
   }
 }
