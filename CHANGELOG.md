@@ -13,6 +13,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Data: keio-bus の GTFS resource を 20260806 版へ更新。
 - Data: keio-bus の GTFS resource を 20260812 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260813 版へ更新。
 
 ## [2026.08.05]
 
