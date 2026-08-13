@@ -6,7 +6,7 @@ author: F88
 paginate: true
 theme: uncover
 class: lead
-backgroundColor: #fafaf8
+backgroundColor: #ffffff
 color: #1f2933
 style: |
     :root {
