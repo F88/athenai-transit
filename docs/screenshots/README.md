@@ -9,28 +9,33 @@
 - **theme**: light / dark
 - **lang**: UI の表示言語。のりば名などが別言語で出ている場合は併記
 
-## ディレクトリと View
+## ディレクトリ
 
-ディレクトリ名は Athenai Transit の `src/domain/transit/stop-time-views.ts` にある view id に対応する。
+ディレクトリは、何を写したものかで分ける。
 
-| ディレクトリ | view id | icon | ラベル | 表示単位 |
-| --- | --- | --- | --- | --- |
-| `stop-view/` | `stop` | 🕐 | のりば | のりば |
-| `route-headsign-view/` | `route-headsign` | 🚌 | 路線 / 行先 | のりば |
-| `transit-display-2-view/` | `transit-display-2` | 🖥️ | 発着案内 | 複数のりば |
-| `route-view/` | `route` | 🚏 | 路線 | 複数のりば |
-| `transit-display-view/` | `transit-display` | 📟 | 発着案内 | 複数のりば |
-| `timetable-dialog/` | -- | -- | 時刻表ダイアログ | -- |
-| `trip-inspection-dialog/` | -- | -- | 行程ダイアログ | -- |
-| `portal/` | -- | -- | Portal (Anchor 一覧) | -- |
+StopTimes の View を写したものは、Athenai Transit の `src/domain/transit/stop-time-views.ts` にある view id をそのまま名前に使う (2026-08-13 時点)。id が変わってもディレクトリ名は追随しないので、ずれたらこの表を直す。
+
+View 以外を写したものは、その呼び名を使う。ダイアログやウィンドウなど、View とは関係のないディレクトリも増えていく。
+
+| ディレクトリ | 種別 | view id | icon | ラベル | 表示単位 |
+| --- | --- | --- | --- | --- | --- |
+| `stop-view/` | View | `stop` | 🕐 | のりば | のりば |
+| `route-headsign-view/` | View | `route-headsign` | 🚌 | 路線 / 行先 | のりば |
+| `transit-display-2-view/` | View | `transit-display-2` | 🖥️ | 発着案内 | 複数のりば |
+| `route-view/` | View | `route` | 🚏 | 路線 | 複数のりば |
+| `transit-display-view/` | View | `transit-display` | 📟 | 発着案内 | 複数のりば |
+| `timetable-dialog/` | ダイアログ | -- | -- | 時刻表 | -- |
+| `trip-inspection-dialog/` | ダイアログ | -- | -- | 行程 | -- |
+| `portal/` | その他 | -- | -- | Anchor 一覧 | -- |
 
 実装済みの View は上記 5 つ。`headsign` 🧭 行先、`frequency` 📊 頻度、`duration` ⏱ 乗車時間、`terminal` 🏬 終点の賑わい は `enabled: false` で、タブはグレーアウト表示になる。
 
 ## 命名規則
 
-`<view>-<screen>-<地点>[-<変種>].png`
+`<ディレクトリの呼び名>-<screen>-<地点>[-<変種>].png`
 
-- **view** はディレクトリ名と重複するが、基底名だけで一意になるようにするため入れる。外部へ持ち出すとパスを失うことがある
+- **呼び名** はディレクトリ名から `-view` や `-dialog` といった接尾辞を除いたもの。`stop-view/` なら `stop`、`timetable-dialog/` なら `timetable`、`portal/` なら `portal`
+- ディレクトリ名と重複するが、基底名だけで一意になるようにするため入れる。外部へ持ち出すとパスを失うことがある
 - **地点** はローマ字。`kinshicho`、`nakano`、`oji`、`kyoto-nishigamo`、`venezia`、`freiburg`、`matsuyama`、`narukosaka-shita`
 - **変種** は同じ場面で 1 つだけ変えたもの。集約半径 (`-100m`)、言語 (`-en`)、テーマ (`-dark`) など
 - light は既定なので付けない。付いていなければ light
