@@ -22,9 +22,3 @@ An accurate, exhaustive inventory of what the app does, meant to be pulled from 
 ### [APP_OVERVIEW.md](./APP_OVERVIEW.md)
 
 A single document that conveys the whole picture at a glance — a general-purpose overview kept on hand, not tailored to any one presentation. Covers what the app is, its concept and value, recommended ways to use it, device/environment support, a feature summary, screen/UI structure, supported data and coverage, and non-goals. As a rule it condenses and integrates the CONCEPT and FEATURE_CATALOG material, but this is a tendency rather than a constraint — it may also carry content of its own.
-
-### [SLIDES.md](./SLIDES.md)
-
-A Marp deck produced by condensing APP_OVERVIEW.md into slides, section by section. Unlike the documents above it was not anticipated when this README was written, and it is kept as a **worked example** rather than a maintained deliverable: something to start from when a deck is needed, not a deck to present as-is.
-
-Being a condensation, it says less than APP_OVERVIEW.md by design — dropping qualifiers and detail to fit a slide is expected. Saying something *different* is not. Where the two disagree, APP_OVERVIEW.md is the one to trust.
