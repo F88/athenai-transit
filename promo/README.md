@@ -5,7 +5,7 @@ Source material for creating product introduction content (blog posts, presentat
 > [!IMPORTANT]
 > **These are intermediate working documents for authoring materials — not finished documents to be used as-is.** They are also **not** product development requirements or specifications (INPUT). For requirements see [../PRD.md](../PRD.md); for developer documentation see [../DEVELOPMENT.md](../DEVELOPMENT.md).
 
-CONCEPT.md and FEATURE_CATALOG.md are the two foundational sources — CONCEPT holds the _why_ (the concept and value proposition), FEATURE_CATALOG the _what_ (the app's actual features, recorded as fact). Any purpose-specific material — a particular presentation, blog post, or pitch — is meant to be derived from these two as the need arises. The other documents here are such derivations, kept ready for general use rather than any single occasion.
+CONCEPT.md and FEATURE_CATALOG.md are the two foundational sources — CONCEPT holds the _why_ (the concept and value proposition), FEATURE_CATALOG the _what_ (the app's actual features, recorded as fact). Any purpose-specific material — a particular presentation, blog post, or pitch — is meant to be derived from these two as the need arises. The other documents here are such derivations, kept ready for general use rather than any single occasion — directly from those two, or by way of another derived document.
 
 ## Foundational sources
 
