@@ -43,7 +43,7 @@ Transit explorer without destination — discover where you can go from here
 ## 今後の開発予定
 
 - デスクトップ向けのUI改善
-- 運行頻度などの統計情報を時刻表・停留所表示に活用
+- 運行頻度などの統計情報の活用
 - 新たなViewの追加
 
 ## Documentation
