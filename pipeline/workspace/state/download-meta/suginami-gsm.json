@@ -2,8 +2,8 @@
   "sourceName": "suginami-gsm",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-08-14T00:29:10.391Z",
+  "downloadedAt": "2026-08-15T00:16:20.469Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260525",
-  "durationMs": 4027,
+  "durationMs": 4053,
   "error": "Failed after 3 attempts (https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260525): Error: HTTP 404 Not Found"
 }
