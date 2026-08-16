@@ -30,9 +30,12 @@ interface HighlightedNameProps {
  *   1. direct substring,
  *   2. case-insensitive substring,
  *   3. {@link normalizeForSearch} substring — same pipeline as the search
- *      index (case + kana + Latin-diacritic collapsed). The pipeline is a
- *      1:1 character mapping in NFC, so the index found in the normalized
- *      string aligns with the original `name` for the slice below.
+ *      index (width + case + kana + Latin-diacritic collapsed). The pipeline
+ *      is a 1:1 character mapping in NFC, so the index found in the normalized
+ *      string aligns with the original `name` for the slice below. That
+ *      invariant is pinned by a test in the `normalizeForSearch` suite; do not
+ *      add a length-changing step (NFKC, halfwidth-kana folding) without
+ *      reworking the slicing here.
  */
 function HighlightedName({ name, query, normalizedQuery }: HighlightedNameProps) {
   if (!query) {

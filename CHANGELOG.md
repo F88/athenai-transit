@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- のりば検索: 全角の英字・数字を含むのりば名を、半角で入力したクエリでも検索できるようにした (#362)。
+
 ## [2026.08.16]
 
 ### Changed

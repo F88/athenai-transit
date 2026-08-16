@@ -1,14 +1,27 @@
 import type { Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
+import { fullwidthAlnumToHalfwidth } from '@/utils/width-normalize';
 
 /**
  * Normalize a string for stop search.
  *
  * Pipeline:
- *   1. `toLowerCase` — collapse case (`NAKA` / `Naka` / `naka` → `naka`).
- *   2. `katakanaToHiragana` — collapse kana script (`ナカ` → `なか`).
- *   3. NFD → strip Latin combining marks (U+0300–U+036F) → NFC —
+ *   1. `fullwidthAlnumToHalfwidth` -- collapse character width for Latin
+ *      letters and digits. Feeds spell the same name both ways (U+FF2E U+FF34
+ *      U+FF34 vs `NTT`, U+FF12 丁目 vs `2丁目`), and a mobile IME produces the
+ *      halfwidth form, so without this the fullwidth spellings are effectively
+ *      unreachable.
+ *   2. `toLowerCase` — collapse case (`NAKA` / `Naka` / `naka` → `naka`).
+ *   3. `katakanaToHiragana` — collapse kana script (`ナカ` → `なか`).
+ *   4. NFD → strip Latin combining marks (U+0300–U+036F) → NFC —
  *      collapse Latin diacritics (`Ōyana` → `oyana`, `café` → `cafe`).
+ *
+ * Halfwidth katakana is deliberately NOT folded here. kobus stores every
+ * `ja-Hrkt` reading in halfwidth katakana, so folding it would be a large
+ * search win, but the fold is not one-to-one (halfwidth "si" plus a voiced
+ * mark is two code points, the composed form is one) and the search highlight
+ * currently depends on this pipeline preserving character offsets. See the
+ * length note below.
  *
  * Why the strip range is narrowed to U+0300–U+036F: kana voicing marks
  * live in U+3099 / U+309A. Stripping `\p{Diacritic}` wholesale would
@@ -17,12 +30,19 @@ import { katakanaToHiragana } from '@/utils/kana-normalize';
  * Marks block keeps kana voicing intact while still catching macron,
  * acute, grave, circumflex, tilde, diaeresis, caron, cedilla, etc.
  *
- * The trailing NFC re-composes any kana that NFD decomposed in step 3
+ * The trailing NFC re-composes any kana that NFD decomposed in step 4
  * (e.g. `が` → `か` + U+3099 → recomposed back to `が`), so callers can
  * rely on the output being canonical (NFC) regardless of input form.
+ *
+ * Length: every step above maps one character to one character for NFC input,
+ * so the output has the same length as the input and an offset found in the
+ * normalized string still points at the right place in the original.
+ * `HighlightedName` relies on this -- it locates a match in the normalized name
+ * and then slices the raw name at that index. Any future step that changes
+ * length (NFKC, halfwidth-kana folding) has to fix the highlight first.
  */
 export function normalizeForSearch(s: string): string {
-  return katakanaToHiragana(s.toLowerCase())
+  return katakanaToHiragana(fullwidthAlnumToHalfwidth(s).toLowerCase())
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC');
@@ -120,10 +140,12 @@ export interface FilterStopsByQueryResult {
 /**
  * Filter and rank a search index for a free-text query.
  *
- * Matching: case-insensitive + katakana→hiragana normalized substring match
- * against any value of `stop.stop_names`. The query is normalized the same
- * way as the index entries, so e.g. `naka` / `NAKA` / `ナカ` / `なか` all
- * behave identically against an entry containing `Nakanobu` / `なかのぶ`.
+ * Matching: width-, case- and kana-normalized substring match against any
+ * value of `stop.stop_names`. The query is normalized the same way as the
+ * index entries, so e.g. `naka` / `NAKA` / `ナカ` / `なか` all behave
+ * identically against an entry containing `Nakanobu` / `なかのぶ`, and a
+ * halfwidth query reaches a fullwidth name (`ntt` finds U+FF2E U+FF34 U+FF34,
+ * `2丁目` finds U+FF12 丁目).
  *
  * Ranking (each step is a tiebreaker for the previous):
  *   1. Prefix bonus — any normalized name starts with the normalized query.

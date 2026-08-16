@@ -6,6 +6,15 @@ import {
   normalizeForSearch,
 } from '../stop-search-index';
 
+/**
+ * Build a string from code points. Fullwidth characters are constructed rather
+ * than written literally so the expectations stay unambiguous about which code
+ * point they cover.
+ */
+function cp(...codes: number[]): string {
+  return String.fromCharCode(...codes);
+}
+
 function makeStop(
   partial: Pick<Stop, 'stop_id' | 'stop_name' | 'stop_names'> & Partial<Stop>,
 ): Stop {
@@ -48,6 +57,45 @@ describe('normalizeForSearch', () => {
     // Pre-decomposed input should still come out NFC-recomposed.
     const decomposed = 'Ōyana'; // O + combining macron
     expect(normalizeForSearch(decomposed)).toBe('oyana');
+  });
+
+  it('folds fullwidth Latin letters to halfwidth', () => {
+    // U+FF2E U+FF34 U+FF34 is the fullwidth spelling of "NTT", used in iyt2 /
+    // od9bus / minkuru stop names. Typing halfwidth "ntt" must reach them.
+    expect(normalizeForSearch(cp(0xff2e, 0xff34, 0xff34))).toBe('ntt');
+    expect(normalizeForSearch(cp(0xff2a, 0xff32) + '王子駅')).toBe('jr王子駅');
+  });
+
+  it('folds fullwidth digits to halfwidth', () => {
+    // yhb / ntbus write chome numbers with fullwidth digits.
+    expect(normalizeForSearch('安善町' + cp(0xff12) + '丁目')).toBe('安善町2丁目');
+    expect(normalizeForSearch(cp(0xff10, 0xff19))).toBe('09');
+  });
+
+  it('leaves halfwidth katakana unchanged (folded separately, see TSDoc)', () => {
+    // U+FF7C U+FF9E is halfwidth "si" + voiced mark. kobus stores every
+    // ja-Hrkt reading this way; folding it is out of scope here because the
+    // fold is not 1:1 and would break the highlight offset invariant.
+    const halfwidthKana = cp(0xff7c, 0xff9e);
+    expect(normalizeForSearch(halfwidthKana)).toBe(halfwidthKana);
+  });
+
+  it('preserves length for NFC input, which the search highlight relies on', () => {
+    // Tripwire for HighlightedName: it finds an index in the normalized string
+    // and slices the ORIGINAL name at that index, so the pipeline must map one
+    // character to one character. A switch to NFKC or a halfwidth-kana fold
+    // would break this silently -- the highlight would land on the wrong
+    // characters rather than fall back to "no highlight".
+    const inputs = [
+      cp(0xff2a, 0xff32) + '王子駅', // fullwidth "JR" + kanji
+      '安善町' + cp(0xff12) + '丁目', // fullwidth digit
+      'がっこう', // precomposed kana with dakuten
+      'パーク', // katakana with a prolonged sound mark
+      'Shibuya',
+    ];
+    for (const input of inputs) {
+      expect(normalizeForSearch(input)).toHaveLength(input.length);
+    }
   });
 });
 
@@ -377,6 +425,43 @@ describe('filterStopsByQuery', () => {
     ];
     const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'sta.', 10);
     expect(result.stops.map((s) => s.stop_id)).toEqual(['p1', 'p2', 'p10', 'pNone']);
+  });
+
+  it('matches fullwidth-digit names from a halfwidth query (yhb / ntbus shape)', () => {
+    // Real shape: the ja name carries a fullwidth digit, the en name spells the
+    // number as "N-chome" and ja-Hrkt spells it in kana, so neither rescues a
+    // "2丁目" query. Before the width fold these stops were unreachable unless
+    // the user typed the fullwidth digit, which a mobile IME does not produce.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'anzen',
+        stop_name: '安善町' + cp(0xff12) + '丁目',
+        stop_names: {
+          ja: '安善町' + cp(0xff12) + '丁目',
+          'ja-Hrkt': 'あんぜんちょうにちょうめ',
+          en: 'Anzencho 2-chome',
+        },
+      }),
+    ];
+    const idx = stops2.map(buildSearchIndexEntry);
+    expect(filterStopsByQuery(idx, '2丁目', 10).stops.map((s) => s.stop_id)).toEqual(['anzen']);
+    expect(filterStopsByQuery(idx, '安善町2', 10).stops.map((s) => s.stop_id)).toEqual(['anzen']);
+  });
+
+  it('matches fullwidth-Latin names from a halfwidth query (iyt2 shape)', () => {
+    // Abbreviations written in fullwidth Latin with no en counterpart have no
+    // fallback candidate name, unlike the JR-prefixed stops that an en
+    // translation happens to rescue.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'ntt',
+        stop_name: cp(0xff2e, 0xff34, 0xff34) + '研修センター前',
+        stop_names: { ja: cp(0xff2e, 0xff34, 0xff34) + '研修センター前' },
+      }),
+    ];
+    const idx = stops2.map(buildSearchIndexEntry);
+    expect(filterStopsByQuery(idx, 'ntt', 10).stops.map((s) => s.stop_id)).toEqual(['ntt']);
+    expect(filterStopsByQuery(idx, 'NTT', 10).stops.map((s) => s.stop_id)).toEqual(['ntt']);
   });
 
   it('does not match across name boundaries', () => {
