@@ -1,9 +1,65 @@
 {
   "sourceName": "suginami-gsm",
   "type": "gtfs",
-  "status": "error",
-  "downloadedAt": "2026-08-16T00:17:26.849Z",
-  "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260525",
-  "durationMs": 3824,
-  "error": "Failed after 3 attempts (https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260525): Error: HTTP 404 Not Found"
+  "status": "ok",
+  "downloadedAt": "2026-08-16T04:47:02.319Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260601",
+  "size": 4576,
+  "contentType": "application/octet-stream",
+  "durationMs": 1446,
+  "archivePath": "workspace/_archives/gtfs/suginami-gsm/GreenSlowMobility_20260816-044703.zip",
+  "extractedFiles": [
+    {
+      "name": "shapes.txt",
+      "size": 1637
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 8163
+    },
+    {
+      "name": "stops.txt",
+      "size": 346
+    },
+    {
+      "name": "trips.txt",
+      "size": 987
+    },
+    {
+      "name": "agency.txt",
+      "size": 200
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 149
+    },
+    {
+      "name": "calendar.txt",
+      "size": 129
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 92
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 61
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 301
+    },
+    {
+      "name": "routes.txt",
+      "size": 169
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "株式会社 アチピレーションテクノロジー",
+    "publisherUrl": "https://acp-tech.jp/",
+    "lang": "ja",
+    "startDate": "20260724",
+    "endDate": "20280630",
+    "version": "Suginami_City_Guri_20260724"
+  }
 }
