@@ -2,12 +2,12 @@
   "sourceName": "tokyo-cruise-ship",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-15T00:16:04.156Z",
+  "downloadedAt": "2026-08-16T00:17:09.662Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyoCruiseShip/AllLines.zip?date=20250402",
-  "size": 8131,
+  "size": 8253,
   "contentType": "application/octet-stream",
-  "durationMs": 1422,
-  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260815-001605.zip",
+  "durationMs": 1131,
+  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260816-001710.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 6069
+      "size": 7152
     },
     {
       "name": "fare_attributes.txt",
@@ -75,7 +75,7 @@
     "publisherUrl": "https://www.suijobus.co.jp/",
     "lang": "ja",
     "startDate": "20250701",
-    "endDate": "20260831",
+    "endDate": "20260930",
     "version": "2.0"
   }
 }
