@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.08.16]
+
 ### Changed
 
 - Data: suginami-gsm の GTFS resource を 20260601 版へ更新。
