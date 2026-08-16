@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Data: suginami-gsm の GTFS resource を 20260601 版へ更新。
+- Data: keio-bus の GTFS resource を 20260815 版へ更新。
+
 ## [2026.08.13]
 
 ### Changed

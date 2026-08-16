@@ -16,8 +16,8 @@ const suginamiGsm: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyo_suginami_city',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility/resource/609d47ae-05e8-4f65-9a45-fe4e8a0c8b7b',
-      resourceId: '609d47ae-05e8-4f65-9a45-fe4e8a0c8b7b',
+        'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility/resource/239b299c-37b0-477d-9b25-7fc4a5efca0d',
+      resourceId: '239b299c-37b0-477d-9b25-7fc4a5efca0d',
     },
     provider: {
       name: {
@@ -34,7 +34,7 @@ const suginamiGsm: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     downloadUrl:
-      'https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260525',
+      'https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20260601',
   },
   pipeline: {
     outDir: 'suginami-gsm',
