@@ -2,12 +2,12 @@
   "sourceName": "itsukishima-kisen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-16T04:46:39.316Z",
+  "downloadedAt": "2026-08-17T00:16:09.685Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20251001",
   "size": 5653,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1594,
-  "archivePath": "workspace/_archives/gtfs/itsukishima-kisen/AllLines_20260816-044640.zip",
+  "durationMs": 1630,
+  "archivePath": "workspace/_archives/gtfs/itsukishima-kisen/AllLines_20260817-001611.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
