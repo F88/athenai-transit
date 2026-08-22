@@ -2,12 +2,12 @@
   "sourceName": "bunkyo-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-21T00:17:48.003Z",
+  "downloadedAt": "2026-08-22T00:16:12.899Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/AllLines.zip?date=20260401",
   "size": 49303,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1281,
-  "archivePath": "workspace/_archives/gtfs/bunkyo-c-bus/AllLines_20260821-001749.zip",
+  "durationMs": 1347,
+  "archivePath": "workspace/_archives/gtfs/bunkyo-c-bus/AllLines_20260822-001614.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
