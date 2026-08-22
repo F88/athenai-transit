@@ -1,19 +1,17 @@
 {
   "sourceName": "keio-bus",
-  "checkedAt": "2026-08-21T10:09:06.594Z",
+  "checkedAt": "2026-08-22T10:06:10.563Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260731",
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260803",
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260806",
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260812",
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260815"
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260815",
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260826",
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260829",
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260901"
   ],
   "result": "attention",
   "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD",
-    "REMOTE_KNOWN_IN_PERIOD",
-    "REMOTE_KNOWN_IN_PERIOD",
-    "REMOTE_KNOWN_IN_PERIOD"
+    "REMOTE_NEW_BEFORE_PERIOD",
+    "REMOTE_NEW_BEFORE_PERIOD",
+    "REMOTE_NEW_BEFORE_PERIOD"
   ],
   "errors": []
 }
