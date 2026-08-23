@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - のりば検索: 全角の英字・数字を含むのりば名を、半角で入力したクエリでも検索できるようにした (#362)。
+- Data: kyoto-bus の GTFS resource を 20260820 版へ更新。
 
 ## [2026.08.16]
 
