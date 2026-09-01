@@ -2,12 +2,12 @@
   "sourceName": "seibu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-08-31T00:40:31.523Z",
+  "downloadedAt": "2026-09-01T00:43:37.354Z",
   "url": "https://api.odpt.org/api/v4/files/SeibuBus/data/SeibuBus-GTFS.zip",
-  "size": 4290332,
+  "size": 4287847,
   "contentType": "application/zip",
-  "durationMs": 4608,
-  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20260831-004035.zip",
+  "durationMs": 3543,
+  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20260901-004340.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -35,11 +35,11 @@
     },
     {
       "name": "trips.txt",
-      "size": 2868758
+      "size": 2866175
     },
     {
       "name": "stop_times.txt",
-      "size": 41320105
+      "size": 41287138
     },
     {
       "name": "calendar.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 5323
+      "size": 2383
     },
     {
       "name": "fare_attributes.txt",
@@ -66,8 +66,8 @@
     "publisherName": "西武バス",
     "publisherUrl": "https://www.seibubus.co.jp",
     "lang": "ja",
-    "startDate": "20260801",
+    "startDate": "20260901",
     "endDate": "20261031",
-    "version": "20260724"
+    "version": "20260824"
   }
 }
