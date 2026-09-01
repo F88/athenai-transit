@@ -17,8 +17,8 @@ const kawasakiCityBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/transportation_bureau_city_of_kawasaki',
       datasetUrl: 'https://ckan.odpt.org/dataset/transportation_bureau_city_of_kawasaki_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/transportation_bureau_city_of_kawasaki_all_lines/resource/6b8c28f3-c953-422f-a863-e4118db9b3c4',
-      resourceId: '6b8c28f3-c953-422f-a863-e4118db9b3c4',
+        'https://ckan.odpt.org/dataset/transportation_bureau_city_of_kawasaki_all_lines/resource/9accdf73-5704-4f80-b10c-fd75d5edbc46',
+      resourceId: '9accdf73-5704-4f80-b10c-fd75d5edbc46',
     },
     provider: {
       name: {
@@ -45,7 +45,7 @@ const kawasakiCityBus: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260801',
+      'https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260828',
   },
   pipeline: {
     outDir: 'kawasaki-city-bus',
