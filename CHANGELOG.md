@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Docs: transit resource の triage 結果と対応予定を記録する TRANSIT-RESOURCES.md を追加。
+
 ## [2026.09.01]
 
 ### Changed

@@ -174,7 +174,10 @@ same block live).
 
 Open with the ONE-line update-job status from step 0, then output a table grouped by
 category (CRITICAL / UPDATE CANDIDATE / UPCOMING / No action), each row showing the source,
-the adopted `start_at`, and the newer `start_at` + its `feed=` window from the block. Then
+the adopted `start_at`, and the newer `start_at` + its `feed=` window from the block.
+Include a **Watch** list under No action: sources whose adopted feed end date is within
+30 days AND for which no remote resource newer than LOCAL exists yet; annotate the list
+with `Re-check before <the day after the feed end>` (absolute date). Then
 list the candidates and ask which (if any) the user wants to adopt after reviewing the
 resource. **Do not edit any definition** — applying an approved
 bump is a separate, user-initiated step (see "Applying an approved bump" below).
@@ -192,14 +195,30 @@ After presenting the triage, update `TRANSIT-RESOURCES.md`. It is a
 latest-only snapshot: the file always reflects the most recent check, and
 history lives in the GitHub Actions runs, not in this file.
 
-- **Header**: set `Checked at:` to today's date (add the run's date in
-  parentheses if the run is older than today), `Source run:` to the run URL
-  from step 3, and `Update job:` to the ONE-line status from step 0.
+- **Header**: `Checked at:` is MANDATORY on every write -- the current
+  date AND time with UTC offset (e.g. `2026-09-01 11:46 +09:00`), plus the
+  run's execution date-time in parentheses. Set `Source run:` to the run
+  URL from step 3 (wrapped in `<...>`), and `Update job:` to the ONE-line
+  status from step 0 INCLUDING that run's URL (wrapped in `<...>`) -- both
+  CI runs this skill reads must stay traceable from the file.
 - **`## Triage` section**: overwrite it with the same category table
   presented in step 3 (CRITICAL / UPDATE CANDIDATE / UPCOMING / No action).
   OUT OF SCOPE sources may be summarized in a single line. Use absolute
   dates only (e.g. `feed end 2026-09-30`), never relative ones ("expires in
-  10 days") -- the file must stay interpretable when read later.
+  10 days") -- the file must stay interpretable when read later. Each
+  source appears in EXACTLY ONE category (first match wins, same as step
+  2). Write only facts read from the run plus concrete re-check dates;
+  never predictions or interpretations (no "expect a new feed soon",
+  no "by design").
+- **Structure**: keep the file's established section layout -- the
+  `## Trial Operation Notes` section (static caveats; leave untouched),
+  the `## Snapshot` header block, the `Total:` line, the category
+  subsections (`### CRITICAL` / `### UPDATE CANDIDATE` / `### UPCOMING` /
+  `### No action` / `### OUT OF SCOPE`) with `(none)` for an empty
+  category, the UPCOMING table columns (Source / Adopted / Newer /
+  Adopt on/after), and the Watch paragraph under No action (criteria in
+  step 3). Overwrite the content only; change the structure itself only
+  on explicit user instruction.
 - **`## Decisions / Pending` section**: NEVER overwrite or blank it.
   Preserve existing entries, with two exceptions: mark or remove an entry
   whose condition has resolved (e.g. an UPCOMING adoption that was applied,
@@ -225,10 +244,13 @@ Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260
    The `downloadUrl` date and `resourceId` must refer to the same version.
 2. **Update `CHANGELOG.md`** under `[Unreleased]` / `### Changed`, one line per source
    in the established format: `- Data: {source} の GTFS resource を {date} 版へ更新。`
-3. **Update `TRANSIT-RESOURCES.md`** (`## Decisions / Pending`): record what was
+3. **Update `TRANSIT-RESOURCES.md`**: in `## Decisions / Pending`, record what was
    adopted (source + `date=`) and any explicit deferrals the user stated in the same
    session (e.g. "kyoto-bus は feed 窓が短いため見送り"), each date-stamped. Resolve
-   any pending entry this bump fulfills.
+   any pending entry this bump fulfills. In `## Triage`, append
+   `-> adopted date=X (YYYY-MM-DD)` to the affected row/line so the snapshot does
+   not misread as still pending -- annotate ONLY; never delete rows or re-judge
+   the table without reading a new run (the run stays the authority).
 4. **Verify**: `npm run typecheck`.
 5. **STOP and get explicit user confirmation before committing (RULE).** After editing
    the definition(s) + `CHANGELOG.md` + `TRANSIT-RESOURCES.md` and passing typecheck,
