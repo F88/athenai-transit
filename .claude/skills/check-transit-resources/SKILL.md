@@ -9,13 +9,15 @@ description: >
     "チェックして <url>"). Also triggers on "check transit resources", a
     check-transit-resources.yml workflow run, or asking whether adopted GTFS feeds
     are out of date. READ-ONLY triage: never edit definitions, never auto-update.
+    The ONLY file it writes is TRANSIT-RESOURCES.md (persisted triage snapshot).
 ---
 
 # Check Transit Resources (update triage)
 
 Read the result of the `.github/workflows/check-transit-resources.yml` GitHub Action
 and produce a **first-pass judgment** of which GTFS resource definitions may need a
-version bump. This skill only **reports**. It does not change anything.
+version bump. This skill only **reports**. It changes nothing except
+`TRANSIT-RESOURCES.md`, the persisted triage snapshot (see step 4).
 
 ## Hard constraints (do not violate)
 
@@ -24,7 +26,9 @@ version bump. This skill only **reports**. It does not change anything.
   by `start_at` with the adopted one marked. Do not reconstruct that from
   `pipeline/workspace/state/**` or by parsing `downloadUrl` — read the run output.
 - **Never auto-update a resource definition.** Do not edit any
-  `pipeline/config/resources/**/*.ts`. Stop after presenting the triage.
+  `pipeline/config/resources/**/*.ts`. Stop after presenting the triage and
+  updating `TRANSIT-RESOURCES.md` (step 4) -- the snapshot file is the ONLY
+  file this skill writes, and it is never committed by this skill.
 - **The user reviews and decides on every new resource themselves.** Present the
   candidates; the user inspects the resource and decides whether to adopt. The decision
   to apply is the user's — not yours.
@@ -182,6 +186,33 @@ it or you resolved the latest run yourself. Put it on the last line so it is eas
 Source run: https://github.com/F88/athenai-transit/actions/runs/<run-id>
 ```
 
+### 4. Persist the snapshot to `TRANSIT-RESOURCES.md` (repo root, git-tracked)
+
+After presenting the triage, update `TRANSIT-RESOURCES.md`. It is a
+latest-only snapshot: the file always reflects the most recent check, and
+history lives in the GitHub Actions runs, not in this file.
+
+- **Header**: set `Checked at:` to today's date (add the run's date in
+  parentheses if the run is older than today), `Source run:` to the run URL
+  from step 3, and `Update job:` to the ONE-line status from step 0.
+- **`## Triage` section**: overwrite it with the same category table
+  presented in step 3 (CRITICAL / UPDATE CANDIDATE / UPCOMING / No action).
+  OUT OF SCOPE sources may be summarized in a single line. Use absolute
+  dates only (e.g. `feed end 2026-09-30`), never relative ones ("expires in
+  10 days") -- the file must stay interpretable when read later.
+- **`## Decisions / Pending` section**: NEVER overwrite or blank it.
+  Preserve existing entries, with two exceptions: mark or remove an entry
+  whose condition has resolved (e.g. an UPCOMING adoption that was applied,
+  which the triage table now shows as adopted), and append decisions the
+  user made in this session. Date-stamp every entry
+  (e.g. `(decided 2026-09-01)`).
+- **Do NOT commit the file.** The user decides when to commit -- typically
+  together with the resulting `chore/update-resources-*` PR, or standalone.
+
+The file is a convenience summary for humans and other agents; the
+authoritative record is the run log. If the file disagrees with a newer
+run, the run wins.
+
 ## Applying an approved bump (only after explicit per-source user approval)
 
 Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260724"):
@@ -194,26 +225,32 @@ Once the user names the sources and dates to adopt (e.g. "keio-bus -> date=20260
    The `downloadUrl` date and `resourceId` must refer to the same version.
 2. **Update `CHANGELOG.md`** under `[Unreleased]` / `### Changed`, one line per source
    in the established format: `- Data: {source} の GTFS resource を {date} 版へ更新。`
-3. **Verify**: `npm run typecheck`.
-4. **STOP and get explicit user confirmation before committing (RULE).** After editing
-   the definition(s) + `CHANGELOG.md` and passing typecheck, show the exact diff and
+3. **Update `TRANSIT-RESOURCES.md`** (`## Decisions / Pending`): record what was
+   adopted (source + `date=`) and any explicit deferrals the user stated in the same
+   session (e.g. "kyoto-bus は feed 窓が短いため見送り"), each date-stamped. Resolve
+   any pending entry this bump fulfills.
+4. **Verify**: `npm run typecheck`.
+5. **STOP and get explicit user confirmation before committing (RULE).** After editing
+   the definition(s) + `CHANGELOG.md` + `TRANSIT-RESOURCES.md` and passing typecheck,
+   show the exact diff and
    WAIT. Resource definition changes are ALWAYS committed only after the user explicitly
    approves *this* commit — naming the sources/dates to adopt (step 0) authorizes the
    *edit*, NOT the commit. The user may still add more sources or revise values before
    committing. Never run `git commit` on a resource bump without that explicit go-ahead.
    See [[feedback_resource_update_human_confirmation]].
-5. **Branch -> commit -> PR. NEVER commit resource definition updates directly on main.**
+6. **Branch -> commit -> PR. NEVER commit resource definition updates directly on main.**
    Cut a fresh branch off main named `chore/update-resources-YYYYMMDD` (today's date).
    Fixed rule (user decision, 2026-07-25): version bumps are ALWAYS `chore`, even when
    triggered by a CRITICAL / expired source. A second bump branch on the same day gets
    a serial suffix (`chore/update-resources-YYYYMMDD-2`). The name deliberately has no
    "gtfs" in it — resource definitions cover more than GTFS. Adding a NEW source is a
    different job: the `add-gtfs-source` skill, on its own `feat/add-resources-YYYYMMDD`
-   branch. Commit ONLY the edited resource definitions + `CHANGELOG.md` (never
-   `pipeline/workspace/state/**` — CI owns those snapshots), push, and open a PR
+   branch. Commit ONLY the edited resource definitions + `CHANGELOG.md` +
+   `TRANSIT-RESOURCES.md` (never `pipeline/workspace/state/**` — CI owns those
+   snapshots), push, and open a PR
    with the `resource` label (`gh pr create --label resource ...`).
    The user decides when to merge.
-6. The data build itself is CI's job after merge (Blob upload workflow) — do not run
+7. The data build itself is CI's job after merge (Blob upload workflow) — do not run
    the pipeline or any production workflow locally as part of the bump.
 
 ## Related

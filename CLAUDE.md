@@ -77,13 +77,14 @@ When refactoring or moving files, always verify path resolution and imports stil
 
 ## Documentation
 
-| File                 | Purpose                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `README.md`          | Project entry point.                                                                  |
-| `PRD.md`             | Product requirements (concept, UX, architecture overview). **What** to build and why. |
-| `DEVELOPMENT.md`     | Developer entry point: code quality, file placement, app orchestration, stop lookup.  |
-| `docs/README.md`     | Index of detailed implementation docs under `docs/**/*.md`.                           |
-| `pipeline/README.md` | Independent data-build subsystem entry point.                                         |
-| `CLAUDE.md`          | This file. High-level architecture and rules for Claude Code.                         |
+| File                   | Purpose                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `README.md`            | Project entry point.                                                                                            |
+| `PRD.md`               | Product requirements (concept, UX, architecture overview). **What** to build and why.                           |
+| `DEVELOPMENT.md`       | Developer entry point: code quality, file placement, app orchestration, stop lookup.                            |
+| `docs/README.md`       | Index of detailed implementation docs under `docs/**/*.md`.                                                     |
+| `pipeline/README.md`   | Independent data-build subsystem entry point.                                                                   |
+| `TRANSIT-RESOURCES.md` | Latest transit-resource triage snapshot + pending decisions. Maintained by the `check-transit-resources` skill. |
+| `CLAUDE.md`            | This file. High-level architecture and rules for Claude Code.                                                   |
 
 Individual `docs/**/*.md` files may be added or reorganized over time; consult [README.md](./README.md) and [docs/README.md](./docs/README.md) for the current set.
