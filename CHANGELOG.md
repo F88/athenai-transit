@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.09.01]
+
 ### Changed
 
 - Data: iyotetsu-bus の GTFS resource を 20260901 版へ更新。
