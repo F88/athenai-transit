@@ -52,6 +52,16 @@ highlight reel.
     - `## Pipeline / CI` — パイプライン、CI/CD、開発ツール等の変更
     - 各セクション内は `### Added`, `### Fixed`, `### Changed` で分類。該当が無いセクション
       (例: Pipeline/CI 変更なし) は丸ごと省く
+- **Boilerplate `### Notes` section (REQUIRED, fixed wording)**: place it after the change
+  sections and before the Full Changelog link, verbatim (user decision, 2026-09-01 --
+  the app version does not track data updates, since data ships via Blob without a release):
+
+  ```markdown
+  ### Notes
+
+  [重要] バージョン情報はアプリケーションのバージョンです。データのみ更新された場合はバージョンが更新されず、リリースノートも提供されないことがあります。
+  ```
+
 - Include link to full diff: `**Full Changelog**: https://github.com/{owner}/{repo}/compare/{prev_tag}...v{version}`
 - If this is the first release (no previous tag), use the initial commit as base
 
