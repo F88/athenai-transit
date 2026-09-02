@@ -1,77 +1,9 @@
 {
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
-  "status": "ok",
-  "downloadedAt": "2026-09-01T01:19:34.054Z",
+  "status": "error",
+  "downloadedAt": "2026-09-02T00:36:50.215Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260901",
-  "size": 868842,
-  "contentType": "application/octet-stream",
-  "durationMs": 2528,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260901-011936.zip",
-  "extractedFiles": [
-    {
-      "name": "agency.txt",
-      "size": 192
-    },
-    {
-      "name": "stops.txt",
-      "size": 74822
-    },
-    {
-      "name": "routes.txt",
-      "size": 5536
-    },
-    {
-      "name": "trips.txt",
-      "size": 253919
-    },
-    {
-      "name": "pattern_jp.txt",
-      "size": 7692
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 5948737
-    },
-    {
-      "name": "fare_attributes.txt",
-      "size": 3722
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 861619
-    },
-    {
-      "name": "calendar.txt",
-      "size": 719
-    },
-    {
-      "name": "calendar_dates.txt",
-      "size": 662
-    },
-    {
-      "name": "feed_info.txt",
-      "size": 189
-    },
-    {
-      "name": "translations.txt",
-      "size": 141733
-    },
-    {
-      "name": "office_jp.txt",
-      "size": 191
-    },
-    {
-      "name": "shapes.txt",
-      "size": 76
-    }
-  ],
-  "feedInfo": {
-    "publisherName": "伊予鉄バス株式会社",
-    "publisherUrl": "https://www.iyotetsu.co.jp/",
-    "lang": "ja",
-    "startDate": "20260901",
-    "endDate": "20260930",
-    "version": "20260901_20260930"
-  }
+  "durationMs": 3802,
+  "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260901&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
