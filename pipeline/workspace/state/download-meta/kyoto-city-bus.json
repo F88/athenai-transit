@@ -2,8 +2,8 @@
   "sourceName": "kyoto-city-bus",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-09-05T00:34:49.058Z",
+  "downloadedAt": "2026-09-06T00:40:20.761Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260729",
-  "durationMs": 4307,
+  "durationMs": 3906,
   "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260729&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }

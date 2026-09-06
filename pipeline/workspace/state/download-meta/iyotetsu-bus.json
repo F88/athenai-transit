@@ -2,8 +2,8 @@
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-09-05T00:34:43.581Z",
+  "downloadedAt": "2026-09-06T00:40:15.916Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260901",
-  "durationMs": 4175,
+  "durationMs": 4013,
   "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260901&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
