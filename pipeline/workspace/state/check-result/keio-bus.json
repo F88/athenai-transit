@@ -1,6 +1,6 @@
 {
   "sourceName": "keio-bus",
-  "checkedAt": "2026-09-12T13:19:33.408Z",
+  "checkedAt": "2026-09-13T01:46:00.471Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260903",
     "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260914",
@@ -8,7 +8,9 @@
   ],
   "result": "attention",
   "warnings": [
-    "LOCAL_NO_DOWNLOAD_REPORT"
+    "ADOPTED_BEFORE_PERIOD",
+    "REMOTE_KNOWN_BEFORE_PERIOD",
+    "REMOTE_KNOWN_IN_PERIOD"
   ],
   "errors": []
 }
