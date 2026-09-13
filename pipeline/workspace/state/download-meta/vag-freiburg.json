@@ -2,12 +2,12 @@
   "sourceName": "vag-freiburg",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-13T01:38:46.398Z",
+  "downloadedAt": "2026-09-13T03:38:26.569Z",
   "url": "https://www.vag-freiburg.de/fileadmin/gtfs/VAGFR.zip",
   "size": 7805151,
   "contentType": "application/zip",
-  "durationMs": 2052,
-  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260913-013848.zip",
+  "durationMs": 3499,
+  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260913-033829.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",

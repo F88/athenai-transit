@@ -2,12 +2,12 @@
   "sourceName": "chuo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-13T01:38:26.903Z",
+  "downloadedAt": "2026-09-13T03:38:09.679Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20260712",
   "size": 36107,
   "contentType": "application/octet-stream",
-  "durationMs": 1705,
-  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260913-013828.zip",
+  "durationMs": 1208,
+  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260913-033810.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",
