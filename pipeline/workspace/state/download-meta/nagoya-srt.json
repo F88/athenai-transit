@@ -2,13 +2,49 @@
   "sourceName": "nagoya-srt",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-12T03:32:00.585Z",
-  "url": "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260213",
-  "size": 5399,
+  "downloadedAt": "2026-09-13T01:38:36.794Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260911",
+  "size": 7320,
   "contentType": "application/octet-stream",
-  "durationMs": 1339,
-  "archivePath": "workspace/_archives/gtfs/nagoya-srt/NagoyaSRT_AllLines_20260912-033201.zip",
+  "durationMs": 1465,
+  "archivePath": "workspace/_archives/gtfs/nagoya-srt/NagoyaSRT_AllLines_20260913-013838.zip",
   "extractedFiles": [
+    {
+      "name": "fare_attributes.txt",
+      "size": 71
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 61
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 236
+    },
+    {
+      "name": "routes.txt",
+      "size": 221
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 12471
+    },
+    {
+      "name": "stops.txt",
+      "size": 672
+    },
+    {
+      "name": "transfers.txt",
+      "size": 57
+    },
+    {
+      "name": "translations.txt",
+      "size": 5642
+    },
+    {
+      "name": "trips.txt",
+      "size": 1855
+    },
     {
       "name": "agency.txt",
       "size": 300
@@ -19,55 +55,19 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 249
-    },
-    {
-      "name": "fare_attributes.txt",
-      "size": 71
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 52
-    },
-    {
-      "name": "feed_info.txt",
-      "size": 236
-    },
-    {
-      "name": "routes.txt",
-      "size": 161
+      "size": 187
     },
     {
       "name": "shapes.txt",
-      "size": 1726
-    },
-    {
-      "name": "stops.txt",
-      "size": 455
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 8019
-    },
-    {
-      "name": "transfers.txt",
-      "size": 57
-    },
-    {
-      "name": "translations.txt",
-      "size": 2999
-    },
-    {
-      "name": "trips.txt",
-      "size": 1149
+      "size": 5124
     }
   ],
   "feedInfo": {
     "publisherName": "名古屋市",
     "publisherUrl": "https://www.city.nagoya.jp/shisei/keikaku/1009818/1010119/1010123.html",
     "lang": "ja",
-    "startDate": "20260213",
+    "startDate": "20260911",
     "endDate": "20270331",
-    "version": "2026/02/13改正-見える化ver2.6e"
+    "version": "2026/09/11改正-見える化ver2.6e"
   }
 }
