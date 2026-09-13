@@ -17,8 +17,8 @@ const nagoyaSrt: GtfsSourceDefinition = {
       datasetUrl:
         'https://ckan.odpt.org/dataset/nagoya_housing_city_planning_bureau_nagoya_srt_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/nagoya_housing_city_planning_bureau_nagoya_srt_all_lines/resource/f9a0da8a-5474-4d59-9396-86978efd1418',
-      resourceId: 'f9a0da8a-5474-4d59-9396-86978efd1418',
+        'https://ckan.odpt.org/dataset/nagoya_housing_city_planning_bureau_nagoya_srt_all_lines/resource/a7588aea-27fd-4962-b39a-912209f19a1b',
+      resourceId: 'a7588aea-27fd-4962-b39a-912209f19a1b',
     },
     provider: {
       name: {
@@ -33,7 +33,7 @@ const nagoyaSrt: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     downloadUrl:
-      'https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260213',
+      'https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260911',
   },
   pipeline: {
     outDir: 'nagoya-srt',
