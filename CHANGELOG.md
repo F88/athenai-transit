@@ -13,6 +13,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Docs: transit resource の triage 結果と対応予定を記録する TRANSIT-RESOURCES.md を追加。
 
+### Changed
+
+- Data: keio-bus の GTFS resource を 20260914 版へ更新。
+- Data: kyoto-city-bus の GTFS resource を 20260831 版へ更新。
+- Data: nagoya-srt の GTFS resource を 20260911 版へ更新。
+- Data: nishi-tokyo-bus の GTFS resource を 20260912 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260911 版へ更新。
+
 ## [2026.09.01]
 
 ### Changed
