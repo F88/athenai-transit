@@ -2,12 +2,12 @@
   "sourceName": "chii-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-13T03:38:08.724Z",
+  "downloadedAt": "2026-09-14T03:47:05.798Z",
   "url": "https://gtfs-jp.buskita.com/fxc/gtfs.zip",
   "size": 246730,
   "contentType": "application/zip",
-  "durationMs": 1556,
-  "archivePath": "workspace/_archives/gtfs/chii-bus/gtfs_20260913-033810.zip",
+  "durationMs": 2094,
+  "archivePath": "workspace/_archives/gtfs/chii-bus/gtfs_20260914-034707.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
