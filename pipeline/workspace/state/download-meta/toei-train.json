@@ -2,12 +2,12 @@
   "sourceName": "toei-train",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-16T03:44:32.873Z",
+  "downloadedAt": "2026-09-17T03:49:34.112Z",
   "url": "https://api-public.odpt.org/api/v4/files/Toei/data/Toei-Train-GTFS.zip",
-  "size": 779628,
+  "size": 779674,
   "contentType": "application/octet-stream",
-  "durationMs": 2216,
-  "archivePath": "workspace/_archives/gtfs/toei-train/Toei-Train-GTFS_20260916-034435.zip",
+  "durationMs": 2032,
+  "archivePath": "workspace/_archives/gtfs/toei-train/Toei-Train-GTFS_20260917-034936.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -43,7 +43,7 @@
     },
     {
       "name": "stops.txt",
-      "size": 7925
+      "size": 8246
     },
     {
       "name": "translations.txt",
@@ -60,6 +60,6 @@
     "lang": "ja",
     "startDate": "20260314",
     "endDate": "20261231",
-    "version": "20260314"
+    "version": "20260916"
   }
 }
