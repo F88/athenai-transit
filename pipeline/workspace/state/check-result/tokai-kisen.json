@@ -1,12 +1,14 @@
 {
   "sourceName": "tokai-kisen",
-  "checkedAt": "2026-09-20T13:54:28.593Z",
+  "checkedAt": "2026-09-28T17:56:20.112Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260701"
+    "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260701",
+    "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20261001"
   ],
   "result": "attention",
   "warnings": [
-    "ADOPTED_EXPIRING_SOON"
+    "ADOPTED_EXPIRING_SOON",
+    "REMOTE_NEW_BEFORE_PERIOD"
   ],
   "errors": []
 }
