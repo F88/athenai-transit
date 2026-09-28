@@ -2,12 +2,12 @@
   "sourceName": "tama-monorail",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-20T03:49:48.450Z",
+  "downloadedAt": "2026-09-28T04:08:02.398Z",
   "url": "https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip",
-  "size": 56419,
+  "size": 56367,
   "contentType": "application/octet-stream",
-  "durationMs": 1587,
-  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20260920-034950.zip",
+  "durationMs": 1106,
+  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20260928-040803.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 837
+      "size": 473
     },
     {
       "name": "fare_attributes.txt",
@@ -43,7 +43,7 @@
     },
     {
       "name": "stops.txt",
-      "size": 1092
+      "size": 1153
     },
     {
       "name": "translations.txt",
@@ -58,8 +58,8 @@
     "publisherName": "多摩都市モノレール",
     "publisherUrl": "https://www.tama-monorail.co.jp/",
     "lang": "ja",
-    "startDate": "20250315",
-    "endDate": "20261231",
-    "version": "20260223"
+    "startDate": "20260314",
+    "endDate": "20270312",
+    "version": "20260921"
   }
 }

@@ -2,12 +2,12 @@
   "sourceName": "twr-rinkai",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-20T03:49:48.079Z",
+  "downloadedAt": "2026-09-28T04:08:02.092Z",
   "url": "https://api.odpt.org/api/v4/files/TWR/data/TWR-Train-GTFS.zip",
-  "size": 33113,
+  "size": 33154,
   "contentType": "application/octet-stream",
-  "durationMs": 1713,
-  "archivePath": "workspace/_archives/gtfs/twr-rinkai/TWR-Train-GTFS_20260920-034949.zip",
+  "durationMs": 1247,
+  "archivePath": "workspace/_archives/gtfs/twr-rinkai/TWR-Train-GTFS_20260928-040803.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 369
+      "size": 473
     },
     {
       "name": "fare_attributes.txt",
@@ -43,7 +43,7 @@
     },
     {
       "name": "stops.txt",
-      "size": 545
+      "size": 584
     },
     {
       "name": "translations.txt",
@@ -59,7 +59,7 @@
     "publisherUrl": "https://www.twr.co.jp/",
     "lang": "ja",
     "startDate": "20260314",
-    "endDate": "20261231",
-    "version": "20260314"
+    "endDate": "20270312",
+    "version": "20260921"
   }
 }
