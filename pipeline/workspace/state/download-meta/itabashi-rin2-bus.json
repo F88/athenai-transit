@@ -2,8 +2,8 @@
   "sourceName": "itabashi-rin2-bus",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-09-28T04:08:14.765Z",
+  "downloadedAt": "2026-09-29T00:38:43.841Z",
   "url": "https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip",
-  "durationMs": 4784,
+  "durationMs": 5118,
   "error": "Failed after 3 attempts (https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip): Error: HTTP 404 Not Found"
 }
