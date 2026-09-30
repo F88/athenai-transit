@@ -2,8 +2,8 @@
   "sourceName": "keio-bus",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-09-29T00:38:45.298Z",
+  "downloadedAt": "2026-09-30T00:40:08.812Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260914",
-  "durationMs": 4270,
+  "durationMs": 4058,
   "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260914&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
