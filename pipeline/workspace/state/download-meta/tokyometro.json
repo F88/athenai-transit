@@ -2,12 +2,12 @@
   "sourceName": "tokyometro",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-09-30T00:39:53.120Z",
+  "downloadedAt": "2026-10-01T00:45:03.049Z",
   "url": "https://api.odpt.org/api/v4/files/TokyoMetro/data/TokyoMetro-Train-GTFS.zip",
   "size": 1135582,
   "contentType": "application/octet-stream",
-  "durationMs": 2912,
-  "archivePath": "workspace/_archives/gtfs/tokyometro/TokyoMetro-Train-GTFS_20260930-003955.zip",
+  "durationMs": 2785,
+  "archivePath": "workspace/_archives/gtfs/tokyometro/TokyoMetro-Train-GTFS_20261001-004505.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
