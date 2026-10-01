@@ -1,7 +1,9 @@
 {
   "sourceName": "iyotetsu-bus",
-  "checkedAt": "2026-09-30T10:10:10.958Z",
-  "resourceUrls": [],
+  "checkedAt": "2026-10-01T10:10:06.312Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20261001"
+  ],
   "result": "attention",
   "warnings": [
     "LOCAL_NO_DOWNLOAD_REPORT"

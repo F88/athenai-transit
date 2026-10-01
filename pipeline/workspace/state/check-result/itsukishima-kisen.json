@@ -1,12 +1,15 @@
 {
   "sourceName": "itsukishima-kisen",
-  "checkedAt": "2026-09-30T10:10:10.944Z",
+  "checkedAt": "2026-10-01T10:10:06.304Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20251001"
+    "https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20251001",
+    "https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20261001"
   ],
-  "result": "attention",
+  "result": "critical",
   "warnings": [
-    "ADOPTED_EXPIRING_SOON"
+    "REMOTE_NEW_IN_PERIOD"
   ],
-  "errors": []
+  "errors": [
+    "ADOPTED_EXPIRED"
+  ]
 }

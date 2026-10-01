@@ -1,14 +1,15 @@
 {
   "sourceName": "uwajima-unyu",
-  "checkedAt": "2026-09-30T10:10:10.949Z",
+  "checkedAt": "2026-10-01T10:10:06.307Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260701",
     "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20261001"
   ],
-  "result": "attention",
+  "result": "critical",
   "warnings": [
-    "ADOPTED_EXPIRING_SOON",
-    "REMOTE_NEW_IN_PERIOD"
+    "REMOTE_KNOWN_IN_PERIOD"
   ],
-  "errors": []
+  "errors": [
+    "ADOPTED_EXPIRED",
+    "ADOPTED_MISSING"
+  ]
 }
