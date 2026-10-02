@@ -17,8 +17,8 @@ const shinagawaCBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyu_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_shinagawa_city',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_shinagawa_city/resource/ccbb1165-224e-4fbc-93e8-a3aa7ce1defa',
-      resourceId: 'ccbb1165-224e-4fbc-93e8-a3aa7ce1defa',
+        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_shinagawa_city/resource/efe4eb1d-4a36-4188-8cfa-41f0654264d4',
+      resourceId: 'efe4eb1d-4a36-4188-8cfa-41f0654264d4',
     },
     provider: {
       name: {
@@ -45,7 +45,7 @@ const shinagawaCBus: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20260601',
+      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20261001',
   },
   pipeline: {
     outDir: 'shinagawa-c-bus',

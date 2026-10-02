@@ -17,8 +17,8 @@ const itsukishimaKisen: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/itsukishima_kisen',
       datasetUrl: 'https://ckan.odpt.org/dataset/itsukishima_kisen_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/itsukishima_kisen_all_lines/resource/4c61a823-c0b9-4262-8226-9ddf6b77d886',
-      resourceId: '4c61a823-c0b9-4262-8226-9ddf6b77d886',
+        'https://ckan.odpt.org/dataset/itsukishima_kisen_all_lines/resource/b555fd9e-9e21-4058-b315-a025cba07010',
+      resourceId: 'b555fd9e-9e21-4058-b315-a025cba07010',
     },
     provider: {
       name: {
@@ -39,7 +39,7 @@ const itsukishimaKisen: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20251001',
+      'https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20261001',
   },
   pipeline: {
     outDir: 'itsukishima-kisen',

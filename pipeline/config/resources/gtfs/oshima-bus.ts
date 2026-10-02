@@ -16,8 +16,8 @@ const oshimaBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/oshima_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/oshima_bus_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/oshima_bus_all_lines/resource/6794ea21-b93d-4625-9246-d72b067a694c',
-      resourceId: '6794ea21-b93d-4625-9246-d72b067a694c',
+        'https://ckan.odpt.org/dataset/oshima_bus_all_lines/resource/289f8580-54c2-41d7-bb70-3093cefdd7a5',
+      resourceId: '289f8580-54c2-41d7-bb70-3093cefdd7a5',
     },
     provider: {
       name: {
@@ -35,7 +35,7 @@ const oshimaBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260701',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20261001',
   },
   pipeline: {
     outDir: 'oshima-bus',

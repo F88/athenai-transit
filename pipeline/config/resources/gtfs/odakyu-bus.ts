@@ -17,8 +17,8 @@ const odakyuBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/odakyu_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/odakyu_bus_aii_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/odakyu_bus_aii_lines/resource/04ab391e-e650-4077-8b14-e5cb5c0ad585',
-      resourceId: '04ab391e-e650-4077-8b14-e5cb5c0ad585',
+        'https://ckan.odpt.org/dataset/odakyu_bus_aii_lines/resource/3ecd38b4-f366-4ac0-aee7-80723c40ee4a',
+      resourceId: '3ecd38b4-f366-4ac0-aee7-80723c40ee4a',
     },
     provider: {
       name: {
@@ -44,7 +44,7 @@ const odakyuBus: GtfsSourceDefinition = {
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260716',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260924',
   },
   pipeline: {
     outDir: 'odakyu-bus',

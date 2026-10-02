@@ -20,6 +20,23 @@ and this project adheres to [CalVer](https://calver.org/).
 - Data: nagoya-srt の GTFS resource を 20260911 版へ更新。
 - Data: nishi-tokyo-bus の GTFS resource を 20260912 版へ更新。
 - Data: kyoto-bus の GTFS resource を 20260911 版へ更新。
+- Data: iyotetsu-bus の GTFS resource を 20261001 版へ更新。
+- Data: oshima-bus の GTFS resource を 20261001 版へ更新。
+- Data: itsukishima-kisen の GTFS resource を 20261001 版へ更新。
+- Data: hankyu-ferry の GTFS resource を 20260929 版へ更新。
+- Data: uwajima-unyu の GTFS resource を 20261001 版へ更新。
+- Data: tokai-kisen の GTFS resource を 20261001 版へ更新。
+- Data: meimon-taiyo-ferry の GTFS resource を 20261001 版へ更新。
+- Data: shinagawa-c-bus の GTFS resource を 20261001 版へ更新。
+- Data: ota-c-bus の GTFS resource を 20261001 版へ更新。
+- Data: meguro-c-bus の GTFS resource を 20261001 版へ更新。
+- Data: nishi-tokyo-bus の GTFS resource を 20261001 版へ更新。
+- Data: keio-bus の GTFS resource を 20261001 版へ更新。
+- Data: suginami-gsm の GTFS resource を 20261001 版へ更新。
+- Data: kawasaki-city-bus の GTFS resource を 20260928 版へ更新。
+- Data: odakyu-bus の GTFS resource を 20260924 版へ更新。
+- Data: kyoto-bus の GTFS resource を 20260928 版へ更新。
+- Data: itabashi-rin2-bus の GTFS resource を 20260803 版へ更新。
 
 ## [2026.09.01]
 

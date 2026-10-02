@@ -17,8 +17,8 @@ const uwajimaUnyu: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/uwajima_unyu',
       datasetUrl: 'https://ckan.odpt.org/dataset/uwajima_unyu_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/uwajima_unyu_all_lines/resource/d2ada078-e357-40f5-8c0c-eae269c3d59b',
-      resourceId: 'd2ada078-e357-40f5-8c0c-eae269c3d59b',
+        'https://ckan.odpt.org/dataset/uwajima_unyu_all_lines/resource/12f67dee-624b-49f3-b185-09b4c99ec6a4',
+      resourceId: '12f67dee-624b-49f3-b185-09b4c99ec6a4',
     },
     provider: {
       name: {
@@ -39,7 +39,7 @@ const uwajimaUnyu: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published — feeds are rotated
     // every 3 months.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260701',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20261001',
   },
   pipeline: {
     outDir: 'uwajima-unyu',
