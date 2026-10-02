@@ -2,12 +2,12 @@
   "sourceName": "uwajima-unyu",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:37.772Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260701",
-  "size": 6633,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1062,
-  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20261002-003838.zip",
+  "downloadedAt": "2026-10-02T01:14:16.003Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20261001",
+  "size": 7072,
+  "contentType": "application/octet-stream",
+  "durationMs": 993,
+  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20261002-011416.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 5383
+      "size": 5679
     },
     {
       "name": "fare_attributes.txt",
@@ -59,7 +59,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 18761
+      "size": 23082
     },
     {
       "name": "translations.txt",
@@ -67,7 +67,7 @@
     },
     {
       "name": "trips.txt",
-      "size": 15584
+      "size": 19198
     }
   ],
   "feedInfo": {
@@ -75,7 +75,7 @@
     "publisherUrl": "https://www.uwajimaunyu.co.jp/",
     "lang": "ja",
     "startDate": "20260701",
-    "endDate": "20260930",
+    "endDate": "20261231",
     "version": "2.0"
   }
 }

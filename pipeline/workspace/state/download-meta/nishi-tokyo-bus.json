@@ -2,12 +2,12 @@
   "sourceName": "nishi-tokyo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:49.637Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260912",
-  "size": 1791243,
+  "downloadedAt": "2026-10-02T01:14:26.198Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20261001",
+  "size": 2634754,
   "contentType": "application/octet-stream",
-  "durationMs": 2306,
-  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20261002-003851.zip",
+  "durationMs": 2478,
+  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20261002-011428.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,39 +15,39 @@
     },
     {
       "name": "stops.txt",
-      "size": 176601
+      "size": 171528
     },
     {
       "name": "routes.txt",
-      "size": 23051
+      "size": 22232
     },
     {
       "name": "trips.txt",
-      "size": 803943
+      "size": 1092610
     },
     {
       "name": "pattern_jp.txt",
-      "size": 23944
+      "size": 23371
     },
     {
       "name": "stop_times.txt",
-      "size": 15017007
+      "size": 20468318
     },
     {
       "name": "fare_attributes.txt",
-      "size": 4464
+      "size": 4372
     },
     {
       "name": "fare_rules.txt",
-      "size": 3203924
+      "size": 3070533
     },
     {
       "name": "calendar.txt",
-      "size": 719
+      "size": 929
     },
     {
       "name": "calendar_dates.txt",
-      "size": 662
+      "size": 2258
     },
     {
       "name": "feed_info.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 315471
+      "size": 317611
     },
     {
       "name": "office_jp.txt",
@@ -70,8 +70,8 @@
     "publisherName": "西東京バス株式会社",
     "publisherUrl": "http://www.nisitokyobus.co.jp",
     "lang": "ja",
-    "startDate": "20260912",
-    "endDate": "20260926",
-    "version": "20260912_20260925"
+    "startDate": "20261001",
+    "endDate": "20261231",
+    "version": "20261001_20261231"
   }
 }

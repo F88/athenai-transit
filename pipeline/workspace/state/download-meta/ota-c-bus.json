@@ -2,12 +2,12 @@
   "sourceName": "ota-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:51.150Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260601",
-  "size": 9754,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1019,
-  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20261002-003852.zip",
+  "downloadedAt": "2026-10-02T01:14:27.840Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20261001",
+  "size": 10206,
+  "contentType": "application/octet-stream",
+  "durationMs": 927,
+  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20261002-011428.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 362
+      "size": 230
     },
     {
       "name": "fare_attributes.txt",
@@ -62,8 +62,8 @@
     "publisherName": "東急バス株式会社",
     "publisherUrl": "https://www.tokyubus.co.jp/",
     "lang": "ja",
-    "startDate": "20260601",
-    "endDate": "20260930",
-    "version": "260601"
+    "startDate": "20261001",
+    "endDate": "20270131",
+    "version": "261001"
   }
 }

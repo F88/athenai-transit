@@ -2,12 +2,12 @@
   "sourceName": "shinagawa-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:53.430Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20260601",
-  "size": 15903,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1073,
-  "archivePath": "workspace/_archives/gtfs/shinagawa-c-bus/tokyubus_community_ShinagawaCity_20261002-003854.zip",
+  "downloadedAt": "2026-10-02T01:14:30.047Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20261001",
+  "size": 15522,
+  "contentType": "application/octet-stream",
+  "durationMs": 984,
+  "archivePath": "workspace/_archives/gtfs/shinagawa-c-bus/tokyubus_community_ShinagawaCity_20261002-011431.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 362
+      "size": 230
     },
     {
       "name": "fare_attributes.txt",
@@ -39,15 +39,15 @@
     },
     {
       "name": "routes.txt",
-      "size": 228
+      "size": 231
     },
     {
       "name": "stops.txt",
-      "size": 2749
+      "size": 2695
     },
     {
       "name": "stop_times.txt",
-      "size": 260604
+      "size": 175964
     },
     {
       "name": "translations.txt",
@@ -55,15 +55,15 @@
     },
     {
       "name": "trips.txt",
-      "size": 6267
+      "size": 12362
     }
   ],
   "feedInfo": {
     "publisherName": "東急バス株式会社",
     "publisherUrl": "https://www.tokyubus.co.jp/",
     "lang": "ja",
-    "startDate": "20260601",
-    "endDate": "20260930",
-    "version": "260601"
+    "startDate": "20261001",
+    "endDate": "20270131",
+    "version": "261001"
   }
 }

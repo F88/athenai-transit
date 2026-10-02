@@ -2,12 +2,12 @@
   "sourceName": "tokai-kisen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:36.141Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260701",
-  "size": 15727,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1069,
-  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20261002-003837.zip",
+  "downloadedAt": "2026-10-02T01:14:14.897Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20261001",
+  "size": 15401,
+  "contentType": "application/octet-stream",
+  "durationMs": 1014,
+  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20261002-011415.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,11 +15,11 @@
     },
     {
       "name": "calendar.txt",
-      "size": 2497
+      "size": 2300
     },
     {
       "name": "calendar_dates.txt",
-      "size": 26353
+      "size": 23659
     },
     {
       "name": "fare_attributes.txt",
@@ -59,23 +59,23 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 39743
+      "size": 39600
     },
     {
       "name": "translations.txt",
-      "size": 6796
+      "size": 6860
     },
     {
       "name": "trips.txt",
-      "size": 31424
+      "size": 31678
     }
   ],
   "feedInfo": {
     "publisherName": "東海汽船",
     "publisherUrl": "https://www.tokaikisen.co.jp/",
     "lang": "ja",
-    "startDate": "20260701",
-    "endDate": "20260930",
+    "startDate": "20261001",
+    "endDate": "20261231",
     "version": "2.0"
   }
 }

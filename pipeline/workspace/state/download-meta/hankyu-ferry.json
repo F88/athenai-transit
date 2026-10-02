@@ -2,12 +2,12 @@
   "sourceName": "hankyu-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:32.315Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260610",
-  "size": 10574,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1067,
-  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20261002-003833.zip",
+  "downloadedAt": "2026-10-02T01:14:10.811Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260929",
+  "size": 10636,
+  "contentType": "application/octet-stream",
+  "durationMs": 963,
+  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20261002-011411.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 391
+      "size": 751
     },
     {
       "name": "fare_attributes.txt",
@@ -78,8 +78,8 @@
     "publisherName": "阪九フェリー株式会社",
     "publisherUrl": "https://www.han9f.co.jp/",
     "lang": "ja",
-    "startDate": "20260610",
-    "endDate": "20260930",
+    "startDate": "20261001",
+    "endDate": "20270131",
     "version": "2.0"
   }
 }

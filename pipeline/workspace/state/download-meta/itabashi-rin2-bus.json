@@ -1,9 +1,81 @@
 {
   "sourceName": "itabashi-rin2-bus",
   "type": "gtfs",
-  "status": "error",
-  "downloadedAt": "2026-10-02T00:38:40.844Z",
-  "url": "https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip",
-  "durationMs": 4677,
-  "error": "Failed after 3 attempts (https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip): Error: HTTP 404 Not Found"
+  "status": "ok",
+  "downloadedAt": "2026-10-02T01:14:18.676Z",
+  "url": "https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260803.zip",
+  "size": 13933,
+  "contentType": "application/zip",
+  "durationMs": 573,
+  "archivePath": "workspace/_archives/gtfs/itabashi-rin2-bus/rinringo_gtfs_20260803_20261002-011419.zip",
+  "extractedFiles": [
+    {
+      "name": "trips.txt",
+      "size": 783
+    },
+    {
+      "name": "agency.txt",
+      "size": 225
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 184
+    },
+    {
+      "name": "calendar.txt",
+      "size": 129
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 564
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 123
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 58
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 246
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 73
+    },
+    {
+      "name": "routes.txt",
+      "size": 204
+    },
+    {
+      "name": "shapes.txt",
+      "size": 25757
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 20084
+    },
+    {
+      "name": "stops.txt",
+      "size": 2038
+    },
+    {
+      "name": "transfers.txt",
+      "size": 57
+    },
+    {
+      "name": "translations.txt",
+      "size": 2501
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "東京都板橋区",
+    "publisherUrl": "https://www.city.itabashi.tokyo.jp/bousai/toshikeiakku/kotsu/1016224.html",
+    "lang": "ja",
+    "startDate": "20260803",
+    "endDate": "20270331",
+    "version": ""
+  }
 }

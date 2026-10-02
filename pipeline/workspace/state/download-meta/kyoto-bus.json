@@ -2,12 +2,12 @@
   "sourceName": "kyoto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-02T00:38:46.802Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260911",
-  "size": 1437497,
+  "downloadedAt": "2026-10-02T01:14:23.177Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260928",
+  "size": 1009924,
   "contentType": "application/octet-stream",
-  "durationMs": 2461,
-  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20261002-003849.zip",
+  "durationMs": 2056,
+  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20261002-011425.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,19 +19,19 @@
     },
     {
       "name": "routes.txt",
-      "size": 9517
+      "size": 9334
     },
     {
       "name": "trips.txt",
-      "size": 883321
+      "size": 555838
     },
     {
       "name": "pattern_jp.txt",
-      "size": 17516
+      "size": 17105
     },
     {
       "name": "stop_times.txt",
-      "size": 16184090
+      "size": 10280310
     },
     {
       "name": "fare_attributes.txt",
@@ -39,15 +39,15 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 808604
+      "size": 808581
     },
     {
       "name": "calendar.txt",
-      "size": 761
+      "size": 509
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1628
+      "size": 5576
     },
     {
       "name": "feed_info.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 493511
+      "size": 482663
     },
     {
       "name": "office_jp.txt",
@@ -70,8 +70,8 @@
     "publisherName": "京都バス",
     "publisherUrl": "https://www.kyotobus.jp/",
     "lang": "ja",
-    "startDate": "20260911",
-    "endDate": "20261130",
-    "version": "20260911_20261130"
+    "startDate": "20260928",
+    "endDate": "20270331",
+    "version": "20260928_20270331"
   }
 }
