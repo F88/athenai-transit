@@ -2,12 +2,12 @@
   "sourceName": "okushiri-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-01T00:45:08.715Z",
+  "downloadedAt": "2026-10-02T00:38:35.280Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/OkushiriIslandFerry/Okushiri_Esashi_Ferry_Route.zip?date=20260101",
   "size": 8726,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1229,
-  "archivePath": "workspace/_archives/gtfs/okushiri-ferry/Okushiri_Esashi_Ferry_Route_20261001-004509.zip",
+  "durationMs": 1046,
+  "archivePath": "workspace/_archives/gtfs/okushiri-ferry/Okushiri_Esashi_Ferry_Route_20261002-003836.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

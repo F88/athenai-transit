@@ -2,12 +2,12 @@
   "sourceName": "yokohama-municipal-subway",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-01T00:45:05.849Z",
+  "downloadedAt": "2026-10-02T00:38:31.872Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20251226",
   "size": 263477,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1812,
-  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-subway/Train_20261001-004507.zip",
+  "durationMs": 1711,
+  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-subway/Train_20261002-003833.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
