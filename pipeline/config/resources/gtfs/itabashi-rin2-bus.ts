@@ -36,7 +36,7 @@ const itabashiRin2Bus: GtfsSourceDefinition = {
       '*': 'FFFFFF',
     },
     downloadUrl:
-      'https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip',
+      'https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260803.zip',
   },
   pipeline: {
     outDir: 'itabashi-rin2-bus',

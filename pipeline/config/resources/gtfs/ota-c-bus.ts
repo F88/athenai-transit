@@ -17,8 +17,8 @@ const otaCBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyu_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_ota_city',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_ota_city/resource/bb03dd66-578d-47d3-918c-e28866fd8851',
-      resourceId: 'bb03dd66-578d-47d3-918c-e28866fd8851',
+        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_ota_city/resource/4a4d90c7-dd8c-4d5c-8876-90af85a296c1',
+      resourceId: '4a4d90c7-dd8c-4d5c-8876-90af85a296c1',
     },
     provider: {
       name: {
@@ -46,7 +46,7 @@ const otaCBus: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260601',
+      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20261001',
   },
   pipeline: {
     outDir: 'ota-c-bus',
