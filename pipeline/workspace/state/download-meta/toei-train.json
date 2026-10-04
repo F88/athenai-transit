@@ -2,12 +2,12 @@
   "sourceName": "toei-train",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-03T00:35:52.531Z",
+  "downloadedAt": "2026-10-04T01:14:32.350Z",
   "url": "https://api-public.odpt.org/api/v4/files/Toei/data/Toei-Train-GTFS.zip",
   "size": 779699,
   "contentType": "application/octet-stream",
-  "durationMs": 2760,
-  "archivePath": "workspace/_archives/gtfs/toei-train/Toei-Train-GTFS_20261003-003555.zip",
+  "durationMs": 2558,
+  "archivePath": "workspace/_archives/gtfs/toei-train/Toei-Train-GTFS_20261004-011434.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

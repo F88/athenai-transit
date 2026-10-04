@@ -2,12 +2,12 @@
   "sourceName": "meguro-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-03T00:36:13.417Z",
+  "downloadedAt": "2026-10-04T01:14:52.233Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_MeguroCity.zip?date=20261001",
   "size": 11725,
   "contentType": "application/octet-stream",
-  "durationMs": 1456,
-  "archivePath": "workspace/_archives/gtfs/meguro-c-bus/tokyubus_community_MeguroCity_20261003-003614.zip",
+  "durationMs": 1413,
+  "archivePath": "workspace/_archives/gtfs/meguro-c-bus/tokyubus_community_MeguroCity_20261004-011453.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
