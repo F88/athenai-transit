@@ -2,12 +2,12 @@
   "sourceName": "nishi-tokyo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-04T01:14:54.098Z",
+  "downloadedAt": "2026-10-05T00:42:26.496Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20261001",
   "size": 2634754,
   "contentType": "application/octet-stream",
-  "durationMs": 3699,
-  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20261004-011457.zip",
+  "durationMs": 2872,
+  "archivePath": "workspace/_archives/gtfs/nishi-tokyo-bus/NTBus_20261005-004229.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
