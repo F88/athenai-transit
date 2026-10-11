@@ -2,12 +2,12 @@
   "sourceName": "yokohama-municipal-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-10T00:40:28.873Z",
+  "downloadedAt": "2026-10-11T00:43:45.522Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260727",
   "size": 5854016,
   "contentType": "application/octet-stream",
-  "durationMs": 3853,
-  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-bus/Bus_20261010-004032.zip",
+  "durationMs": 3156,
+  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-bus/Bus_20261011-004348.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
