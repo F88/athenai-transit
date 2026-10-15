@@ -1,11 +1,13 @@
 {
   "sourceName": "kanto-bus",
-  "checkedAt": "2026-10-14T10:09:25.575Z",
+  "checkedAt": "2026-10-15T10:09:05.384Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260701",
-    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260824"
+    "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20261014"
   ],
-  "result": "ok",
+  "result": "critical",
   "warnings": [],
-  "errors": []
+  "errors": [
+    "ADOPTED_MISSING",
+    "REMOTE_NO_VALID_DATA"
+  ]
 }
