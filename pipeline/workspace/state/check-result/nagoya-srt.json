@@ -1,10 +1,13 @@
 {
   "sourceName": "nagoya-srt",
-  "checkedAt": "2026-10-19T10:08:59.429Z",
+  "checkedAt": "2026-10-20T10:08:14.640Z",
   "resourceUrls": [
-    "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260911"
+    "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260911",
+    "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20261020"
   ],
-  "result": "ok",
-  "warnings": [],
+  "result": "attention",
+  "warnings": [
+    "REMOTE_NEW_IN_PERIOD"
+  ],
   "errors": []
 }
