@@ -2,12 +2,12 @@
   "sourceName": "oshima-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-19T00:37:00.377Z",
+  "downloadedAt": "2026-10-20T00:34:58.257Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20261001",
   "size": 164934,
   "contentType": "application/octet-stream",
-  "durationMs": 1902,
-  "archivePath": "workspace/_archives/gtfs/oshima-bus/AllLines_20261019-003702.zip",
+  "durationMs": 1608,
+  "archivePath": "workspace/_archives/gtfs/oshima-bus/AllLines_20261020-003459.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

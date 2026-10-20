@@ -2,12 +2,12 @@
   "sourceName": "kita-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-19T00:36:54.230Z",
+  "downloadedAt": "2026-10-20T00:34:53.424Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/KitaAllLines.zip?date=20251220",
   "size": 33202,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1601,
-  "archivePath": "workspace/_archives/gtfs/kita-bus/KitaAllLines_20261019-003655.zip",
+  "durationMs": 1359,
+  "archivePath": "workspace/_archives/gtfs/kita-bus/KitaAllLines_20261020-003454.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",
