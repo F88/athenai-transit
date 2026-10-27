@@ -2,12 +2,12 @@
   "sourceName": "orange-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-10-26T00:35:50.996Z",
+  "downloadedAt": "2026-10-27T00:34:34.263Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20250517",
   "size": 5719,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1384,
-  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261026-003552.zip",
+  "durationMs": 1094,
+  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261027-003435.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
