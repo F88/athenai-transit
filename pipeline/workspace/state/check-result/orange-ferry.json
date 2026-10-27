@@ -1,12 +1,12 @@
 {
   "sourceName": "orange-ferry",
-  "checkedAt": "2026-10-26T10:11:40.747Z",
+  "checkedAt": "2026-10-27T10:09:37.496Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20261101"
   ],
   "result": "critical",
   "warnings": [
-    "REMOTE_NEW_BEFORE_PERIOD"
+    "REMOTE_KNOWN_BEFORE_PERIOD"
   ],
   "errors": [
     "ADOPTED_MISSING",
