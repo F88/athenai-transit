@@ -2,8 +2,8 @@
   "sourceName": "kanto-bus",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-10-30T00:27:21.980Z",
+  "downloadedAt": "2026-10-31T00:22:08.866Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260824",
-  "durationMs": 3844,
+  "durationMs": 3996,
   "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260824&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
