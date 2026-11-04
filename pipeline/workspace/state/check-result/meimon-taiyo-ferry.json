@@ -1,14 +1,16 @@
 {
   "sourceName": "meimon-taiyo-ferry",
-  "checkedAt": "2026-11-03T10:06:36.384Z",
+  "checkedAt": "2026-11-04T10:07:26.508Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20261101",
-    "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20261201"
+    "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20261201",
+    "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20270101"
   ],
   "result": "critical",
   "warnings": [
     "REMOTE_KNOWN_BEFORE_PERIOD",
-    "REMOTE_KNOWN_IN_PERIOD"
+    "REMOTE_KNOWN_IN_PERIOD",
+    "REMOTE_NEW_BEFORE_PERIOD"
   ],
   "errors": [
     "ADOPTED_EXPIRED",
