@@ -17,8 +17,8 @@ const taitoCBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyo_taito_city',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyo_taito_city_megurin_ccby40',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyo_taito_city_megurin_ccby40/resource/6e882760-6ee0-4cb3-b3de-88c0c1819367',
-      resourceId: '6e882760-6ee0-4cb3-b3de-88c0c1819367',
+        'https://ckan.odpt.org/dataset/tokyo_taito_city_megurin_ccby40/resource/8fff61b3-e035-4340-81b9-18b08f5cbeb8',
+      resourceId: '8fff61b3-e035-4340-81b9-18b08f5cbeb8',
     },
     provider: {
       name: {
@@ -35,7 +35,7 @@ const taitoCBus: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     downloadUrl:
-      'https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20251028',
+      'https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20261102',
   },
   pipeline: {
     outDir: 'taito-c-bus',
