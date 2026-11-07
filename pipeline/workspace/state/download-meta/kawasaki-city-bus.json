@@ -2,12 +2,12 @@
   "sourceName": "kawasaki-city-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-07T00:21:48.088Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20260928",
-  "size": 7423250,
+  "downloadedAt": "2026-11-07T12:41:24.152Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TransportationBureau_CityOfKawasaki/AllLines.zip?date=20261101",
+  "size": 7469495,
   "contentType": "application/octet-stream",
-  "durationMs": 3887,
-  "archivePath": "workspace/_archives/gtfs/kawasaki-city-bus/AllLines_20261107-002151.zip",
+  "durationMs": 4214,
+  "archivePath": "workspace/_archives/gtfs/kawasaki-city-bus/AllLines_20261107-124127.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -23,15 +23,15 @@
     },
     {
       "name": "trips.txt",
-      "size": 2738021
+      "size": 2748623
     },
     {
       "name": "pattern_jp.txt",
-      "size": 16261
+      "size": 16288
     },
     {
       "name": "stop_times.txt",
-      "size": 71447299
+      "size": 71804423
     },
     {
       "name": "fare_attributes.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 76
+      "size": 692
     },
     {
       "name": "feed_info.txt",
@@ -66,8 +66,8 @@
     "publisherName": "川崎市交通局",
     "publisherUrl": "https://www.city.kawasaki.jp/820/",
     "lang": "ja",
-    "startDate": "20260701",
-    "endDate": "20270701",
-    "version": "20260701_20260928"
+    "startDate": "20261101",
+    "endDate": "20271101",
+    "version": "20261101_00000000"
   }
 }

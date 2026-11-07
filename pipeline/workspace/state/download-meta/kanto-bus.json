@@ -1,9 +1,73 @@
 {
   "sourceName": "kanto-bus",
   "type": "gtfs",
-  "status": "error",
-  "downloadedAt": "2026-11-07T00:21:47.757Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260824",
-  "durationMs": 4062,
-  "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260824&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
+  "status": "ok",
+  "downloadedAt": "2026-11-07T12:41:22.940Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20261014",
+  "size": 2484580,
+  "contentType": "application/octet-stream",
+  "durationMs": 2815,
+  "archivePath": "workspace/_archives/gtfs/kanto-bus/AllLines_20261107-124125.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 190
+    },
+    {
+      "name": "stops.txt",
+      "size": 122311
+    },
+    {
+      "name": "routes.txt",
+      "size": 28127
+    },
+    {
+      "name": "trips.txt",
+      "size": 1665809
+    },
+    {
+      "name": "pattern_jp.txt",
+      "size": 26357
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 22589780
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 284
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 884965
+    },
+    {
+      "name": "calendar.txt",
+      "size": 845
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 32
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 207
+    },
+    {
+      "name": "translations.txt",
+      "size": 264917
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 209
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "NECネクサソリューションズ株式会社",
+    "publisherUrl": "https://www.nec-nexs.com",
+    "lang": "ja",
+    "startDate": "20261001",
+    "endDate": "20261014",
+    "version": "20261001_20261014"
+  }
 }

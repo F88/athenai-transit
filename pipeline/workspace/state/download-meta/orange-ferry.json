@@ -2,24 +2,24 @@
   "sourceName": "orange-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-07T00:21:41.663Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20250517",
-  "size": 5719,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1385,
-  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261107-002143.zip",
+  "downloadedAt": "2026-11-07T12:41:15.964Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20261101",
+  "size": 6444,
+  "contentType": "application/octet-stream",
+  "durationMs": 1394,
+  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261107-124117.zip",
   "extractedFiles": [
     {
+      "name": "translations.txt",
+      "size": 4285
+    },
+    {
       "name": "agency.txt",
-      "size": 255
+      "size": 191
     },
     {
       "name": "stops.txt",
       "size": 664
-    },
-    {
-      "name": "translations.txt",
-      "size": 948
     },
     {
       "name": "routes.txt",
@@ -31,7 +31,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 3165
+      "size": 491
     },
     {
       "name": "payload.txt",
@@ -39,11 +39,11 @@
     },
     {
       "name": "trips.txt",
-      "size": 5300
+      "size": 4394
     },
     {
       "name": "stop_times.txt",
-      "size": 4875
+      "size": 4857
     },
     {
       "name": "ships.txt",
@@ -51,11 +51,11 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 54
+      "size": 870
     },
     {
       "name": "fare_attributes.txt",
-      "size": 92
+      "size": 479
     },
     {
       "name": "feed_info.txt",
@@ -74,7 +74,7 @@
     "publisherName": "オレンジフェリー",
     "publisherUrl": "https://www.orange-ferry.co.jp/",
     "lang": "ja",
-    "startDate": "20220401",
+    "startDate": "20261101",
     "endDate": "20280331",
     "version": "2.0"
   }

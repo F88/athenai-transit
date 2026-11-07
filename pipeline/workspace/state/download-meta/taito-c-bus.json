@@ -2,28 +2,40 @@
   "sourceName": "taito-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-07T00:21:59.777Z",
-  "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20251028",
-  "size": 78030,
-  "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1680,
-  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20261107-002201.zip",
+  "downloadedAt": "2026-11-07T12:41:37.272Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20261102",
+  "size": 79171,
+  "contentType": "application/octet-stream",
+  "durationMs": 1985,
+  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20261107-124139.zip",
   "extractedFiles": [
+    {
+      "name": "trips.txt",
+      "size": 21482
+    },
+    {
+      "name": "agency.txt",
+      "size": 211
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 147
+    },
     {
       "name": "calendar.txt",
       "size": 212
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1139
+      "size": 1221
     },
     {
       "name": "fare_attributes.txt",
-      "size": 73
+      "size": 99
     },
     {
       "name": "feed_info.txt",
-      "size": 257
+      "size": 259
     },
     {
       "name": "office_jp.txt",
@@ -39,35 +51,23 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 486790
+      "size": 519860
     },
     {
       "name": "stops.txt",
-      "size": 10111
+      "size": 10073
     },
     {
       "name": "transfers.txt",
       "size": 831
-    },
-    {
-      "name": "trips.txt",
-      "size": 21677
-    },
-    {
-      "name": "agency.txt",
-      "size": 211
-    },
-    {
-      "name": "agency_jp.txt",
-      "size": 147
     }
   ],
   "feedInfo": {
     "publisherName": "株式会社 アチピレーションテクノロジー",
     "publisherUrl": "https://acp-tech.jp/",
     "lang": "ja",
-    "startDate": "20250810",
-    "endDate": "20261231",
-    "version": "20250801_MEG001"
+    "startDate": "20260301",
+    "endDate": "20271231",
+    "version": "megu_20260301_003"
   }
 }
