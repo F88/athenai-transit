@@ -17,8 +17,8 @@ const rinkoBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/kawasaki_tsurumi_rinko_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/kawasaki_tsurumi_rinko_bus_allrinko',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/kawasaki_tsurumi_rinko_bus_allrinko/resource/ffc40d96-ee01-4b67-a76d-885793ad5822',
-      resourceId: 'ffc40d96-ee01-4b67-a76d-885793ad5822',
+        'https://ckan.odpt.org/dataset/kawasaki_tsurumi_rinko_bus_allrinko/resource/7265c43e-acb7-4bce-8aa6-061f24cc9c7c',
+      resourceId: '7265c43e-acb7-4bce-8aa6-061f24cc9c7c',
     },
     provider: {
       name: {
@@ -42,7 +42,7 @@ const rinkoBus: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20260716',
+      'https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20261101',
   },
   pipeline: {
     outDir: 'rinko-bus',

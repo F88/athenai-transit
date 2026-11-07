@@ -17,8 +17,8 @@ const orangeFerry: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/orange_ferry',
       datasetUrl: 'https://ckan.odpt.org/dataset/orange_ferry_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/orange_ferry_all_lines/resource/2115e2d4-dc0e-4dbf-b825-14f1da5bd841',
-      resourceId: '2115e2d4-dc0e-4dbf-b825-14f1da5bd841',
+        'https://ckan.odpt.org/dataset/orange_ferry_all_lines/resource/a0d98c84-a739-4056-a2ea-f1330a29a52c',
+      resourceId: 'a0d98c84-a739-4056-a2ea-f1330a29a52c',
     },
     provider: {
       name: {
@@ -38,7 +38,7 @@ const orangeFerry: GtfsSourceDefinition = {
     routeTypes: ['ferry'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20250517',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20261101',
   },
   pipeline: {
     outDir: 'orange-ferry',

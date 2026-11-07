@@ -17,8 +17,8 @@ const meimonTaiyoFerry: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/meimon_taiyo_ferry',
       datasetUrl: 'https://ckan.odpt.org/dataset/meimon_taiyo_ferry_all_lines',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/meimon_taiyo_ferry_all_lines/resource/8af45a4c-01c9-4570-8b08-997c8a86337a',
-      resourceId: '8af45a4c-01c9-4570-8b08-997c8a86337a',
+        'https://ckan.odpt.org/dataset/meimon_taiyo_ferry_all_lines/resource/58aaf293-42cd-4605-b885-1d02d62ab100',
+      resourceId: '58aaf293-42cd-4605-b885-1d02d62ab100',
     },
     provider: {
       name: {
@@ -40,7 +40,7 @@ const meimonTaiyoFerry: GtfsSourceDefinition = {
     // Update this value when a new version is published — feeds are rotated
     // every 3 months.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20261001',
+      'https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20261101',
   },
   pipeline: {
     outDir: 'meimon-taiyo-ferry',
