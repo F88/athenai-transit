@@ -1,6 +1,6 @@
 {
   "sourceName": "rinko-bus",
-  "checkedAt": "2026-11-07T10:06:06.901Z",
+  "checkedAt": "2026-11-07T12:48:29.411Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20230801",
     "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20231101",
@@ -16,11 +16,7 @@
     "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20251016",
     "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20261101"
   ],
-  "result": "critical",
-  "warnings": [
-    "REMOTE_KNOWN_IN_PERIOD"
-  ],
-  "errors": [
-    "ADOPTED_MISSING"
-  ]
+  "result": "ok",
+  "warnings": [],
+  "errors": []
 }
