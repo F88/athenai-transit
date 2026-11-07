@@ -19,76 +19,59 @@ below. If this file conflicts with a newer run, the run wins.
 
 ## Snapshot
 
-- Checked at: 2026-11-07 21:36 +09:00 (run executed 2026-11-07 19:04 +09:00)
-- Source run: <https://github.com/F88/athenai-transit/actions/runs/42362412250>
-- Update job: 2026-11-07 09:20 +09:00 run of
-  upload-transit-data-to-vercel-blob.yml concluded success WITH partial
-  failure: GTFS download 44 of 46 succeeded (kanto-bus and kyoto-city-bus
-  HTTP 404); DB, v2 data, shapes and insights builds failed for the same 2
-  sources; global insights and catalog skipped them. Blob upload: Done: 137
+- Checked at: 2026-11-07 21:49 +09:00 (run executed 2026-11-07 21:47 +09:00)
+- Source run: <https://github.com/F88/athenai-transit/actions/runs/42374037627>
+- Update job: 2026-11-07 21:39 +09:00 workflow_dispatch run of
+  upload-transit-data-to-vercel-blob.yml on merge commit 5c640340 (PR #372)
+  concluded success with no partial failure: GTFS download 46 of 46
+  succeeded, every build step 0 failed / 0 skipped. Blob upload: Done: 143
   uploaded, 0 failed
-  (<https://github.com/F88/athenai-transit/actions/runs/42317621782>)
+  (<https://github.com/F88/athenai-transit/actions/runs/42373481675>)
 
 ## Triage
 
 <!-- Overwritten on every check run. Absolute dates only. -->
 
-Total: 41 sources checked, 7 errors, 2 warnings, 24 info (exit 1 critical).
+Total: 41 sources checked, 2 errors, 0 warnings, 19 info (exit 1 critical).
 
 ### CRITICAL
 
-No in-period replacement exists.
-
-| Source    | Adopted                                 | Remote                                                                                                                   |
-| --------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| kanto-bus | date=20260824 (download fails HTTP 404) | 1 resource, 0 currently valid: date=20261014, feed 2026-10-01 - 2026-10-14 (after) -> adopted date=20261014 (2026-11-07) |
+| Source    | Adopted (start_at)                                                                        | Remote                                                                           |
+| --------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| kanto-bus | date=20261014 (2026-10-14, feed 2026-10-01 - 2026-10-14, status `after`; ADOPTED_EXPIRED) | 1 resource, 0 currently valid (REMOTE_NO_VALID_DATA); LOCAL is the only resource |
 
 ### UPDATE CANDIDATE
 
-Group A (urgent): adopted feed is expired, removed from remote, or fails to
-download, and an in-period replacement exists.
-
-| Source             | Adopted                                                        | Newer in-period (start_at)                                                                     | Other rows above adopted                                                  |
-| ------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| kyoto-city-bus     | date=20260831 (download fails HTTP 404)                        | date=20261104 (2026-11-04, feed 2026-10-27 - 2027-03-31) -> adopted date=20261104 (2026-11-07) | none                                                                      |
-| iyotetsu-bus       | date=20261001 (missing, expired, feed 2026-10-01 - 2026-10-31) | date=20261025 (2026-10-25, feed 2026-10-25 - 2026-11-30) -> adopted date=20261025 (2026-11-07) | none                                                                      |
-| meimon-taiyo-ferry | date=20261001 (missing, expired, feed 2026-10-01 - 2026-10-31) | date=20261101 (2026-11-01, feed 2026-11-01 - 2026-11-30) -> adopted date=20261101 (2026-11-07) | before: date=20261201 (feed to 2026-12-31), date=20270101 (to 2027-01-31) |
-| rinko-bus          | date=20260716 (missing, feed 2026-07-16 - 2027-07-16)          | date=20261101 (2026-11-01, feed 2026-11-01 - 2027-11-01) -> adopted date=20261101 (2026-11-07) | none                                                                      |
-| orange-ferry       | date=20250517 (missing, feed 2022-04-01 - 2028-03-31)          | date=20261101 (2026-11-01, feed 2026-11-01 - 2028-03-31) -> adopted date=20261101 (2026-11-07) | none                                                                      |
-| taito-c-bus        | date=20251028 (missing, feed 2025-08-10 - 2026-12-31)          | date=20261102 (2026-11-02, feed 2026-03-01 - 2027-12-31) -> adopted date=20261102 (2026-11-07) | none                                                                      |
-
-Group B: adopted feed is `in` and a newer `in` revision exists.
-
-| Source                 | Adopted (start_at)                                       | Newest in-period (start_at)                                                                    | Other rows above adopted                                                                                 |
-| ---------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| kyoto-bus              | date=20260928 (2026-09-28, feed 2026-09-28 - 2027-03-31) | date=20261107 (2026-11-07, feed 2026-11-07 - 2027-04-04) -> adopted date=20261107 (2026-11-07) | before: date=20261109 (start 2026-11-09, feed to 2027-04-04); in: 20261102, 20261031, 20261022, 20261013 |
-| yokohama-municipal-bus | date=20260727 (2026-07-27, feed 2026-07-27 - 2027-07-26) | date=20261101 (2026-11-01, feed 2026-11-01 - 2027-10-31) -> adopted date=20261101 (2026-11-07) | none                                                                                                     |
-| kawasaki-city-bus      | date=20260928 (2026-09-28, feed 2026-07-01 - 2027-07-01) | date=20261101 (2026-11-01, feed 2026-11-01 - 2027-11-01) -> adopted date=20261101 (2026-11-07) | none                                                                                                     |
+(none)
 
 ### UPCOMING
 
-(none) -- the `before` rows of kyoto-bus and meimon-taiyo-ferry are listed
-under UPDATE CANDIDATE.
+| Source             | Adopted (start_at)                                       | Newer (start_at)                                                                                                   | Adopt on/after                                        |
+| ------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| kyoto-bus          | date=20261107 (2026-11-07, feed 2026-11-07 - 2027-04-04) | date=20261109 (2026-11-09, feed 2026-11-09 - 2027-04-04)                                                           | 2026-11-09                                            |
+| meimon-taiyo-ferry | date=20261101 (2026-11-01, feed 2026-11-01 - 2026-11-30) | date=20261201 (2026-12-01, feed 2026-12-01 - 2026-12-31); date=20270101 (2027-01-01, feed 2027-01-01 - 2027-01-31) | 2026-12-01 (adopted feed ends 2026-11-30); 2027-01-01 |
 
 ### No action
 
-Adopted is the newest valid revision for (22): yokohama-municipal-subway,
-kita-bus, bunkyo-c-bus, chiyoda-bus, oshima-bus, keio-bus,
-itsukishima-kisen, miyake-bus, chuo-bus, okushiri-ferry, sanwa-shosen,
-odakyu-bus, hankyu-ferry, uwajima-unyu, shinagawa-c-bus, ota-c-bus,
-meguro-c-bus, nishi-tokyo-bus, tokai-kisen, keisei-transit-bus,
-suginami-gsm, nagoya-srt.
+Adopted is the newest valid revision for (29): rinko-bus,
+yokohama-municipal-subway, yokohama-municipal-bus, kita-bus, bunkyo-c-bus,
+chiyoda-bus, oshima-bus, keio-bus, iyotetsu-bus, itsukishima-kisen,
+miyake-bus, chuo-bus, okushiri-ferry, sanwa-shosen, odakyu-bus,
+hankyu-ferry, uwajima-unyu, shinagawa-c-bus, ota-c-bus, meguro-c-bus,
+nishi-tokyo-bus, tokai-kisen, keisei-transit-bus, suginami-gsm,
+orange-ferry, taito-c-bus, kyoto-city-bus, kawasaki-city-bus, nagoya-srt.
 
-Watch: (none) -- no adopted feed in this category ends on or before
-2026-12-07. odakyu-bus reports no feed end (`in-no-end`); its feed version
-string is 20261001_20261130.
+Watch: the adopted feed of iyotetsu-bus (date=20261025, feed end 2026-11-30)
+ends within 30 days and no remote resource newer than LOCAL exists (as of
+2026-11-07). Re-check before 2026-12-01. odakyu-bus reports no feed end
+(`in-no-end`); its feed version string is 20261001_20261130.
 
 ### OUT OF SCOPE
 
 9 sources with no remote table in Members Portal API
 (kagoshima-maritime-bureau, mir-train, seibu-bus, tama-monorail, toei-bus,
 toei-train, tokyo-cruise-ship, tokyometro, twr-rinkai); all 9 downloaded
-OK in the 2026-11-07 09:20 update job. tokyo-cruise-ship local feed ends
+OK in the 2026-11-07 21:39 update job. tokyo-cruise-ship local feed ends
 2026-12-31. itabashi-rin2-bus (fixed URL, not in the checker's target
 list) downloaded OK in the same update job.
 
@@ -141,7 +124,7 @@ list) downloaded OK in the same update job.
   next update of that source needs the URL re-read from the city page. The
   meimon-taiyo-ferry date=20261101 item is RESOLVED by the 2026-11-07
   adoption below.
-- ADOPTED (branch chore/update-resources-20261107; decided by the user
+- APPLIED (PR #372, merged 2026-11-07 21:38 +09:00; decided by the user
   2026-11-07, Group A and Group B candidates plus kanto-bus; each CKAN
   resource verified against its resource page):
     - kyoto-city-bus date=20261104 (cba5e1e3-2581-40e6-a18f-f9dfccb5e215)
@@ -157,3 +140,6 @@ list) downloaded OK in the same update job.
       resource published on CKAN as of 2026-11-07. Adopted knowing its feed
       ended 2026-10-14; the adopted feed stays expired until a newer resource
       is adopted.
+      The 2026-11-07 21:47 check run confirms all 10 sources as adopted (LOCAL
+      marker present); data built and uploaded to Blob by the update job linked
+      above.
