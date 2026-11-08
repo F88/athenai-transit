@@ -2,12 +2,12 @@
   "sourceName": "itabashi-rin2-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-07T12:41:22.591Z",
+  "downloadedAt": "2026-11-08T00:25:37.108Z",
   "url": "https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260803.zip",
   "size": 13933,
   "contentType": "application/zip",
-  "durationMs": 528,
-  "archivePath": "workspace/_archives/gtfs/itabashi-rin2-bus/rinringo_gtfs_20260803_20261107-124123.zip",
+  "durationMs": 620,
+  "archivePath": "workspace/_archives/gtfs/itabashi-rin2-bus/rinringo_gtfs_20260803_20261108-002537.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",
