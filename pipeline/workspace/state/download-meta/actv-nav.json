@@ -2,12 +2,12 @@
   "sourceName": "actv-nav",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-09T00:25:05.492Z",
+  "downloadedAt": "2026-11-10T00:22:11.976Z",
   "url": "https://actv.avmspa.it/sites/default/files/attachments/opendata/navigazione/actv_nav.zip",
   "size": 1473788,
   "contentType": "application/zip",
-  "durationMs": 1994,
-  "archivePath": "workspace/_archives/gtfs/actv-nav/actv_nav_20261109-002507.zip",
+  "durationMs": 1668,
+  "archivePath": "workspace/_archives/gtfs/actv-nav/actv_nav_20261110-002213.zip",
   "extractedFiles": [
     {
       "name": "routes.txt",
