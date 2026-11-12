@@ -1,69 +1,9 @@
 {
   "sourceName": "kyoto-city-bus",
   "type": "gtfs",
-  "status": "ok",
-  "downloadedAt": "2026-11-11T00:23:38.185Z",
+  "status": "error",
+  "downloadedAt": "2026-11-12T00:24:01.761Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20261104",
-  "size": 5689565,
-  "contentType": "application/octet-stream",
-  "durationMs": 3014,
-  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20261111-002340.zip",
-  "extractedFiles": [
-    {
-      "name": "calendar_dates.txt",
-      "size": 13457
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 56002121
-    },
-    {
-      "name": "trips.txt",
-      "size": 1957820
-    },
-    {
-      "name": "calendar.txt",
-      "size": 958
-    },
-    {
-      "name": "routes.txt",
-      "size": 13815
-    },
-    {
-      "name": "feed_info.txt",
-      "size": 205
-    },
-    {
-      "name": "shapes.txt",
-      "size": 3965904
-    },
-    {
-      "name": "translations.txt",
-      "size": 760866
-    },
-    {
-      "name": "stops.txt",
-      "size": 261017
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 733863
-    },
-    {
-      "name": "agency.txt",
-      "size": 193
-    },
-    {
-      "name": "fare_attributes.txt",
-      "size": 694
-    }
-  ],
-  "feedInfo": {
-    "publisherName": "京都市交通局",
-    "publisherUrl": "https://www.city.kyoto.lg.jp/kotsu/",
-    "lang": "ja",
-    "startDate": "20261027",
-    "endDate": "20270331",
-    "version": "Kyoto_City_Bus_GTFS_2026_0012_03"
-  }
+  "durationMs": 3967,
+  "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20261104&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
