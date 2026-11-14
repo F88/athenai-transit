@@ -2,12 +2,12 @@
   "sourceName": "tama-monorail",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-13T00:23:19.591Z",
+  "downloadedAt": "2026-11-14T00:22:38.543Z",
   "url": "https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip",
   "size": 56367,
   "contentType": "application/zip",
-  "durationMs": 1428,
-  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20261113-002321.zip",
+  "durationMs": 1069,
+  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20261114-002239.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
