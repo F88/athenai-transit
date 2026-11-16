@@ -2,12 +2,12 @@
   "sourceName": "miyake-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-15T00:25:22.989Z",
+  "downloadedAt": "2026-11-16T00:28:40.642Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/MiyakeVill/AllLine.zip?date=20250929",
   "size": 106023,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1461,
-  "archivePath": "workspace/_archives/gtfs/miyake-bus/AllLine_20261115-002524.zip",
+  "durationMs": 1920,
+  "archivePath": "workspace/_archives/gtfs/miyake-bus/AllLine_20261116-002842.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
