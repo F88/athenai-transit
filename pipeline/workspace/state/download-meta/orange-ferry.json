@@ -2,12 +2,12 @@
   "sourceName": "orange-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-17T00:23:50.251Z",
+  "downloadedAt": "2026-11-18T00:24:04.025Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/OrangeFerry/AllLines.zip?date=20261101",
   "size": 6444,
   "contentType": "application/octet-stream",
-  "durationMs": 1042,
-  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261117-002351.zip",
+  "durationMs": 1150,
+  "archivePath": "workspace/_archives/gtfs/orange-ferry/AllLines_20261118-002405.zip",
   "extractedFiles": [
     {
       "name": "translations.txt",

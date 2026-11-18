@@ -2,10 +2,10 @@
   "sourceName": "yurikamome-railway",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-11-17T00:24:09.876Z",
+  "downloadedAt": "2026-11-18T00:24:25.028Z",
   "url": "https://api.odpt.org/api/v4/odpt:Railway?odpt:operator=odpt.Operator:Yurikamome",
   "size": 3681,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 492,
-  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_Railway_20261117-002410.json"
+  "durationMs": 466,
+  "archivePath": "workspace/_archives/odpt-json/yurikamome/odpt_Railway_20261118-002425.json"
 }
