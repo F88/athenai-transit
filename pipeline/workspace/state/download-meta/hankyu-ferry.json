@@ -1,85 +1,9 @@
 {
   "sourceName": "hankyu-ferry",
   "type": "gtfs",
-  "status": "ok",
-  "downloadedAt": "2026-11-20T00:21:27.871Z",
+  "status": "error",
+  "downloadedAt": "2026-11-21T00:22:26.686Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260929",
-  "size": 10636,
-  "contentType": "application/octet-stream",
-  "durationMs": 1394,
-  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20261120-002129.zip",
-  "extractedFiles": [
-    {
-      "name": "agency.txt",
-      "size": 202
-    },
-    {
-      "name": "calendar.txt",
-      "size": 424
-    },
-    {
-      "name": "calendar_dates.txt",
-      "size": 751
-    },
-    {
-      "name": "fare_attributes.txt",
-      "size": 559
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 984
-    },
-    {
-      "name": "feed_info.txt",
-      "size": 211
-    },
-    {
-      "name": "payload.txt",
-      "size": 189
-    },
-    {
-      "name": "payload_fare_attributes.txt",
-      "size": 126
-    },
-    {
-      "name": "payload_fare_rules.txt",
-      "size": 62
-    },
-    {
-      "name": "routes.txt",
-      "size": 313
-    },
-    {
-      "name": "shapes.txt",
-      "size": 18818
-    },
-    {
-      "name": "ships.txt",
-      "size": 366
-    },
-    {
-      "name": "stops.txt",
-      "size": 825
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 1610
-    },
-    {
-      "name": "translations.txt",
-      "size": 6210
-    },
-    {
-      "name": "trips.txt",
-      "size": 1327
-    }
-  ],
-  "feedInfo": {
-    "publisherName": "阪九フェリー株式会社",
-    "publisherUrl": "https://www.han9f.co.jp/",
-    "lang": "ja",
-    "startDate": "20261001",
-    "endDate": "20270131",
-    "version": "2.0"
-  }
+  "durationMs": 4225,
+  "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260929&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }
