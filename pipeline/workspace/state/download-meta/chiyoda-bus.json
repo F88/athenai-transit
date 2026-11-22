@@ -2,12 +2,12 @@
   "sourceName": "chiyoda-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-21T00:22:33.170Z",
+  "downloadedAt": "2026-11-22T00:25:11.271Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20260601",
   "size": 29964,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1358,
-  "archivePath": "workspace/_archives/gtfs/chiyoda-bus/Chiyoda_ALLLINES_20261121-002234.zip",
+  "durationMs": 2156,
+  "archivePath": "workspace/_archives/gtfs/chiyoda-bus/Chiyoda_ALLLINES_20261122-002513.zip",
   "extractedFiles": [
     {
       "name": "routes.txt",
