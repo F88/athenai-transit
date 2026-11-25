@@ -2,12 +2,12 @@
   "sourceName": "uwajima-unyu",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-24T00:22:33.092Z",
+  "downloadedAt": "2026-11-25T00:24:19.244Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20261001",
   "size": 7072,
   "contentType": "application/octet-stream",
-  "durationMs": 1302,
-  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20261124-002234.zip",
+  "durationMs": 1429,
+  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20261125-002420.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
