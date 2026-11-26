@@ -2,12 +2,12 @@
   "sourceName": "vag-freiburg",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-25T00:24:38.449Z",
+  "downloadedAt": "2026-11-26T00:23:49.146Z",
   "url": "https://www.vag-freiburg.de/fileadmin/gtfs/VAGFR.zip",
   "size": 7121003,
   "contentType": "application/zip",
-  "durationMs": 1707,
-  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20261125-002439.zip",
+  "durationMs": 2155,
+  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20261126-002351.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",
@@ -15,7 +15,7 @@
     },
     {
       "name": "agency.txt",
-      "size": 352
+      "size": 354
     },
     {
       "name": "calendar.txt",

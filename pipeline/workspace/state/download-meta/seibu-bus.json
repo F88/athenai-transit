@@ -2,12 +2,12 @@
   "sourceName": "seibu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-25T00:24:35.630Z",
+  "downloadedAt": "2026-11-26T00:23:46.280Z",
   "url": "https://api.odpt.org/api/v4/files/SeibuBus/data/SeibuBus-GTFS.zip",
   "size": 4265703,
   "contentType": "application/zip",
-  "durationMs": 4349,
-  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20261125-002439.zip",
+  "durationMs": 3587,
+  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20261126-002349.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",

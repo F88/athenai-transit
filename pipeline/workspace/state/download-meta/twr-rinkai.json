@@ -2,12 +2,12 @@
   "sourceName": "twr-rinkai",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-25T00:24:09.810Z",
+  "downloadedAt": "2026-11-26T00:23:21.101Z",
   "url": "https://api.odpt.org/api/v4/files/TWR/data/TWR-Train-GTFS.zip",
   "size": 33154,
   "contentType": "application/zip",
-  "durationMs": 1570,
-  "archivePath": "workspace/_archives/gtfs/twr-rinkai/TWR-Train-GTFS_20261125-002411.zip",
+  "durationMs": 1504,
+  "archivePath": "workspace/_archives/gtfs/twr-rinkai/TWR-Train-GTFS_20261126-002322.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
