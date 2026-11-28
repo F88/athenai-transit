@@ -2,8 +2,8 @@
   "sourceName": "hankyu-ferry",
   "type": "gtfs",
   "status": "error",
-  "downloadedAt": "2026-11-27T00:23:59.301Z",
+  "downloadedAt": "2026-11-28T00:22:05.307Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260929",
-  "durationMs": 5668,
+  "durationMs": 4912,
   "error": "Failed after 3 attempts (https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260929&acl:consumerKey=[REDACTED] Error: HTTP 404 Not Found"
 }

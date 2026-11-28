@@ -2,12 +2,12 @@
   "sourceName": "taito-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-11-27T00:24:17.463Z",
+  "downloadedAt": "2026-11-28T00:22:27.721Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoTaitoCity/megurinCCBY40.zip?date=20261102",
   "size": 79171,
   "contentType": "application/octet-stream",
-  "durationMs": 1194,
-  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20261127-002418.zip",
+  "durationMs": 1568,
+  "archivePath": "workspace/_archives/gtfs/taito-c-bus/megurinCCBY40_20261128-002229.zip",
   "extractedFiles": [
     {
       "name": "trips.txt",
